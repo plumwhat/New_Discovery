@@ -1,4 +1,3 @@
-
 export enum Role {
   SALES = "Sales",
   PRESALES = "Presales",
@@ -101,6 +100,13 @@ export interface RoiInput {
   value: string | number; // User input is string, converted for calculation
   unit?: string; // e.g., "hours/week", "%", "$"
   isCurrency?: boolean; // Hint for formatting
+  placeholder?: string; // Specific placeholder for this input
+}
+
+export interface RoiCalculationFactors {
+  timeSavingPercentage: number; // Stored as 0-1 (e.g., 0.75 for 75%)
+  errorReductionPercentage: number; // Stored as 0-1
+  // Add other specific factors as needed by various module calculations
 }
 
 export interface RoiResults {
@@ -124,12 +130,14 @@ export interface RoiResults {
 }
 
 export interface RoiModuleState {
-  annualSalary: number; // Average annual salary of staff involved in the process
-  annualSoftwareCost: number; // Proposed annual cost of the software/solution
-  upfrontProfServicesCost: number; // One-time implementation/professional services cost
-  solutionLifespanYears: number; // Expected lifespan of the solution in years
+  annualSalary: number | string; // Allow string for input field
+  annualSoftwareCost: number | string;
+  upfrontProfServicesCost: number | string;
+  solutionLifespanYears: number | string;
   inputs: { [inputId: string]: string | number }; // Module-specific metrics
   results: RoiResults | null;
+  calculationFactors: RoiCalculationFactors;
+  defaultCalculationFactors: RoiCalculationFactors; // For reset functionality
 }
 
 export interface RoiCalculatorState {
@@ -152,6 +160,7 @@ export interface AppState {
   discoveryQuestions: DiscoveryQuestionsState;
   roiCalculator: RoiCalculatorState;
   exportFormat: ExportFormat;
+  isRoiAdminModalOpen: boolean; // To control ROI admin modal visibility from App state if needed, or can be local to ROI tab
 }
 
 // Props for common components

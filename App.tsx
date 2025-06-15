@@ -1,7 +1,15 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { AppState, Role, AutomationType, TabId, ExportFormat, TabDefinition, RoiModuleState } from './types';
-import { INITIAL_STATE, TABS, MODULES_BY_AUTOMATION_TYPE, ALL_MODULES, DISCOVERY_QUESTIONS_TEMPLATES, ROI_INPUT_TEMPLATES } from './constants';
+import { AppState, Role, AutomationType, TabId, ExportFormat, TabDefinition, RoiModuleState, RoiCalculationFactors } from './types';
+import { 
+    INITIAL_STATE, 
+    TABS, 
+    MODULES_BY_AUTOMATION_TYPE, 
+    ALL_MODULES, 
+    DISCOVERY_QUESTIONS_TEMPLATES, 
+    ROI_INPUT_TEMPLATES,
+    DEFAULT_AP_CALCULATION_FACTORS,
+    DEFAULT_GENERIC_CALCULATION_FACTORS
+} from './constants';
 import Header from './components/Header';
 import ControlsSection from './components/ControlsSection';
 import TabNavigation from './components/TabNavigation';
@@ -14,7 +22,7 @@ const App: React.FC = () => {
   const { selectedRole, selectedAutomationType, selectedModuleId, activeTab, exportFormat } = appState;
 
   // Initialize discovery and ROI data for all modules if not present
-  useEffect(() => {
+   useEffect(() => {
     setAppState(currentAppState => {
       let needsUpdate = false;
       const newDiscoveryQuestions = { ...currentAppState.discoveryQuestions };
@@ -32,23 +40,20 @@ const App: React.FC = () => {
         if (!newRoiCalculator[module.id]) {
           needsUpdate = true;
           const roiInputTemplate = ROI_INPUT_TEMPLATES[module.id] || ROI_INPUT_TEMPLATES.default;
-          // Use defaults from INITIAL_STATE for the specific module if available, otherwise general defaults
-          const initialModuleRoiState: RoiModuleState = INITIAL_STATE.roiCalculator[module.id] || {
-            annualSalary: 60000,
-            annualSoftwareCost: 10000,
-            upfrontProfServicesCost: 5000,
-            solutionLifespanYears: 3,
-            inputs: {},
-            results: null,
-          };
-
+          const defaultFactors = module.id === 'accountsPayable' ? { ...DEFAULT_AP_CALCULATION_FACTORS } : { ...DEFAULT_GENERIC_CALCULATION_FACTORS };
+          
           newRoiCalculator[module.id] = {
-            ...initialModuleRoiState, // Spread to get all properties
-            inputs: roiInputTemplate.reduce((acc, input) => { // Override inputs with template
+            annualSalary: INITIAL_STATE.roiCalculator[module.id]?.annualSalary || 60000,
+            annualSoftwareCost: INITIAL_STATE.roiCalculator[module.id]?.annualSoftwareCost || 10000,
+            upfrontProfServicesCost: INITIAL_STATE.roiCalculator[module.id]?.upfrontProfServicesCost || 5000,
+            solutionLifespanYears: INITIAL_STATE.roiCalculator[module.id]?.solutionLifespanYears || 3,
+            inputs: roiInputTemplate.reduce((acc, input) => {
               acc[input.id] = input.value;
               return acc;
             }, {} as { [inputId: string]: string | number }),
-            results: null, // Ensure results are reset
+            results: null,
+            calculationFactors: { ...defaultFactors },
+            defaultCalculationFactors: { ...defaultFactors },
           };
         }
       });
@@ -62,15 +67,17 @@ const App: React.FC = () => {
       }
       return currentAppState;
     });
-  }, []); // Run once on mount
+  }, []); 
 
 
   const visibleTabs = TABS.filter(tab => tab.roles.includes(selectedRole));
 
   useEffect(() => {
-    // If current activeTab is not visible for the new role, switch to the first available one
-    if (!visibleTabs.find(tab => tab.id === activeTab)) {
-      setAppState(prev => ({ ...prev, activeTab: visibleTabs[0]?.id || prev.activeTab }));
+    if (!visibleTabs.find(tab => tab.id === activeTab) && visibleTabs.length > 0) {
+      setAppState(prev => ({ ...prev, activeTab: visibleTabs[0].id }));
+    } else if (visibleTabs.length === 0 && activeTab !== null) {
+       // Fallback if no tabs are visible, though this shouldn't happen with default roles
+       setAppState(prev => ({ ...prev, activeTab: TABS[0].id }));
     }
   }, [selectedRole, activeTab, visibleTabs]);
 
@@ -109,8 +116,7 @@ const App: React.FC = () => {
   
   const handleClearForm = useCallback(() => {
     if(window.confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
-      // Re-initialize state, ensuring dynamic parts are also reset
-      const freshInitialState = JSON.parse(JSON.stringify(INITIAL_STATE)); // Deep copy to avoid mutation issues with nested objects
+      const freshInitialState = JSON.parse(JSON.stringify(INITIAL_STATE)); 
       const newDiscoveryQuestions = { ...freshInitialState.discoveryQuestions };
       const newRoiCalculator = { ...freshInitialState.roiCalculator };
 
@@ -122,29 +128,28 @@ const App: React.FC = () => {
           };
         
           const roiInputTemplate = ROI_INPUT_TEMPLATES[module.id] || ROI_INPUT_TEMPLATES.default;
-           // Get default values for this module from the fresh initial state
-          const initialModuleRoiState: RoiModuleState = freshInitialState.roiCalculator[module.id] || {
-            annualSalary: 60000,
-            annualSoftwareCost: 10000,
-            upfrontProfServicesCost: 5000,
-            solutionLifespanYears: 3,
-            inputs: {}, // Will be overridden by template below
-            results: null,
-          };
-
+          const defaultFactors: RoiCalculationFactors = module.id === 'accountsPayable' 
+            ? { ...DEFAULT_AP_CALCULATION_FACTORS } 
+            : { ...DEFAULT_GENERIC_CALCULATION_FACTORS };
+          
           newRoiCalculator[module.id] = {
-            ...initialModuleRoiState, // Spread to get all base properties
-            inputs: roiInputTemplate.reduce((acc, input) => { // Override inputs with template
+            annualSalary: freshInitialState.roiCalculator[module.id]?.annualSalary || 60000,
+            annualSoftwareCost: freshInitialState.roiCalculator[module.id]?.annualSoftwareCost || 10000,
+            upfrontProfServicesCost: freshInitialState.roiCalculator[module.id]?.upfrontProfServicesCost || 5000,
+            solutionLifespanYears: freshInitialState.roiCalculator[module.id]?.solutionLifespanYears || 3,
+            inputs: roiInputTemplate.reduce((acc, input) => { 
               acc[input.id] = input.value;
               return acc;
             }, {} as { [inputId: string]: string | number }),
-            results: null, // Ensure results are reset
+            results: null, 
+            calculationFactors: { ...defaultFactors },
+            defaultCalculationFactors: { ...defaultFactors },
           };
       });
       setAppState({
-        ...freshInitialState, // Spread the base fresh state
-        discoveryQuestions: newDiscoveryQuestions, // Apply the newly initialized discovery questions
-        roiCalculator: newRoiCalculator, // Apply the newly initialized ROI calculator data
+        ...freshInitialState, 
+        discoveryQuestions: newDiscoveryQuestions, 
+        roiCalculator: newRoiCalculator, 
       });
     }
   }, []);
@@ -177,7 +182,7 @@ const App: React.FC = () => {
         />
       </main>
       <footer className="text-center p-4 text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} Process Automation Tool. All rights reserved.
+        &copy; 2025 Brad Whatman
       </footer>
     </div>
   );
