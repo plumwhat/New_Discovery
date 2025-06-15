@@ -28,7 +28,7 @@ const parseGlobalRoiInput = (value: string | number | undefined): number => {
 
 
 const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
-  const { selectedModuleId, isRoiAdminModalOpen } = appState;
+  const { selectedModuleId } = appState; // Removed isRoiAdminModalOpen as it's local
   const [isModalOpen, setIsModalOpen] = useState(false);
 
 
@@ -51,10 +51,12 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
       const newModuleRoiData = { ...prev.roiCalculator[selectedModuleId] };
       
       if (['annualSalary', 'annualSoftwareCost', 'upfrontProfServicesCost', 'solutionLifespanYears'].includes(inputId)) {
-        (newModuleRoiData as any)[inputId] = value; // Keep as string for direct input binding
+        (newModuleRoiData as any)[inputId] = value; 
       } else { 
-        newModuleRoiData.inputs = { ...newModuleRoiData.inputs, [inputId]: value }; // Keep as string
+        newModuleRoiData.inputs = { ...newModuleRoiData.inputs, [inputId]: value }; 
       }
+      // Set results to null when inputs change, to indicate recalculation is needed
+      newModuleRoiData.results = null; 
       return {
         ...prev,
         roiCalculator: { ...prev.roiCalculator, [selectedModuleId]: newModuleRoiData }
@@ -71,7 +73,6 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     let totalAnnualGrossSavings = 0;
     const savingsCalculationWorkings: RoiResults['savingsCalculationWorkings'] = [];
 
-    // Use configured calculation factors
     const timeSavingPercentage = calculationFactors.timeSavingPercentage;
     const errorReductionPercentage = calculationFactors.errorReductionPercentage;
 
@@ -92,7 +93,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 category: "Labor Savings (Invoice Processing Time Reduction)",
                 formula: `(${numInvoicesPerMonth} invoices/mo * ${avgManualProcessingTimePerInvoiceMins} mins/invoice * ${timeSavingPercentage*100}% saved / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
                 result: laborSavingsProcessing,
-                inputsUsed: { numInvoicesPerMonth, avgManualProcessingTimePerInvoiceMins, hourlyRate, timeSavingPercentage }
+                inputsUsed: { "Number of Invoices/Month": numInvoicesPerMonth, "Avg Manual Processing Time/Invoice (mins)": avgManualProcessingTimePerInvoiceMins, "Hourly Rate": hourlyRate.toFixed(2), "Time Saving Factor": `${(timeSavingPercentage*100).toFixed(0)}%` }
             });
         }
         
@@ -100,34 +101,31 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             const errorsPerMonth = numInvoicesPerMonth * currentInvoiceErrorRatePercentage;
             const timeSpentResolvingErrorsMinsPerMonth = errorsPerMonth * avgTimeToResolveExceptionMins;
             const timeSavedResolvingErrorsMinsPerMonth = (timeSpentResolvingErrorsMinsPerMonth * errorReductionPercentage);
-            const errorReductionSavings = (timeSavedResolvingErrorsMinsPerMonth / 60) * 12 * hourlyRate;
+            const errorReductionSavingsVal = (timeSavedResolvingErrorsMinsPerMonth / 60) * 12 * hourlyRate;
 
-            totalAnnualGrossSavings += errorReductionSavings;
+            totalAnnualGrossSavings += errorReductionSavingsVal;
             savingsCalculationWorkings.push({
                 category: "Savings (Error Reduction & Resolution Time)",
                 formula: `((${numInvoicesPerMonth} invoices/mo * ${currentInvoiceErrorRatePercentage*100}% error rate * ${avgTimeToResolveExceptionMins} mins/error * ${errorReductionPercentage*100}% reduction) / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
-                result: errorReductionSavings,
-                inputsUsed: { numInvoicesPerMonth, currentInvoiceErrorRatePercentage, avgTimeToResolveExceptionMins, hourlyRate, errorReductionPercentage }
+                result: errorReductionSavingsVal,
+                inputsUsed: { "Number of Invoices/Month": numInvoicesPerMonth, "Current Error Rate": `${(currentInvoiceErrorRatePercentage*100).toFixed(0)}%`, "Avg Time to Resolve Exception (mins)": avgTimeToResolveExceptionMins, "Hourly Rate": hourlyRate.toFixed(2), "Error Reduction Factor": `${(errorReductionPercentage*100).toFixed(0)}%`}
             });
         }
 
         if (annualValueMissedEarlyPaymentDiscounts > 0) {
             totalAnnualGrossSavings += annualValueMissedEarlyPaymentDiscounts;
-             savingsCalculationWorkings.push({ category: "Captured Early Payment Discounts", formula: `Direct input`, result: annualValueMissedEarlyPaymentDiscounts, inputsUsed: {annualValueMissedEarlyPaymentDiscounts} });
+             savingsCalculationWorkings.push({ category: "Captured Early Payment Discounts", formula: `Direct input`, result: annualValueMissedEarlyPaymentDiscounts, inputsUsed: {"Annual Value Missed Early Payment Discounts": annualValueMissedEarlyPaymentDiscounts} });
         }
         if (annualCostPhysicalInvoiceStorage > 0) {
             totalAnnualGrossSavings += annualCostPhysicalInvoiceStorage;
-            savingsCalculationWorkings.push({ category: "Reduced Physical Storage Costs", formula: `Direct input`, result: annualCostPhysicalInvoiceStorage, inputsUsed: {annualCostPhysicalInvoiceStorage} });
+            savingsCalculationWorkings.push({ category: "Reduced Physical Storage Costs", formula: `Direct input`, result: annualCostPhysicalInvoiceStorage, inputsUsed: {"Annual Cost Physical Invoice Storage": annualCostPhysicalInvoiceStorage} });
         }
 
-    } else if (moduleId === 'claimsDeductions') { // Example for another specific module
+    } else if (moduleId === 'claimsDeductions') { 
         const deductionsProcessedPerMonth = getInputValue(inputs, 'cd_roi_deductionsProcessedPerMonth');
         const avgResearchTimePerDeductionHrs = getInputValue(inputs, 'cd_roi_avgResearchTimePerDeductionHrs');
-        const percentageDeductionsInvalid = getInputValue(inputs, 'cd_roi_percentageDeductionsInvalidPercentage') / 100;
-        // const totalValueOfDeductionsPerMonth = getInputValue(inputs, 'cd_roi_totalValueOfDeductionsPerMonth'); // Used for recovery
-        const numFTEs = getInputValue(inputs, 'cd_roi_numFTEs');
-
-
+        // const percentageDeductionsInvalid = getInputValue(inputs, 'cd_roi_percentageDeductionsInvalidPercentage') / 100; // Example if used for error reduction
+        
         if (deductionsProcessedPerMonth > 0 && avgResearchTimePerDeductionHrs > 0 && hourlyRate > 0 && timeSavingPercentage > 0) {
             const annualResearchHours = deductionsProcessedPerMonth * avgResearchTimePerDeductionHrs * 12;
             const savedResearchHours = annualResearchHours * timeSavingPercentage;
@@ -137,23 +135,36 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 category: "Labor Savings (Deduction Research Time)",
                 formula: `(${deductionsProcessedPerMonth}/mo * ${avgResearchTimePerDeductionHrs} hrs/ded * 12 mo * ${timeSavingPercentage*100}% saved) * $${hourlyRate.toFixed(2)}/hr`,
                 result: laborSavingsResearch,
-                inputsUsed: { deductionsProcessedPerMonth, avgResearchTimePerDeductionHrs, hourlyRate, timeSavingPercentage }
+                inputsUsed: { "Deductions Processed/Month": deductionsProcessedPerMonth, "Avg Research Time/Deduction (hrs)": avgResearchTimePerDeductionHrs, "Hourly Rate": hourlyRate.toFixed(2), "Time Saving Factor": `${(timeSavingPercentage*100).toFixed(0)}%`}
             });
         }
-        // Could add logic for recovery of invalid deductions if automation improves that.
-        // This requires more inputs like "current recovery rate" vs "post-automation recovery rate".
-        // For now, focusing on labor savings from research and FTE reduction.
-         if (numFTEs > 0 && hourlyRate > 0 && timeSavingPercentage > 0) { // Assuming timeSavingPercentage can also mean FTE reduction/reallocation
-            const fteSavings = numFTEs * resolvedAnnualSalary * timeSavingPercentage; // Simplified: portion of FTE cost saved
-            // This might double count if time saving is already per deduction.
-            // Better: use a specific "FTE Reduction Potential" factor if this is desired.
-            // For now, let's assume the timeSavingPercentage applies to the FTEs' work on these tasks.
+        // Example: Add error reduction savings if relevant for claims/deductions
+        const numTransactions = deductionsProcessedPerMonth; // Use deductions as 'transactions'
+        const errorRateInput = getInputValue(inputs, 'cd_roi_percentageDeductionsInvalidPercentage') / 100; // % of deductions invalid could be an 'error rate'
+        const timeToFixErrorInput = getInputValue(inputs, 'cd_roi_avgResearchTimePerDeductionHrs') * 60; // Research time could be 'time to fix' in mins
+
+        if (numTransactions > 0 && errorRateInput > 0 && timeToFixErrorInput > 0 && hourlyRate > 0 && errorReductionPercentage > 0) {
+            const errorsPerMonth = numTransactions * errorRateInput;
+            const timeSpentResolvingErrorsMinsPerMonth = errorsPerMonth * timeToFixErrorInput; // This is total research time on invalid ones
+            const timeSavedResolvingErrorsMinsPerMonth = (timeSpentResolvingErrorsMinsPerMonth * errorReductionPercentage); // Time saved on this subset
+            const errorReductionSavingsVal = (timeSavedResolvingErrorsMinsPerMonth / 60) * 12 * hourlyRate;
+            
+            // Avoid double counting with labor savings if they overlap too much.
+            // This example assumes errorReductionPercentage applies to the 'invalid' portion specifically.
+            // For true distinctness, input labels and logic might need refinement.
+            // totalAnnualGrossSavings += errorReductionSavingsVal; // Be cautious about adding if similar to above
+             savingsCalculationWorkings.push({
+                category: "Savings (Improved Invalid Deduction Handling)",
+                formula: `((${numTransactions}/mo * ${errorRateInput*100}% invalid * ${timeToFixErrorInput} mins/ded * ${errorReductionPercentage*100}% reduction) / 60 * 12) * $${hourlyRate.toFixed(2)}/hr`,
+                result: errorReductionSavingsVal, // This is a potential saving, ensure it's additive if distinct
+                inputsUsed: {"Deductions/Month": numTransactions, "Invalid Deduction Rate": `${(errorRateInput*100).toFixed(0)}%`, "Research Time/Invalid (mins)": timeToFixErrorInput, "Hourly Rate": hourlyRate.toFixed(2), "Error Handling Improvement": `${(errorReductionPercentage*100).toFixed(0)}%`}
+            });
         }
 
 
-    } else { // Generic Calculation for other modules using "default" template inputs
+    } else { // Generic Calculation
         const manualTaskTimeHrsWeek = getInputValue(inputs, 'def_roi_manualTaskTimeHrsWeek');
-        const numEmployees = getInputValue(inputs, 'def_roi_numberOfEmployeesPerformingTask') || 1; // Default to 1 if not specified
+        const numEmployees = getInputValue(inputs, 'def_roi_numberOfEmployeesPerformingTask') || 1; 
         
         if (manualTaskTimeHrsWeek > 0 && numEmployees > 0 && hourlyRate > 0 && timeSavingPercentage > 0) {
             const timeSavedPerWeekTotal = manualTaskTimeHrsWeek * timeSavingPercentage * numEmployees;
@@ -163,7 +174,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 category: "Generic Time Savings (Manual Task Reduction)",
                 formula: `(${manualTaskTimeHrsWeek.toFixed(1)} hrs/wk/emp * ${timeSavingPercentage*100}% saved * ${numEmployees} emp * 52 wks) * $${hourlyRate.toFixed(2)}/hr`,
                 result: genericAnnualTimeSavings,
-                inputsUsed: { manualTaskTimeHrsWeek, numEmployees, hourlyRate, timeSavingPercentage }
+                inputsUsed: { "Manual Task Time (hrs/wk/emp)": manualTaskTimeHrsWeek.toFixed(1), "Number of Employees": numEmployees, "Hourly Rate": hourlyRate.toFixed(2), "Time Saving Factor": `${(timeSavingPercentage*100).toFixed(0)}%` }
             });
         }
 
@@ -176,36 +187,34 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             const annualTransactions = numTransactionsPerMonth * 12;
             const currentAnnualErrors = annualTransactions * errorRate;
             const errorsReducedAnnually = currentAnnualErrors * errorReductionPercentage;
-            let currentErrorSavings = 0;
-
+            
             if (costPerErrorMaterial > 0) {
                 const materialErrorSavingsVal = errorsReducedAnnually * costPerErrorMaterial;
-                currentErrorSavings += materialErrorSavingsVal;
+                totalAnnualGrossSavings += materialErrorSavingsVal;
                  savingsCalculationWorkings.push({
                     category: "Generic Savings (Reduced Material Cost of Errors)",
                     formula: `(${numTransactionsPerMonth} trans/mo * 12 * ${errorRate*100}% error rate * ${errorReductionPercentage*100}% reduction) * $${costPerErrorMaterial.toFixed(2)}/error`,
                     result: materialErrorSavingsVal,
-                    inputsUsed: { numTransactionsPerMonth, errorRate, errorReductionPercentage, costPerErrorMaterial }
+                    inputsUsed: { "Transactions/Month": numTransactionsPerMonth, "Error Rate": `${(errorRate*100).toFixed(0)}%`, "Cost per Error ($)": costPerErrorMaterial.toFixed(2), "Error Reduction Factor": `${(errorReductionPercentage*100).toFixed(0)}%` }
                 });
             }
             if (timeToFixErrorMins > 0 && hourlyRate > 0) {
                 const laborTimeSavedFixingErrorsHrsAnnual = (errorsReducedAnnually * timeToFixErrorMins) / 60;
                 const laborErrorFixSavingsVal = laborTimeSavedFixingErrorsHrsAnnual * hourlyRate;
-                currentErrorSavings += laborErrorFixSavingsVal;
+                totalAnnualGrossSavings += laborErrorFixSavingsVal;
                  savingsCalculationWorkings.push({
                     category: "Generic Savings (Reduced Labor to Fix Errors)",
                     formula: `(((${numTransactionsPerMonth} trans/mo * 12 * ${errorRate*100}% error rate * ${errorReductionPercentage*100}% reduction) * ${timeToFixErrorMins} mins/error) / 60) * $${hourlyRate.toFixed(2)}/hr`,
                     result: laborErrorFixSavingsVal,
-                    inputsUsed: { numTransactionsPerMonth, errorRate, errorReductionPercentage, timeToFixErrorMins, hourlyRate }
+                    inputsUsed: { "Transactions/Month": numTransactionsPerMonth, "Error Rate": `${(errorRate*100).toFixed(0)}%`, "Time to Fix Error (mins)": timeToFixErrorMins, "Hourly Rate": hourlyRate.toFixed(2), "Error Reduction Factor": `${(errorReductionPercentage*100).toFixed(0)}%` }
                 });
             }
-            totalAnnualGrossSavings += currentErrorSavings;
         }
     }
     
     const resolvedAnnualSoftwareCost = parseGlobalRoiInput(annualSoftwareCost);
     const resolvedUpfrontProfServicesCost = parseGlobalRoiInput(upfrontProfServicesCost);
-    const resolvedSolutionLifespanYears = Math.max(1, parseGlobalRoiInput(solutionLifespanYears) || 1); // Ensure at least 1 year
+    const resolvedSolutionLifespanYears = Math.max(1, parseGlobalRoiInput(solutionLifespanYears) || 1); 
 
     const totalInvestmentOverLifespan = resolvedUpfrontProfServicesCost + (resolvedAnnualSoftwareCost * resolvedSolutionLifespanYears);
     const totalSavingsOverLifespan = totalAnnualGrossSavings * resolvedSolutionLifespanYears;
@@ -215,7 +224,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
 
     const annualBreakdown: RoiResults['annualBreakdown'] = [];
     let cumulativeNetCashFlow = 0;
-    let paybackPeriodMonths = Infinity;
+    let paybackPeriodMonthsCalculated: number | null = null; // Use null to indicate not yet found
 
     for (let i = 1; i <= resolvedSolutionLifespanYears; i++) {
         const investmentThisYear = (i === 1) ? resolvedUpfrontProfServicesCost : 0;
@@ -232,29 +241,40 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             cumulativeNetCashFlow: cumulativeNetCashFlow
         });
 
-        if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow >= 0) {
-             if (prevCumulativeNetCashFlow < 0 && netCashFlowYear > 0) {
-                paybackPeriodMonths = ((i - 1) * 12) + ((-prevCumulativeNetCashFlow / netCashFlowYear) * 12);
-            } else if (prevCumulativeNetCashFlow < 0 && netCashFlowYear === 0 && cumulativeNetCashFlow === 0) { 
-                paybackPeriodMonths = i * 12;
-            } else if (cumulativeNetCashFlow >= 0 && prevCumulativeNetCashFlow <=0) { // Became positive or started positive
-                 paybackPeriodMonths = (i-1)*12; // If profitable in Y1 from the start
-                 if (resolvedUpfrontProfServicesCost === 0 && totalAnnualGrossSavings > resolvedAnnualSoftwareCost && i === 1) {
-                     paybackPeriodMonths = 0; // Immediate payback if no upfront cost and profitable
-                 } else if (prevCumulativeNetCashFlow < 0) { // If it crossed zero in this year
-                     paybackPeriodMonths = ((i - 1) * 12) + ((-prevCumulativeNetCashFlow / netCashFlowYear) * 12);
-                 } else { // If it started >=0 in year 1
-                    paybackPeriodMonths = 0;
-                 }
+        if (paybackPeriodMonthsCalculated === null && cumulativeNetCashFlow >= 0) {
+            if (prevCumulativeNetCashFlow < 0 && netCashFlowYear > 0) { // Crossed from negative to positive
+                paybackPeriodMonthsCalculated = ((i - 1) * 12) + ((-prevCumulativeNetCashFlow / netCashFlowYear) * 12);
+            } else if (cumulativeNetCashFlow >=0 && i === 1 ) { // Profitable from year 1 (or even month 0)
+                 // if upfront is 0 and profitable Y1, payback is immediate (0)
+                if (resolvedUpfrontProfServicesCost === 0 && totalAnnualGrossSavings > resolvedAnnualSoftwareCost) {
+                    paybackPeriodMonthsCalculated = 0;
+                } else if (netCashFlowYear > 0) { // Positive cash flow in Y1 with upfront costs
+                    paybackPeriodMonthsCalculated = (resolvedUpfrontProfServicesCost / (totalAnnualGrossSavings - resolvedAnnualSoftwareCost)) * 12;
+                    if(paybackPeriodMonthsCalculated < 0) paybackPeriodMonthsCalculated = 0; // If somehow negative (e.g. no upfront and high savings)
+                    if(paybackPeriodMonthsCalculated > 12) paybackPeriodMonthsCalculated = Math.min(paybackPeriodMonthsCalculated, 12); // Cap at 12 for Y1 payback
+                } else { // No positive cash flow in Y1, but cumulative is >=0 (e.g. all costs = 0)
+                     paybackPeriodMonthsCalculated = 0;
+                }
+            } else if (cumulativeNetCashFlow >=0 && prevCumulativeNetCashFlow >=0 && i === 1) { // starts profitable
+                 paybackPeriodMonthsCalculated = 0;
             }
         }
     }
-    if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow < 0) { // Never broke even
-        paybackPeriodMonths = Infinity; 
-    } else if (paybackPeriodMonths < 0 || (resolvedUpfrontProfServicesCost === 0 && totalAnnualGrossSavings > resolvedAnnualSoftwareCost)) { 
-        paybackPeriodMonths = 0; // Immediate or effectively immediate
+    
+    let finalPaybackPeriodMonths: number;
+    if (paybackPeriodMonthsCalculated === null) { // Never broke even
+        finalPaybackPeriodMonths = Infinity; 
+    } else {
+        finalPaybackPeriodMonths = paybackPeriodMonthsCalculated;
     }
-    if (paybackPeriodMonths > resolvedSolutionLifespanYears * 12) paybackPeriodMonths = Infinity; // Cap at lifespan
+    // Ensure payback is not longer than lifespan if it occurred
+    if (finalPaybackPeriodMonths > resolvedSolutionLifespanYears * 12) {
+        finalPaybackPeriodMonths = Infinity;
+    }
+     if (totalNetBenefitOverLifespan <= 0 && totalInvestmentOverLifespan > 0 && finalPaybackPeriodMonths !== Infinity) {
+      // If overall negative benefit, but somehow payback was calculated (e.g. Y1 profit then losses), mark as no payback
+      finalPaybackPeriodMonths = Infinity;
+    }
 
 
     const results: RoiResults = {
@@ -265,14 +285,14 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         solutionLifespanYears: resolvedSolutionLifespanYears,
         overallRoiPercentage,
         totalNetBenefitOverLifespan,
-        paybackPeriodMonths,
+        paybackPeriodMonths: finalPaybackPeriodMonths,
         savingsCalculationWorkings,
         annualBreakdown,
     };
 
     setAppState(prev => {
       const updatedModuleWithResults = {
-        ...moduleDataToCalculate,
+        ...moduleDataToCalculate, // Contains the inputs and factors used for this calculation run
         results: results
       };
       return {
@@ -306,10 +326,11 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         upfrontProfServicesCost: DEMO_ROI_GLOBAL_SETTINGS.upfrontProfServicesCost,
         solutionLifespanYears: DEMO_ROI_GLOBAL_SETTINGS.solutionLifespanYears,
         inputs: allDemoInputsWithStringValues,
-        calculationFactors: { ...currentModuleBaseData.defaultCalculationFactors }, // Reset factors to default for demo
+        calculationFactors: { ...currentModuleBaseData.defaultCalculationFactors }, 
         results: null 
     };
     
+    // Set state first to update inputs and factors
     setAppState(prev => ({
         ...prev,
         roiCalculator: {
@@ -318,6 +339,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         }
     }));
     
+    // Then calculate with this new state
     calculateRoi(newModuleDataWithDemoValues, selectedModuleId);
 
   }, [selectedModuleId, appState.roiCalculator, setAppState, calculateRoi]);
@@ -325,21 +347,31 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const handleOpenAdminModal = () => setIsModalOpen(true);
   const handleCloseAdminModal = () => setIsModalOpen(false);
 
-  const handleSaveRoiFactors = (newFactors: RoiCalculationFactors) => {
+  const handleSaveRoiFactors = useCallback((newFactors: RoiCalculationFactors) => {
     if (!selectedModuleId) return;
+
+    // Get the most current version of the module data from appState
+    // This ensures we're not using a stale 'currentModuleRoiData' from the parent scope of this callback
+    const moduleDataForUpdate = appState.roiCalculator[selectedModuleId];
+    
+    const newModuleDataWithUpdatedFactors: RoiModuleState = {
+      ...moduleDataForUpdate, // Use the latest inputs and global settings
+      calculationFactors: newFactors, // Apply the new factors
+      results: null, // Clear previous results to indicate re-calculation is pending or happening
+    };
+
+    // Update the state with the module data that includes the new factors
     setAppState(prev => ({
       ...prev,
       roiCalculator: {
         ...prev.roiCalculator,
-        [selectedModuleId]: {
-          ...prev.roiCalculator[selectedModuleId],
-          calculationFactors: newFactors,
-        }
+        [selectedModuleId]: newModuleDataWithUpdatedFactors,
       }
     }));
-    // Optionally, recalculate ROI immediately after saving factors
-    // calculateRoi({ ...currentModuleRoiData, calculationFactors: newFactors }, selectedModuleId);
-  };
+
+    // Explicitly call calculateRoi with the state that has the new factors
+    calculateRoi(newModuleDataWithUpdatedFactors, selectedModuleId);
+  }, [selectedModuleId, appState.roiCalculator, calculateRoi, setAppState]);
 
 
   return (
@@ -349,7 +381,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             <h2 className="text-xl font-semibold text-gray-800">ROI Calculator for {moduleConfig.name}</h2>
             <Button onClick={handleOpenAdminModal} variant="ghost" size="sm">Calculation Settings</Button>
         </div>
-        <p className="text-sm text-gray-500 mb-6">Enter the following metrics to estimate potential ROI.</p>
+        <p className="text-sm text-gray-500 mb-6">Enter the following metrics to estimate potential ROI. Results will clear if inputs are changed.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6 p-4 border rounded-md bg-gray-50">
            <Input
@@ -399,7 +431,14 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           ))}
         </div>
         <div className="flex space-x-3">
-            <Button onClick={() => calculateRoi(currentModuleRoiData, selectedModuleId)} variant="primary">Calculate ROI</Button>
+            <Button 
+                onClick={() => calculateRoi(currentModuleRoiData, selectedModuleId)} 
+                variant="primary"
+                disabled={currentModuleRoiData.results !== null} // Disable if results are already shown and inputs haven't changed
+                title={currentModuleRoiData.results !== null ? "Change inputs to re-enable calculation" : "Calculate ROI"}
+            >
+                Calculate ROI
+            </Button>
             <Button onClick={populateDemoData} variant="secondary">Populate with Demo Data</Button>
         </div>
       </div>
@@ -461,16 +500,16 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                     <span className="font-medium">Formula:</span> {item.formula}
                   </p>
                   <details className="text-xs text-gray-500 mt-1">
-                    <summary className="cursor-pointer hover:text-gray-700">Inputs Used</summary>
-                    <ul className="list-disc list-inside pl-2">
+                    <summary className="cursor-pointer hover:text-gray-700 font-medium">Inputs Used</summary>
+                    <ul className="list-disc list-inside pl-4 mt-1 space-y-0.5">
                     {Object.entries(item.inputsUsed).map(([key, value]) => (
-                        <li key={key}>{key}: {typeof value === 'number' ? (key.toLowerCase().includes('percentage') ? (value*100).toFixed(1) + '%' : value.toFixed(key.toLowerCase().includes('rate')? 2:0) ) : value}</li>
+                        <li key={key}><span className="font-normal">{key}:</span> {typeof value === 'number' ? value.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:2}) : value}</li>
                     ))}
                     </ul>
                   </details>
                 </div>
               ))}
-               {!currentModuleRoiData.results.savingsCalculationWorkings.length && <p className="text-gray-500">No specific savings categories calculated based on current inputs.</p>}
+               {!currentModuleRoiData.results.savingsCalculationWorkings.length && <p className="text-gray-500">No specific savings categories calculated based on current inputs or factors.</p>}
             </div>
           </div>
 

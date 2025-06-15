@@ -1,22 +1,19 @@
 import path from 'path';
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react'; // This import is standard for React projects
+import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // 1. This 'base' property is added to fix the blank page on GitHub Pages.
-  // It tells your app to look for files in the correct sub-folder.
+  // This is the essential line for deploying to a GitHub Pages subfolder
   base: "/New_Discovery/",
 
-  // This is a standard and required plugin for Vite to work with React.
+  // This is required for React projects
   plugins: [react()],
 
-  // 2. Your 'resolve' configuration for custom '@' imports is kept.
+  // This section keeps your custom import path for '@'
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.')
     }
   }
-
-  // 3. The 'define' block that exposed your API key has been removed for security.
 });
