@@ -1,4 +1,3 @@
-
 import React, { useCallback } from 'react';
 import { TabProps, RoiInput as RoiInputType, RoiResults, RoiModuleState } from '../types';
 import { ROI_INPUT_TEMPLATES, HOURLY_RATE_DIVISOR, ALL_MODULES, AUTOMATION_TIME_SAVING_PERCENTAGE, AUTOMATION_ERROR_REDUCTION_PERCENTAGE } from '../constants';
@@ -32,39 +31,37 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const moduleInputFields = ROI_INPUT_TEMPLATES[selectedModuleId] || ROI_INPUT_TEMPLATES.default;
 
   const handleInputChange = useCallback((inputId: keyof RoiModuleState | string, value: string) => {
-    const numericValue = parseFloat(value) || 0;
+    const numericValue = parseFloat(value) || 0; // Keep 0 if parsing fails or empty
     setAppState(prev => {
-      const newModuleRoiData = { ...prev.roiCalculator[selectedModuleId] };
-      if (inputId in newModuleRoiData) { // Global ROI fields
-        (newModuleRoiData as any)[inputId] = numericValue;
+      const newModuleRoiData = { ...prev.roiCalculator[selectedModuleId!] };
+      if (inputId in newModuleRoiData) { // Global ROI fields like 'annualSalary'
+        (newModuleRoiData as any)[inputId] = value === "" ? "" : numericValue; // Store as number, or empty string if user clears it
       } else { // Module-specific inputs
         newModuleRoiData.inputs = { ...newModuleRoiData.inputs, [inputId]: value }; // Keep as string for input field, parse in calculation
       }
       return {
         ...prev,
-        roiCalculator: { ...prev.roiCalculator, [selectedModuleId]: newModuleRoiData }
+        roiCalculator: { ...prev.roiCalculator, [selectedModuleId!]: newModuleRoiData }
       };
     });
   }, [selectedModuleId, setAppState]);
   
-  const calculateRoi = useCallback(() => {
-    const { annualSalary, inputs, annualSoftwareCost, upfrontProfServicesCost, solutionLifespanYears } = currentModuleRoiData;
-    const hourlyRate = annualSalary > 0 && HOURLY_RATE_DIVISOR > 0 ? annualSalary / HOURLY_RATE_DIVISOR : 0;
+  const calculateRoi = useCallback((moduleDataToCalculate: RoiModuleState, moduleId: string) => {
+    const { annualSalary, inputs, annualSoftwareCost, upfrontProfServicesCost, solutionLifespanYears } = moduleDataToCalculate;
+    const resolvedAnnualSalary = typeof annualSalary === 'string' ? parseFloat(annualSalary) || 0 : annualSalary || 0;
+    const hourlyRate = resolvedAnnualSalary > 0 && HOURLY_RATE_DIVISOR > 0 ? resolvedAnnualSalary / HOURLY_RATE_DIVISOR : 0;
+    
     let totalAnnualGrossSavings = 0;
     const savingsCalculationWorkings: RoiResults['savingsCalculationWorkings'] = [];
 
-    // Module-specific calculations
-    if (selectedModuleId === 'accountsPayable') {
+    if (moduleId === 'accountsPayable') {
         const numInvoicesPerMonth = getInputValue(inputs, 'ap_roi_numInvoicesPerMonth');
         const avgManualProcessingTimePerInvoiceMins = getInputValue(inputs, 'ap_roi_avgManualProcessingTimePerInvoiceMins');
         const currentInvoiceErrorRatePercentage = getInputValue(inputs, 'ap_roi_currentInvoiceErrorRatePercentage') / 100;
         const avgTimeToResolveExceptionMins = getInputValue(inputs, 'ap_roi_avgTimeToResolveExceptionMins');
         const annualValueMissedEarlyPaymentDiscounts = getInputValue(inputs, 'ap_roi_annualValueMissedEarlyPaymentDiscounts');
         const annualCostPhysicalInvoiceStorage = getInputValue(inputs, 'ap_roi_annualCostPhysicalInvoiceStorage');
-        const numFTEs = getInputValue(inputs, 'ap_roi_numFTEs');
-
-
-        // 1. Labor savings from reduced processing time
+        
         if (numInvoicesPerMonth > 0 && avgManualProcessingTimePerInvoiceMins > 0 && hourlyRate > 0) {
             const timeSavedPerInvoiceMins = avgManualProcessingTimePerInvoiceMins * AUTOMATION_TIME_SAVING_PERCENTAGE;
             const annualTimeSavingHours = (numInvoicesPerMonth * timeSavedPerInvoiceMins / 60) * 12;
@@ -78,10 +75,8 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             });
         }
         
-        // 2. Savings from error reduction
         if (numInvoicesPerMonth > 0 && currentInvoiceErrorRatePercentage > 0 && avgTimeToResolveExceptionMins > 0 && hourlyRate > 0) {
             const errorsPerMonth = numInvoicesPerMonth * currentInvoiceErrorRatePercentage;
-            const errorsReducedPerMonth = errorsPerMonth * AUTOMATION_ERROR_REDUCTION_PERCENTAGE;
             const timeSpentResolvingErrorsMinsPerMonth = errorsPerMonth * avgTimeToResolveExceptionMins;
             const timeSavedResolvingErrorsMinsPerMonth = (timeSpentResolvingErrorsMinsPerMonth * AUTOMATION_ERROR_REDUCTION_PERCENTAGE);
             const errorReductionSavings = (timeSavedResolvingErrorsMinsPerMonth / 60) * 12 * hourlyRate;
@@ -95,7 +90,6 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             });
         }
 
-        // 3. Captured early payment discounts (assume 100% capture with automation if currently missed)
         if (annualValueMissedEarlyPaymentDiscounts > 0) {
             totalAnnualGrossSavings += annualValueMissedEarlyPaymentDiscounts;
             savingsCalculationWorkings.push({
@@ -106,7 +100,6 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             });
         }
 
-        // 4. Reduced physical storage costs (assume 100% reduction with digital solution)
         if (annualCostPhysicalInvoiceStorage > 0) {
             totalAnnualGrossSavings += annualCostPhysicalInvoiceStorage;
             savingsCalculationWorkings.push({
@@ -117,9 +110,9 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             });
         }
 
-    } else { // Generic fallback for other modules (can be expanded)
-        const manualTaskTimeHrsWeek = getInputValue(inputs, 'def_roi_manualTaskTimeHrsWeek') || (getInputValue(inputs, 'om_roi_avgManualOrderEntryTimeMins') / 60 * (getInputValue(inputs, 'om_roi_numSalesOrdersPerMonth') / 4.33) ); // Example fallback logic
-        const numEmployees = getInputValue(inputs, 'def_roi_numberOfEmployeesPerformingTask') || getInputValue(inputs, 'ap_roi_numFTEs') || 1; // Prioritize FTEs if available
+    } else { 
+        const manualTaskTimeHrsWeek = getInputValue(inputs, 'def_roi_manualTaskTimeHrsWeek') || (getInputValue(inputs, 'om_roi_avgManualOrderEntryTimeMins') / 60 * (getInputValue(inputs, 'om_roi_numSalesOrdersPerMonth') / 4.33) );
+        const numEmployees = getInputValue(inputs, 'def_roi_numberOfEmployeesPerformingTask') || getInputValue(inputs, 'ap_roi_numFTEs') || 1;
         
         if (manualTaskTimeHrsWeek > 0 && numEmployees > 0 && hourlyRate > 0) {
             const timeSavedPerWeek = manualTaskTimeHrsWeek * AUTOMATION_TIME_SAVING_PERCENTAGE * numEmployees;
@@ -134,44 +127,53 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         }
     }
     
-    const totalInvestmentOverLifespan = upfrontProfServicesCost + (annualSoftwareCost * solutionLifespanYears);
-    const totalSavingsOverLifespan = totalAnnualGrossSavings * solutionLifespanYears;
+    const resolvedAnnualSoftwareCost = typeof annualSoftwareCost === 'string' ? parseFloat(annualSoftwareCost) || 0 : annualSoftwareCost || 0;
+    const resolvedUpfrontProfServicesCost = typeof upfrontProfServicesCost === 'string' ? parseFloat(upfrontProfServicesCost) || 0 : upfrontProfServicesCost || 0;
+    const resolvedSolutionLifespanYears = typeof solutionLifespanYears === 'string' ? parseInt(solutionLifespanYears, 10) || 0 : solutionLifespanYears || 0;
+
+    const totalInvestmentOverLifespan = resolvedUpfrontProfServicesCost + (resolvedAnnualSoftwareCost * resolvedSolutionLifespanYears);
+    const totalSavingsOverLifespan = totalAnnualGrossSavings * resolvedSolutionLifespanYears;
     const totalNetBenefitOverLifespan = totalSavingsOverLifespan - totalInvestmentOverLifespan;
-    const overallRoiPercentage = totalInvestmentOverLifespan > 0 ? (totalNetBenefitOverLifespan / totalInvestmentOverLifespan) * 100 : 0;
+    const overallRoiPercentage = totalInvestmentOverLifespan > 0 ? (totalNetBenefitOverLifespan / totalInvestmentOverLifespan) * 100 : (totalNetBenefitOverLifespan > 0 ? Infinity : 0) ;
+
 
     const annualBreakdown: RoiResults['annualBreakdown'] = [];
     let cumulativeNetCashFlow = 0;
     let paybackPeriodMonths = Infinity;
 
-    for (let i = 1; i <= solutionLifespanYears; i++) {
-        const investmentThisYear = (i === 1) ? upfrontProfServicesCost : 0;
-        const netCashFlowYear = totalAnnualGrossSavings - annualSoftwareCost - investmentThisYear;
+    for (let i = 1; i <= resolvedSolutionLifespanYears; i++) {
+        const investmentThisYear = (i === 1) ? resolvedUpfrontProfServicesCost : 0;
+        const netCashFlowYear = totalAnnualGrossSavings - resolvedAnnualSoftwareCost - investmentThisYear;
         const prevCumulativeNetCashFlow = cumulativeNetCashFlow;
         cumulativeNetCashFlow += netCashFlowYear;
         
         annualBreakdown.push({
             year: i,
             grossSavings: totalAnnualGrossSavings,
-            softwareCost: annualSoftwareCost,
-            investment: investmentThisYear, // Upfront in Y1
+            softwareCost: resolvedAnnualSoftwareCost,
+            investment: investmentThisYear,
             netCashFlow: netCashFlowYear,
             cumulativeNetCashFlow: cumulativeNetCashFlow
         });
 
         if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow >= 0) {
-            if (netCashFlowYear > 0) { // Check to avoid division by zero if CF turns positive exactly at year end by a zero CF in that year
-                 // (Year_before_positive - (Cumulative_Cash_Flow_at_Year_before_positive / Cash_Flow_in_Year_it_turns_positive))
-                paybackPeriodMonths = ((i - 1) - (prevCumulativeNetCashFlow / netCashFlowYear)) * 12;
-            } else if (prevCumulativeNetCashFlow === 0) { // If it was zero before and positive now due to this year's positive CF
-                 paybackPeriodMonths = (i-1) * 12; // Payback was at the end of the previous year
-            } else {
-                 paybackPeriodMonths = i * 12; // If CF is zero this year but made it positive
+             if (prevCumulativeNetCashFlow < 0 && netCashFlowYear > 0) { // Crossed from negative to positive this year
+                paybackPeriodMonths = ((i - 1) * 12) + ((-prevCumulativeNetCashFlow / netCashFlowYear) * 12);
+            } else if (prevCumulativeNetCashFlow < 0 && netCashFlowYear === 0 && cumulativeNetCashFlow === 0) { // Landed exactly on zero with zero CF this year
+                paybackPeriodMonths = i * 12;
+            } else if (prevCumulativeNetCashFlow === 0 && cumulativeNetCashFlow === 0) { // Started at zero and stayed zero
+                paybackPeriodMonths = (i-1) * 12; // Payback was immediate or at end of prior year
+            } else if (cumulativeNetCashFlow >= 0) { // Became positive
+                 paybackPeriodMonths = i * 12; // Default to end of current year if logic above doesn't catch precise point
+            }
+             if (resolvedUpfrontProfServicesCost === 0 && totalAnnualGrossSavings > resolvedAnnualSoftwareCost && i === 1) { // Profitable from year 1 with no upfront
+                paybackPeriodMonths = 0; // Immediate payback
             }
         }
     }
      if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow < 0) {
-        paybackPeriodMonths = Infinity; // Still not paid back
-    } else if (paybackPeriodMonths < 0) { // Edge case if it starts positive (no upfront cost and immediate profit)
+        paybackPeriodMonths = Infinity; 
+    } else if (paybackPeriodMonths < 0) { 
         paybackPeriodMonths = 0;
     }
 
@@ -179,9 +181,9 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     const results: RoiResults = {
         totalAnnualGrossSavings,
         totalInvestmentOverLifespan,
-        upfrontInvestment: upfrontProfServicesCost,
-        annualRecurringSoftwareCost: annualSoftwareCost,
-        solutionLifespanYears,
+        upfrontInvestment: resolvedUpfrontProfServicesCost,
+        annualRecurringSoftwareCost: resolvedAnnualSoftwareCost,
+        solutionLifespanYears: resolvedSolutionLifespanYears,
         overallRoiPercentage,
         totalNetBenefitOverLifespan,
         paybackPeriodMonths,
@@ -189,27 +191,31 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         annualBreakdown,
     };
 
-    setAppState(prev => ({
+    setAppState(prev => {
+      // Ensure we are updating the correct module's data, with the newly calculated results.
+      // moduleDataToCalculate already contains the inputs used for this calculation.
+      const updatedModuleWithResults = {
+        ...moduleDataToCalculate,
+        results: results
+      };
+      return {
         ...prev,
         roiCalculator: {
-            ...prev.roiCalculator,
-            [selectedModuleId]: { ...prev.roiCalculator[selectedModuleId], results }
+          ...prev.roiCalculator,
+          [moduleId]: updatedModuleWithResults
         }
-    }));
+      };
+    });
 
-  }, [currentModuleRoiData, selectedModuleId, setAppState]);
+  }, [setAppState]);
 
   const populateDemoData = useCallback(() => {
-    const demoValues: Partial<RoiModuleState> = {
-        annualSalary: 75000,
-        annualSoftwareCost: 12000,
-        upfrontProfServicesCost: 8000,
-        solutionLifespanYears: 3,
-        inputs: {},
-    };
+    if (!selectedModuleId) return;
 
-    if (selectedModuleId === 'accountsPayable') {
-        demoValues.inputs = {
+    const currentModuleBaseData = appState.roiCalculator[selectedModuleId];
+
+    const demoSpecificInputs = (selectedModuleId === 'accountsPayable') 
+        ? {
             ap_roi_numInvoicesPerMonth: "5000",
             ap_roi_avgManualProcessingTimePerInvoiceMins: "15",
             ap_roi_currentInvoiceErrorRatePercentage: "5",
@@ -217,34 +223,47 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             ap_roi_annualValueMissedEarlyPaymentDiscounts: "10000",
             ap_roi_annualCostPhysicalInvoiceStorage: "2000",
             ap_roi_numFTEs: "5",
-        };
-    } else { 
-        demoValues.inputs = {
+        } 
+        : { // Default demo inputs
             def_roi_manualTaskTimeHrsWeek: "20",
             def_roi_numberOfEmployeesPerformingTask: "3",
             def_roi_errorRatePercentage: "10",
             def_roi_costPerError: "50",
         };
-    }
     
-    setAppState(prev => {
-        const existingModuleData = prev.roiCalculator[selectedModuleId];
-        const updatedModuleRoiData: RoiModuleState = {
-            ...existingModuleData,
-            annualSalary: demoValues.annualSalary ?? existingModuleData.annualSalary,
-            annualSoftwareCost: demoValues.annualSoftwareCost ?? existingModuleData.annualSoftwareCost,
-            upfrontProfServicesCost: demoValues.upfrontProfServicesCost ?? existingModuleData.upfrontProfServicesCost,
-            solutionLifespanYears: demoValues.solutionLifespanYears ?? existingModuleData.solutionLifespanYears,
-            inputs: { ...existingModuleData.inputs, ...demoValues.inputs },
-            results: null 
-        };
-      return {
+    // Ensure all input fields defined in ROI_INPUT_TEMPLATES for the module have a string value, even if empty
+    const templateInputs = ROI_INPUT_TEMPLATES[selectedModuleId] || ROI_INPUT_TEMPLATES.default;
+    const allDemoInputsWithStringValues = templateInputs.reduce((acc, inputField) => {
+        acc[inputField.id] = demoSpecificInputs[inputField.id] ?? (inputField.type === 'number' ? "0" : ""); // Ensure string, default to "0" for numbers if not in demoSpecificInputs
+        return acc;
+    }, {} as { [key: string]: string });
+
+
+    const newModuleDataWithDemoValues: RoiModuleState = {
+        ...currentModuleBaseData, // Start with existing structure
+        annualSalary: 75000,     // Apply demo global settings
+        annualSoftwareCost: 12000,
+        upfrontProfServicesCost: 8000,
+        solutionLifespanYears: 3,
+        inputs: { // Merge, ensuring all template fields are present as strings
+            ...currentModuleBaseData.inputs, // Keep any existing unrelated inputs (though usually reset)
+            ...allDemoInputsWithStringValues // Override with demo values, ensuring string type
+        },
+        results: null // Clear previous results
+    };
+    
+    setAppState(prev => ({
         ...prev,
-        roiCalculator: { ...prev.roiCalculator, [selectedModuleId]: updatedModuleRoiData }
-      };
-    });
-    setTimeout(calculateRoi, 100);
-  }, [selectedModuleId, setAppState, calculateRoi]);
+        roiCalculator: {
+            ...prev.roiCalculator,
+            [selectedModuleId]: newModuleDataWithDemoValues
+        }
+    }));
+    
+    // Call calculateRoi with the exact data that was just prepared for the state
+    calculateRoi(newModuleDataWithDemoValues, selectedModuleId);
+
+  }, [selectedModuleId, appState.roiCalculator, setAppState, calculateRoi]);
 
 
   return (
@@ -257,8 +276,8 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
            <Input
             label="Average Annual Employee Salary ($)"
             id="annualSalary"
-            type="number"
-            value={currentModuleRoiData.annualSalary.toString()}
+            type="number" // Input type is number for browser behavior
+            value={currentModuleRoiData.annualSalary?.toString() ?? ""} // Display as string
             onChange={(e) => handleInputChange('annualSalary', e.target.value)}
             placeholder="e.g., 60000"
           />
@@ -266,7 +285,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             label="Annual Software Cost ($)"
             id="annualSoftwareCost"
             type="number"
-            value={currentModuleRoiData.annualSoftwareCost.toString()}
+            value={currentModuleRoiData.annualSoftwareCost?.toString() ?? ""}
             onChange={(e) => handleInputChange('annualSoftwareCost', e.target.value)}
             placeholder="e.g., 10000"
           />
@@ -274,7 +293,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             label="Upfront Professional Services Cost ($)"
             id="upfrontProfServicesCost"
             type="number"
-            value={currentModuleRoiData.upfrontProfServicesCost.toString()}
+            value={currentModuleRoiData.upfrontProfServicesCost?.toString() ?? ""}
             onChange={(e) => handleInputChange('upfrontProfServicesCost', e.target.value)}
             placeholder="e.g., 5000"
           />
@@ -282,7 +301,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             label="Solution Lifespan (Years)"
             id="solutionLifespanYears"
             type="number"
-            value={currentModuleRoiData.solutionLifespanYears.toString()}
+            value={currentModuleRoiData.solutionLifespanYears?.toString() ?? ""}
             onChange={(e) => handleInputChange('solutionLifespanYears', e.target.value)}
             placeholder="e.g., 3"
             min="1"
@@ -301,7 +320,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           ))}
         </div>
         <div className="flex space-x-3">
-            <Button onClick={calculateRoi} variant="primary">Calculate ROI</Button>
+            <Button onClick={() => calculateRoi(currentModuleRoiData, selectedModuleId)} variant="primary">Calculate ROI</Button>
             <Button onClick={populateDemoData} variant="secondary">Populate with Demo Data</Button>
         </div>
       </div>
@@ -323,15 +342,19 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 <div className="text-xs text-red-500 uppercase tracking-wider">Total Investment ({currentModuleRoiData.results.solutionLifespanYears} yrs)</div>
                 <div className="text-2xl font-bold text-red-700">{formatCurrency(currentModuleRoiData.results.totalInvestmentOverLifespan)}</div>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg shadow">
+             <div className="p-4 bg-green-50 rounded-lg shadow">
                 <div className="text-xs text-green-500 uppercase tracking-wider">Overall ROI ({currentModuleRoiData.results.solutionLifespanYears} yrs)</div>
-                <div className="text-2xl font-bold text-green-700">{currentModuleRoiData.results.overallRoiPercentage.toFixed(1)}%</div>
+                <div className="text-2xl font-bold text-green-700">
+                    {isFinite(currentModuleRoiData.results.overallRoiPercentage) ? 
+                     `${currentModuleRoiData.results.overallRoiPercentage.toFixed(1)}%` : 
+                     (currentModuleRoiData.results.totalNetBenefitOverLifespan > 0 ? "Very High (Effectively Infinite)" : "N/A")}
+                </div>
             </div>
             <div className="p-4 bg-yellow-50 rounded-lg shadow">
                 <div className="text-xs text-yellow-600 uppercase tracking-wider">Payback Period</div>
                 <div className="text-2xl font-bold text-yellow-700">
                     {isFinite(currentModuleRoiData.results.paybackPeriodMonths) ? 
-                     `${currentModuleRoiData.results.paybackPeriodMonths.toFixed(1)} Months` : 
+                     (currentModuleRoiData.results.paybackPeriodMonths <= 0 && currentModuleRoiData.results.totalNetBenefitOverLifespan > 0 ? "Immediate" : `${currentModuleRoiData.results.paybackPeriodMonths.toFixed(1)} Months`) : 
                      (currentModuleRoiData.results.totalNetBenefitOverLifespan <=0 ? 'N/A (No Payback)' : `> ${currentModuleRoiData.results.solutionLifespanYears*12} Months`)}
                 </div>
             </div>
