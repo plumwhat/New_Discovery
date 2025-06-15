@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { AppState, Role, AutomationType, TabId, ExportFormat, TabDefinition, RoiModuleState, RoiCalculationFactors } from './types';
+import { AppState, Role, AutomationType, TabId, ExportFormat, TabDefinition, RoiModuleState, RoiCalculationFactors, QualificationStatus, QualificationModuleData } from './types';
 import { 
     INITIAL_STATE, 
     TABS, 
@@ -8,7 +9,8 @@ import {
     DISCOVERY_QUESTIONS_TEMPLATES, 
     ROI_INPUT_TEMPLATES,
     DEFAULT_AP_CALCULATION_FACTORS,
-    DEFAULT_GENERIC_CALCULATION_FACTORS
+    DEFAULT_GENERIC_CALCULATION_FACTORS,
+    QUALIFICATION_QUESTIONS_MODULE_TEMPLATES // Added for initialization
 } from './constants';
 import Header from './components/Header';
 import ControlsSection from './components/ControlsSection';
@@ -16,17 +18,41 @@ import TabNavigation from './components/TabNavigation';
 import ExportSection from './components/ExportSection';
 import { generateExportContent, triggerDownload } from './services/exportService';
 
+const initialSingleQualificationSectionState = {
+  answers: {},
+  averageScore: 0,
+  status: QualificationStatus.NOT_STARTED,
+};
+
+const getInitialQualificationModuleData = (): QualificationModuleData => ({
+  qualitative: { ...initialSingleQualificationSectionState, answers: {} },
+  quantitative: { ...initialSingleQualificationSectionState, answers: {} },
+});
+
+
 const App: React.FC = () => {
-  const [appState, setAppState] = useState<AppState>(INITIAL_STATE);
+  const [appState, setAppState] = useState<AppState>(() => {
+    // Deep copy INITIAL_STATE to prevent shared references, especially for nested objects
+    const initialStateCopy = JSON.parse(JSON.stringify(INITIAL_STATE));
+    
+    // Ensure all modules have their qualification data initialized
+    ALL_MODULES.forEach(module => {
+        if (!initialStateCopy.qualification.moduleData[module.id]) {
+            initialStateCopy.qualification.moduleData[module.id] = getInitialQualificationModuleData();
+        }
+    });
+    return initialStateCopy;
+  });
 
   const { selectedRole, selectedAutomationType, selectedModuleId, activeTab, exportFormat } = appState;
 
-  // Initialize discovery and ROI data for all modules if not present
+  // Initialize discovery and ROI data for all modules if not present (runs once on mount)
    useEffect(() => {
     setAppState(currentAppState => {
       let needsUpdate = false;
       const newDiscoveryQuestions = { ...currentAppState.discoveryQuestions };
       const newRoiCalculator = { ...currentAppState.roiCalculator };
+      const newQualificationData = { ...currentAppState.qualification.moduleData };
 
       ALL_MODULES.forEach(module => {
         if (!newDiscoveryQuestions[module.id]) {
@@ -56,6 +82,10 @@ const App: React.FC = () => {
             defaultCalculationFactors: { ...defaultFactors },
           };
         }
+        if (!newQualificationData[module.id]) {
+            needsUpdate = true;
+            newQualificationData[module.id] = getInitialQualificationModuleData();
+        }
       });
 
       if (needsUpdate) {
@@ -63,6 +93,10 @@ const App: React.FC = () => {
           ...currentAppState,
           discoveryQuestions: newDiscoveryQuestions,
           roiCalculator: newRoiCalculator,
+          qualification: {
+            ...currentAppState.qualification,
+            moduleData: newQualificationData,
+          }
         };
       }
       return currentAppState;
@@ -76,7 +110,6 @@ const App: React.FC = () => {
     if (!visibleTabs.find(tab => tab.id === activeTab) && visibleTabs.length > 0) {
       setAppState(prev => ({ ...prev, activeTab: visibleTabs[0].id }));
     } else if (visibleTabs.length === 0 && activeTab !== null) {
-       // Fallback if no tabs are visible, though this shouldn't happen with default roles
        setAppState(prev => ({ ...prev, activeTab: TABS[0].id }));
     }
   }, [selectedRole, activeTab, visibleTabs]);
@@ -117,8 +150,10 @@ const App: React.FC = () => {
   const handleClearForm = useCallback(() => {
     if(window.confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
       const freshInitialState = JSON.parse(JSON.stringify(INITIAL_STATE)); 
+      
       const newDiscoveryQuestions = { ...freshInitialState.discoveryQuestions };
       const newRoiCalculator = { ...freshInitialState.roiCalculator };
+      const newQualificationModuleData: { [moduleId: string]: QualificationModuleData } = {};
 
        ALL_MODULES.forEach(module => {
           const discoveryTemplate = DISCOVERY_QUESTIONS_TEMPLATES[module.id] || DISCOVERY_QUESTIONS_TEMPLATES.default;
@@ -145,11 +180,18 @@ const App: React.FC = () => {
             calculationFactors: { ...defaultFactors },
             defaultCalculationFactors: { ...defaultFactors },
           };
+
+          newQualificationModuleData[module.id] = getInitialQualificationModuleData();
       });
+
       setAppState({
         ...freshInitialState, 
         discoveryQuestions: newDiscoveryQuestions, 
         roiCalculator: newRoiCalculator, 
+        qualification: {
+            ...freshInitialState.qualification,
+            moduleData: newQualificationModuleData,
+        }
       });
     }
   }, []);

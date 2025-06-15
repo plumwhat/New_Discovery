@@ -1,6 +1,6 @@
 
-import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat } from '../types';
-import { SCORECARD_QUESTIONS, QUALIFICATION_QUESTIONS_QUALITATIVE, QUALIFICATION_QUESTIONS_QUANTITATIVE, TABS, ALL_MODULES } from '../constants';
+import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat, QualificationQuestion } from '../types';
+import { SCORECARD_QUESTIONS, QUALIFICATION_QUESTIONS_MODULE_TEMPLATES, TABS, ALL_MODULES } from '../constants'; // Removed QUALIFICATION_QUESTIONS_QUALITATIVE & QUANTITATIVE
 
 const getModuleById = (id: string): Module | undefined => ALL_MODULES.find(m => m.id === id);
 
@@ -32,13 +32,31 @@ const formatRoiResults = (results: RoiResults | null): string => {
     results.savingsCalculationWorkings.forEach(item => {
         content += `  - ${item.category}: $${item.result.toLocaleString()}\n    (Formula: ${item.formula})\n`;
     });
-    content += "\n**Annual Breakdown (Lifespan: ${results.solutionLifespanYears} Years):**\n";
+    content += `\n**Annual Breakdown (Lifespan: ${results.solutionLifespanYears} Years):**\n`;
     content += "| Year | Gross Savings | Software Cost | Investment | Net Cash Flow (Year) | Cumulative Net Cash Flow |\n";
     content += "|------|---------------|---------------|------------|----------------------|--------------------------|\n";
     results.annualBreakdown.forEach(item => {
         content += `| ${item.year} | $${item.grossSavings.toLocaleString()} | $${item.softwareCost.toLocaleString()} | $${item.investment.toLocaleString()} | $${item.netCashFlow.toLocaleString()} | $${item.cumulativeNetCashFlow.toLocaleString()} |\n`;
     });
     return content + "\n";
+};
+
+
+const formatQualificationSectionForExport = (
+    sectionTitle: string,
+    sectionData: AppState['qualification']['moduleData'][string]['qualitative'], // type for one section
+    questionsForSection: QualificationQuestion[]
+): string => {
+    let content = `**${sectionTitle}:**\n`;
+    questionsForSection.forEach(q => {
+        const answerValue = sectionData.answers[q.id];
+        const selectedOption = q.options.find(opt => opt.value === answerValue);
+        content += formatField(q.text, selectedOption ? `${selectedOption.label} (Rating: ${selectedOption.value})` : "Not answered");
+    });
+    content += formatField("Average Score", sectionData.averageScore.toFixed(2));
+    content += formatField("Status", sectionData.status);
+    content += "\n";
+    return content;
 };
 
 
@@ -77,29 +95,19 @@ export const generateExportContent = (state: AppState): string => {
         break;
 
       case TabId.QUALIFICATION:
-        content += "**Qualitative Assessment:**\n";
-        QUALIFICATION_QUESTIONS_QUALITATIVE.forEach(q => {
-          const answerValue = state.qualification.qualitative.answers[q.id];
-          const selectedOption = q.options.find(opt => opt.value === answerValue);
-          content += formatField(q.text, selectedOption ? selectedOption.label : "Not answered");
-        });
-        content += formatField("Score", state.qualification.qualitative.score);
-        content += formatField("Status", state.qualification.qualitative.status);
-        content += "\n";
+        if (selectedModuleId && state.qualification.moduleData[selectedModuleId]) {
+            const currentModuleQualData = state.qualification.moduleData[selectedModuleId];
+            const questionTemplatesForModule = QUALIFICATION_QUESTIONS_MODULE_TEMPLATES[selectedModuleId] || QUALIFICATION_QUESTIONS_MODULE_TEMPLATES.default;
+            
+            content += formatQualificationSectionForExport("Qualitative Assessment", currentModuleQualData.qualitative, questionTemplatesForModule.qualitative);
+            content += formatQualificationSectionForExport("Quantitative Assessment", currentModuleQualData.quantitative, questionTemplatesForModule.quantitative);
 
-        content += "**Quantitative Assessment:**\n";
-        QUALIFICATION_QUESTIONS_QUANTITATIVE.forEach(q => {
-          const answerValue = state.qualification.quantitative.answers[q.id];
-          const selectedOption = q.options.find(opt => opt.value === answerValue);
-          content += formatField(q.text, selectedOption ? selectedOption.label : "Not answered");
-        });
-        content += formatField("Score", state.qualification.quantitative.score);
-        content += formatField("Status", state.qualification.quantitative.status);
-        content += "\n";
-        
-        content += "**Admin Settings (Thresholds):**\n";
-        content += formatField("Qualified if Score >", state.qualification.adminSettings.thresholds.qualified);
-        content += formatField("Clarification Required if Score >", state.qualification.adminSettings.thresholds.clarification);
+            content += "**Admin Settings (Thresholds):**\n";
+            content += formatField("Qualified if Average Score >", state.qualification.adminSettings.thresholds.qualifiedMinAverage.toFixed(1));
+            content += formatField("Requires Clarification if Average Score >=", state.qualification.adminSettings.thresholds.clarificationMinAverage.toFixed(1));
+        } else {
+             content += "No module selected or no qualification data available for this module.\n";
+        }
         break;
 
       case TabId.DISCOVERY_QUESTIONS:
@@ -115,11 +123,16 @@ export const generateExportContent = (state: AppState): string => {
       case TabId.ROI_CALCULATOR:
         if (selectedModuleId && state.roiCalculator[selectedModuleId]) {
           const moduleRoi = state.roiCalculator[selectedModuleId];
-          content += formatField("Average Annual Employee Salary", `$${moduleRoi.annualSalary.toLocaleString()}`);
-          content += formatField("Annual Software Cost", `$${moduleRoi.annualSoftwareCost.toLocaleString()}`);
-          content += formatField("Upfront Professional Services Cost", `$${moduleRoi.upfrontProfServicesCost.toLocaleString()}`);
-          content += formatField("Solution Lifespan (Years)", `${moduleRoi.solutionLifespanYears}`);
-          // Add other inputs here if needed for export
+          content += formatField("Average Annual Employee Salary", `$${parseGlobalRoiInput(moduleRoi.annualSalary).toLocaleString()}`);
+          content += formatField("Annual Software Cost", `$${parseGlobalRoiInput(moduleRoi.annualSoftwareCost).toLocaleString()}`);
+          content += formatField("Upfront Professional Services Cost", `$${parseGlobalRoiInput(moduleRoi.upfrontProfServicesCost).toLocaleString()}`);
+          content += formatField("Solution Lifespan (Years)", `${parseGlobalRoiInput(moduleRoi.solutionLifespanYears)}`);
+          
+          content += `\n**Calculation Factors Used:**\n`;
+          content += formatField("Automation Time Saving Percentage", `${(moduleRoi.calculationFactors.timeSavingPercentage * 100).toFixed(0)}%`);
+          content += formatField("Automation Error Reduction Percentage", `${(moduleRoi.calculationFactors.errorReductionPercentage * 100).toFixed(0)}%`);
+          content += `\n`;
+
           content += formatRoiResults(moduleRoi.results);
         } else {
           content += "No module selected or no ROI data available.\n";
@@ -134,7 +147,7 @@ export const generateExportContent = (state: AppState): string => {
 # AI Analysis Prompt (Australian English)
 
 ## Instructions for AI:
-Please analyze the following data related to a process automation opportunity.
+Please analyse the following data related to a process automation opportunity.
 Use Australian English spelling (e.g., "analyse", "colour", "centre").
 Avoid mentioning specific brand names or product names unless they are part of the customer's direct input.
 Provide a strategic summary that includes:
@@ -150,6 +163,13 @@ Provide a strategic summary that includes:
 
   return content;
 };
+// Helper function (already exists in RoiCalculatorTab, can be shared or redefined)
+const parseGlobalRoiInput = (value: string | number | undefined): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return parseFloat(value) || 0;
+    return 0;
+};
+
 
 export const triggerDownload = (content: string, filename: string, format: ExportFormat) => {
   let mimeType = "text/plain";

@@ -1,3 +1,4 @@
+
 export enum Role {
   SALES = "Sales",
   PRESALES = "Presales",
@@ -33,40 +34,48 @@ export interface ScorecardState {
   totalScore: number;
 }
 
+export interface QualificationQuestionOption {
+  label: string;
+  value: number; // PDF Rating: 1, 2, or 3
+}
 export interface QualificationQuestion {
   id: string;
   text: string;
-  options: { label: string; value: number }[];
+  options: QualificationQuestionOption[];
 }
 
 export enum QualificationStatus {
   NOT_STARTED = "Not Started",
   QUALIFIED = "Qualified",
-  CLARIFICATION_REQUIRED = "Clarification Required",
-  NOT_SUITABLE = "Not Suitable",
+  CLARIFICATION_REQUIRED = "Requires Clarification", // Updated label for consistency
+  NOT_SUITABLE = "Do Not Proceed", // Updated label for consistency
 }
 
 export interface QualificationSectionState {
-  answers: { [key: string]: number | "" }; // Store selected option's value (score)
-  score: number;
+  answers: { [questionId: string]: number | "" }; // Store selected option's PDF rating (1,2,3) or ""
+  averageScore: number; // Calculated average score (0-3)
   status: QualificationStatus;
 }
 
 export interface QualificationAdminSettings {
   thresholds: {
-    qualified: number;
-    clarification: number;
+    qualifiedMinAverage: number; // e.g., 2.4
+    clarificationMinAverage: number; // e.g., 1.7
   };
-  // Store default thresholds separately for reset functionality
   defaultThresholds: {
-      qualified: number;
-      clarification: number;
+    qualifiedMinAverage: number;
+    clarificationMinAverage: number;
   };
 }
 
-export interface QualificationState {
+export interface QualificationModuleData {
   qualitative: QualificationSectionState;
   quantitative: QualificationSectionState;
+}
+export interface QualificationState {
+  moduleData: {
+    [moduleId: string]: QualificationModuleData;
+  };
   adminSettings: QualificationAdminSettings;
   showAdminSettings: boolean;
 }
@@ -160,7 +169,7 @@ export interface AppState {
   discoveryQuestions: DiscoveryQuestionsState;
   roiCalculator: RoiCalculatorState;
   exportFormat: ExportFormat;
-  isRoiAdminModalOpen: boolean; // To control ROI admin modal visibility from App state if needed, or can be local to ROI tab
+  isRoiAdminModalOpen: boolean; 
 }
 
 // Props for common components
