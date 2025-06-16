@@ -16,11 +16,12 @@ const ExportSection: React.FC<ExportSectionProps> = ({ exportFormat, onFormatCha
     { value: ExportFormat.TXT, label: "Text File (.txt)" },
     { value: ExportFormat.MD, label: "Markdown (.md)" },
     { value: ExportFormat.AI_PROMPT, label: "AI Prompt (.txt)" },
+    { value: ExportFormat.HTML, label: "HTML File (.html)" },
   ];
 
   return (
     <div className="p-6 bg-white shadow rounded-lg mt-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Actions & Export</h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">Export</h2>
       <div className="space-y-4">
         <RadioGroup
           label="Export Options"

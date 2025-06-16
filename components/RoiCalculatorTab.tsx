@@ -147,7 +147,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         
         const numTransactions = deductionsProcessedPerMonth; 
         const errorRateInput = getInputValue(inputs, 'cd_roi_percentageDeductionsInvalidPercentage') / 100; 
-        const timeToFixErrorInput = getInputValue(inputs, 'cd_roi_avgResearchTimePerDeductionHrs') * 60; 
+        const timeToFixErrorInput = getInputValue(inputs, 'cd_roi_avgResearchTimePerDeductionHrs') * 60; // Convert hours to minutes for consistency if needed
 
         if (numTransactions > 0 && errorRateInput > 0 && timeToFixErrorInput > 0 && hourlyRate > 0 && errorReductionPercentage > 0) {
             const errorsPerMonth = numTransactions * errorRateInput;
@@ -155,19 +155,59 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             const timeSavedResolvingErrorsMinsPerMonth = (timeSpentResolvingErrorsMinsPerMonth * errorReductionPercentage); 
             const errorReductionSavingsVal = (timeSavedResolvingErrorsMinsPerMonth / 60) * 12 * hourlyRate;
             
+             // This calculation represents the labor time saved by more efficiently handling invalid deductions due to automation.
+             totalAnnualGrossSavings += errorReductionSavingsVal;
              savingsCalculationWorkings.push({
-                category: "Savings (Improved Invalid Deduction Handling)",
-                formula: `((${numTransactions}/mo * ${errorRateInput*100}% invalid * ${timeToFixErrorInput} mins/ded * ${errorReductionPercentage*100}% reduction) / 60 * 12) * $${hourlyRate.toFixed(2)}/hr`,
+                category: "Savings (Improved Invalid Deduction Handling - Labor)",
+                formula: `((${numTransactions}/mo * ${errorRateInput*100}% invalid * ${timeToFixErrorInput} mins/ded * ${errorReductionPercentage*100}% reduction in handling time) / 60 * 12) * $${hourlyRate.toFixed(2)}/hr`,
                 result: errorReductionSavingsVal, 
-                inputsUsed: {"Deductions/Month": numTransactions, "Invalid Deduction Rate": `${(errorRateInput*100).toFixed(0)}%`, "Research Time/Invalid (mins)": timeToFixErrorInput, "Hourly Rate": hourlyRate.toFixed(2), "Error Handling Improvement": `${(errorReductionPercentage*100).toFixed(0)}%`}
+                inputsUsed: {"Deductions/Month": numTransactions, "Invalid Deduction Rate": `${(errorRateInput*100).toFixed(0)}%`, "Original Research Time/Invalid (mins)": timeToFixErrorInput, "Hourly Rate": hourlyRate.toFixed(2), "Handling Time Reduction Factor": `${(errorReductionPercentage*100).toFixed(0)}%`}
             });
-             // Decide if this should be added to totalAnnualGrossSavings or if it's already accounted for.
-             // For now, let's assume it is additive if it represents a distinct saving.
-             // totalAnnualGrossSavings += errorReductionSavingsVal; 
+        }
+    } else if (moduleId === 'orderManagement') {
+        const numSalesOrdersPerMonth = getInputValue(inputs, 'om_roi_numSalesOrdersPerMonth');
+        const avgManualOrderEntryTimeMins = getInputValue(inputs, 'om_roi_avgManualOrderEntryTimeMins');
+        const currentOrderErrorRatePercentage = getInputValue(inputs, 'om_roi_currentOrderErrorRatePercentage') / 100;
+        const avgCostToReworkOrderError = getInputValue(inputs, 'om_roi_avgCostToReworkOrderError');
+
+        // Labor Savings from Order Entry Time Reduction
+        if (numSalesOrdersPerMonth > 0 && avgManualOrderEntryTimeMins > 0 && hourlyRate > 0 && timeSavingPercentage > 0) {
+            const timeSavedPerOrderMins = avgManualOrderEntryTimeMins * timeSavingPercentage;
+            const annualTimeSavingHours = (numSalesOrdersPerMonth * timeSavedPerOrderMins / 60) * 12;
+            const laborSavingsOrderEntry = annualTimeSavingHours * hourlyRate;
+            totalAnnualGrossSavings += laborSavingsOrderEntry;
+            savingsCalculationWorkings.push({
+                category: "Labor Savings (Order Entry Time Reduction)",
+                formula: `(${numSalesOrdersPerMonth} orders/mo * ${avgManualOrderEntryTimeMins} mins/order * ${timeSavingPercentage*100}% saved / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
+                result: laborSavingsOrderEntry,
+                inputsUsed: { 
+                    "Number of Orders/Month": numSalesOrdersPerMonth, 
+                    "Avg Manual Entry Time/Order (mins)": avgManualOrderEntryTimeMins, 
+                    "Hourly Rate": hourlyRate.toFixed(2), 
+                    "Time Saving Factor": `${(timeSavingPercentage*100).toFixed(0)}%` 
+                }
+            });
         }
 
-
-    } else { // Generic Calculation
+        // Savings from Order Error Reduction (Cost-based)
+        if (numSalesOrdersPerMonth > 0 && currentOrderErrorRatePercentage > 0 && avgCostToReworkOrderError > 0 && errorReductionPercentage > 0) {
+            const currentAnnualErrors = numSalesOrdersPerMonth * 12 * currentOrderErrorRatePercentage;
+            const errorsReducedAnnually = currentAnnualErrors * errorReductionPercentage;
+            const errorCostReductionSavings = errorsReducedAnnually * avgCostToReworkOrderError;
+            totalAnnualGrossSavings += errorCostReductionSavings;
+            savingsCalculationWorkings.push({
+                category: "Savings (Order Error Cost Reduction)",
+                formula: `(${numSalesOrdersPerMonth} orders/mo * 12 * ${currentOrderErrorRatePercentage*100}% error rate * ${errorReductionPercentage*100}% reduction) * $${avgCostToReworkOrderError.toFixed(2)}/error cost`,
+                result: errorCostReductionSavings,
+                inputsUsed: {
+                    "Number of Orders/Month": numSalesOrdersPerMonth,
+                    "Current Order Error Rate": `${(currentOrderErrorRatePercentage*100).toFixed(0)}%`,
+                    "Avg Cost to Rework Error ($)": avgCostToReworkOrderError.toFixed(2),
+                    "Error Reduction Factor": `${(errorReductionPercentage*100).toFixed(0)}%`
+                }
+            });
+        }
+    } else { // Generic Calculation for other modules using def_roi_ inputs
         const manualTaskTimeHrsWeek = getInputValue(inputs, 'def_roi_manualTaskTimeHrsWeek');
         const numEmployees = getInputValue(inputs, 'def_roi_numberOfEmployeesPerformingTask') || 1; 
         
@@ -257,10 +297,10 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                     if(paybackPeriodMonthsCalculated < 0) paybackPeriodMonthsCalculated = 0; 
                     if(paybackPeriodMonthsCalculated > 12) paybackPeriodMonthsCalculated = Math.min(paybackPeriodMonthsCalculated, 12); 
                 } else { 
-                     paybackPeriodMonthsCalculated = 0;
+                     paybackPeriodMonthsCalculated = 0; // If no upfront cost and no positive cashflow in Y1
                 }
             } else if (cumulativeNetCashFlow >=0 && prevCumulativeNetCashFlow >=0 && i === 1) { 
-                 paybackPeriodMonthsCalculated = 0;
+                 paybackPeriodMonthsCalculated = 0; // Already paid back (no cost or immediate profit)
             }
         }
     }
@@ -275,7 +315,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     if (finalPaybackPeriodMonths > resolvedSolutionLifespanYears * 12) {
         finalPaybackPeriodMonths = Infinity;
     }
-     if (totalNetBenefitOverLifespan <= 0 && totalInvestmentOverLifespan > 0 && finalPaybackPeriodMonths !== Infinity) {
+     if (totalNetBenefitOverLifespan <= 0 && totalInvestmentOverLifespan > 0 && finalPaybackPeriodMonths !== Infinity) { // If total benefit is not positive, payback is not achieved.
       finalPaybackPeriodMonths = Infinity;
     }
 
@@ -527,7 +567,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                   </details>
                 </div>
               ))}
-               {!currentModuleRoiData.results.savingsCalculationWorkings.length && <p className="text-gray-500">No specific savings categories calculated based on current inputs or factors.</p>}
+               {!currentModuleRoiData.results.savingsCalculationWorkings.length && <p className="text-gray-500">No specific savings categories calculated based on current inputs or factors. Populate inputs and calculation factors, then click "Calculate ROI".</p>}
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 
 import { Role, AutomationType, Module, TabId, ScorecardQuestion, QualificationQuestion, QualificationStatus, DiscoveryQuestion, RoiInput, AppState, ExportFormat, TabDefinition, RoiCalculationFactors, QualificationModuleData } from './types';
+import HomeTab from './components/HomeTab'; // Import new HomeTab
 import OpportunityScorecardTab from './components/OpportunityScorecardTab';
 import QualificationTab from './components/QualificationTab';
 import DiscoveryQuestionsTab from './components/DiscoveryQuestionsTab';
@@ -188,7 +189,7 @@ export const QUALIFICATION_QUESTIONS_MODULE_TEMPLATES: Record<string, { qualitat
     quantitative: [
         { id: "cim_quant_q6", text: "What is your First Contact Resolution (FCR) rate for customer inquiries?", options: [ { label: "< 60%", value: 3 }, { label: "60% - 80%", value: 2 }, { label: "> 80%", value: 1 } ]},
         { id: "cim_quant_q7", text: "What is the average time to resolve a standard customer inquiry?", options: [ { label: "> 48 hours", value: 3 }, { label: "24 - 48 hours", value: 2 }, { label: "< 24 hours", value: 1 } ]},
-        { id: "cim_quant_q8", text: "What percentage of total inquiries could be answered if customers had access to a self-service portal with order and invoice data?", options: [ { label: "> 50%", value: 3 }, { label: "25% - 50%", value: 2 }, { label: "< 25%", value: 1 } ]}, // Note: Options re-ordered to match PDF rating logic (High pain first)
+        { id: "cim_quant_q8", text: "What percentage of total inquiries could be answered if customers had access to a self-service portal with order and invoice data?", options: [ { label: "> 50%", value: 3 }, { label: "25% - 50%", value: 2 }, { label: "< 25%", value: 1 } ]}, 
         { id: "cim_quant_q9", text: "How many different systems must an agent typically access to resolve a single inquiry?", options: [ { label: "> 4 systems", value: 3 }, { label: "2-3 systems", value: 2 }, { label: "1 system", value: 1 } ]},
         { id: "cim_quant_q10", text: "What is the volume of inquiries your team handles per month?", options: [ { label: "A volume that is causing noticeable strain, delays, and employee burnout.", value: 3 }, { label: "A manageable, but high volume that limits proactive work.", value: 2 }, { label: "A volume that is easily handled by the current team.", value: 1 } ]},
     ]
@@ -241,7 +242,7 @@ export const QUALIFICATION_QUESTIONS_MODULE_TEMPLATES: Record<string, { qualitat
         { id: "id_quant_q10", text: "How many different customer AP portals does your team have to manually access each month?", options: [ { label: "> 10", value: 3 }, { label: "3 - 10", value: 2 }, { label: "< 3 or none", value: 1 } ]},
     ]
   },
-  documentManagement: { // From "Part II: Content & Document Management"
+  documentManagement: { 
     qualitative: [
         { id: "dm_qual_q1", text: "How do you manage version control for critical documents like contracts or policies?", options: [ { label: "We don't. We use file naming conventions like \"Contract_v2_FINAL_final\" and hope for the best.", value: 3 }, { label: "We rely on people to check documents in and out of a network drive, but it's not enforced.", value: 2 }, { label: "Our system manages versioning automatically, providing a full audit history of changes.", value: 1 } ]},
         { id: "dm_qual_q2", text: "Describe the process for finding a specific document needed for an audit or legal request.", options: [ { label: "It's a fire drill. We have to manually search through filing cabinets, network drives, and email archives.", value: 3 }, { label: "We have a general idea of where it is, but it takes significant time and effort to locate.", value: 2 }, { label: "We can find any document in seconds using metadata-based search.", value: 1 } ]},
@@ -258,8 +259,7 @@ export const QUALIFICATION_QUESTIONS_MODULE_TEMPLATES: Record<string, { qualitat
     ]
   },
   workflowManagement: workflowManagementQualificationQuestions,
-  // processMapping will be assigned after this object's declaration
-  default: { // Fallback, though ideally not used if all modules are covered
+  default: { 
     qualitative: [{ id: "def_qual_1", text: "Default Qualitative Question: No specific questions loaded for this module. Describe the qualitative aspects.", options: [{label: "High Pain", value: 3}, {label: "Medium Pain", value: 2}, {label: "Low Pain", value: 1}]}],
     quantitative: [{ id: "def_quant_1", text: "Default Quantitative Question: No specific questions loaded for this module. Provide relevant metrics.", options: [{label: "Significant Impact", value: 3}, {label: "Moderate Impact", value: 2}, {label: "Minor Impact", value: 1}]}]
   }
@@ -880,7 +880,7 @@ export const INITIAL_STATE: AppState = {
   selectedRole: Role.PRESALES,
   selectedAutomationType: AutomationType.FINANCE,
   selectedModuleId: FINANCE_MODULES[0].id, 
-  activeTab: TabId.QUALIFICATION, 
+  activeTab: TabId.HOME, // Set Home as default active tab
   opportunityScorecard: {
     answers: {},
     totalScore: 0,
@@ -915,7 +915,7 @@ ALL_MODULES.forEach(module => {
   };
 
   // Initialize ROI Calculator
-  const roiInputTemplate = ROI_INPUT_TEMPLATES[module.id] || ROI_INPUT_TEMPLATES.default; // Now defined
+  const roiInputTemplate = ROI_INPUT_TEMPLATES[module.id] || ROI_INPUT_TEMPLATES.default; 
   const currentModuleDefaultFactors = module.id === 'accountsPayable' 
     ? { ...DEFAULT_AP_CALCULATION_FACTORS } 
     : { ...DEFAULT_GENERIC_CALCULATION_FACTORS };
@@ -937,6 +937,7 @@ ALL_MODULES.forEach(module => {
 
 
 export const TABS: TabDefinition[] = [
+  { id: TabId.HOME, label: "Home", roles: [Role.SALES, Role.PRESALES, Role.SDR_SAD], component: HomeTab }, // Added Home tab
   { id: TabId.OPPORTUNITY_SCORECARD, label: "Opportunity Scorecard", roles: [Role.SALES], component: OpportunityScorecardTab },
   { id: TabId.QUALIFICATION, label: "Qualification", roles: [Role.SALES, Role.PRESALES, Role.SDR_SAD], component: QualificationTab },
   { id: TabId.DISCOVERY_QUESTIONS, label: "Discovery Questions", roles: [Role.PRESALES, Role.SDR_SAD], component: DiscoveryQuestionsTab },

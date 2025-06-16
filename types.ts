@@ -11,6 +11,7 @@ export enum AutomationType {
 }
 
 export enum TabId {
+  HOME = "Home", // Added Home Tab
   OPPORTUNITY_SCORECARD = "Opportunity Scorecard",
   QUALIFICATION = "Qualification",
   DISCOVERY_QUESTIONS = "Discovery Questions",
@@ -157,6 +158,7 @@ export enum ExportFormat {
   TXT = "txt",
   MD = "md",
   AI_PROMPT = "ai_prompt",
+  HTML = "html",
 }
 
 export interface AppState {
