@@ -96,15 +96,15 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: Record<string, { qualitative: Discov
         { id: "om_quant_2", text: "What is the average number of lines per order?" },
     ]
   },
-  customerInquiryManagement: { qualitative: [{id: "cim_q1", text:"Sample CIM Qual"}], quantitative: [{id: "cim_q1_quant", text:"Sample CIM Quant"}]},
-  cashApplication: { qualitative: [{id: "ca_q1", text:"Sample CA Qual"}], quantitative: [{id: "ca_q1_quant", text:"Sample CA Quant"}]},
-  collectionManagement: { qualitative: [{id: "cm_q1", text:"Sample CM Qual"}], quantitative: [{id: "cm_q1_quant", text:"Sample CM Quant"}]},
-  creditManagement: { qualitative: [{id: "crm_q1", text:"Sample CRM Qual"}], quantitative: [{id: "crm_q1_quant", text:"Sample CRM Quant"}]},
-  claimsDeductions: { qualitative: [{id: "cd_q1", text:"Sample CD Qual"}], quantitative: [{id: "cd_q1_quant", text:"Sample CD Quant"}]},
-  expenseManagement: { qualitative: [{id: "em_q1", text:"Sample EM Qual"}], quantitative: [{id: "em_q1_quant", text:"Sample EM Quant"}]},
-  procurement: { qualitative: [{id: "proc_q1", text:"Sample PROC Qual"}], quantitative: [{id: "proc_q1_quant", text:"Sample PROC Quant"}]},
-  invoiceDelivery: { qualitative: [{id: "id_q1", text:"Sample ID Qual"}], quantitative: [{id: "id_q1_quant", text:"Sample ID Quant"}]},
-  supplierManagement: { qualitative: [{id: "sm_q1", text:"Sample SM Qual"}], quantitative: [{id: "sm_q1_quant", text:"Sample SM Quant"}]},
+  customerInquiryManagement: { qualitative: [{id: "cim_q1", text:"Describe common customer inquiries and current resolution processes."}], quantitative: [{id: "cim_q1_quant", text:"What's the average number of inquiries handled per agent daily?"}]},
+  cashApplication: { qualitative: [{id: "ca_q1", text:"What are the challenges in matching payments to invoices?"}], quantitative: [{id: "ca_q1_quant", text:"What's your current auto-match rate for cash application?"}]},
+  collectionManagement: { qualitative: [{id: "cm_q1", text:"How do you prioritize collection activities?"}], quantitative: [{id: "cm_q1_quant", text:"What is your average Days Sales Outstanding (DSO)?"}]},
+  creditManagement: { qualitative: [{id: "crm_q1", text:"Describe your credit risk assessment process."}], quantitative: [{id: "crm_q1_quant", text:"What percentage of credit applications are processed manually?"}]},
+  claimsDeductions: { qualitative: [{id: "cd_q1", text:"What types of claims/deductions are most common and problematic?"}], quantitative: [{id: "cd_q1_quant", text:"What is the average value of unresolved deductions?"}]},
+  expenseManagement: { qualitative: [{id: "em_q1", text:"What are the biggest frustrations with the current expense reporting process?"}], quantitative: [{id: "em_q1_quant", text:"What percentage of expense reports are non-compliant?"}]},
+  procurement: { qualitative: [{id: "proc_q1", text:"Describe your current purchase requisition and approval process."}], quantitative: [{id: "proc_q1_quant", text:"What percentage of spend is considered maverick spend?"}]},
+  invoiceDelivery: { qualitative: [{id: "id_q1", text:"How are customer invoices currently delivered, and what are the associated challenges?"}], quantitative: [{id: "id_q1_quant", text:"What is the average cost to deliver a single paper invoice?"}]},
+  supplierManagement: { qualitative: [{id: "sm_q1", text:"Describe your supplier onboarding process and its pain points."}], quantitative: [{id: "sm_q1_quant", text:"How long does it typically take to onboard a new supplier?"}]},
   documentManagement: { 
     qualitative: [{id: "dm_q1", text:"Describe your current document storage and retrieval process. What are the key challenges?"}], 
     quantitative: [{id: "dm_q1_quant", text:"Approximately how many documents are processed/archived monthly?"}]
@@ -140,21 +140,83 @@ export const ROI_INPUT_TEMPLATES: Record<string, RoiInput[]> = {
     { id: "om_roi_avgCostToReworkOrderError", label: "Avg. cost to rework an order error ($)", type: "number", value: "", isCurrency: true },
     { id: "om_roi_numFTEs", label: "Number of FTEs in Order Entry process", type: "number", value: ""},
   ],
-  customerInquiryManagement: [{id:"cim_roi_1", label:"Sample CIM ROI", type:"number", value:""}],
-  cashApplication: [{id:"ca_roi_1", label:"Sample CA ROI", type:"number", value:""}],
-  collectionManagement: [{id:"col_roi_1", label:"Sample COL ROI", type:"number", value:""}],
-  creditManagement: [{id:"crm_roi_1", label:"Sample CRM ROI", type:"number", value:""}],
-  claimsDeductions: [{id:"cd_roi_1", label:"Sample CD ROI", type:"number", value:""}],
-  expenseManagement: [{id:"em_roi_1", label:"Sample EM ROI", type:"number", value:""}],
-  procurement: [{id:"proc_roi_1", label:"Sample PROC ROI", type:"number", value:""}],
-  invoiceDelivery: [{id:"id_roi_1", label:"Sample ID ROI", type:"number", value:""}],
-  supplierManagement: [{id:"sm_roi_1", label:"Sample SM ROI", type:"number", value:""}],
-  documentManagement: [{id:"docm_roi_1", label:"Sample DOCM ROI", type:"number", value:""}],
-  workflowManagement: [{id:"wm_roi_1", label:"Sample WM ROI", type:"number", value:""}],
-  processMapping: [{id:"pm_roi_1", label:"Sample PM ROI", type:"number", value:""}],
+  customerInquiryManagement: [
+    { id: "cim_roi_numInquiriesPerMonth", label: "Number of customer inquiries per month", type: "number", value: "" },
+    { id: "cim_roi_avgHandleTimePerInquiryMins", label: "Avg. manual handling time per inquiry (mins)", type: "number", value: "" },
+    { id: "cim_roi_repeatInquiryRatePercentage", label: "Current repeat inquiry rate (%)", type: "number", value: "" },
+    { id: "cim_roi_costToResolveRepeatInquiry", label: "Avg. cost to resolve a repeat inquiry ($)", type: "number", value: "", isCurrency: true },
+  ],
+  cashApplication: [
+    { id: "ca_roi_numRemittancesPerMonth", label: "Number of remittances processed per month", type: "number", value: "" },
+    { id: "ca_roi_avgManualMatchRatePercentage", label: "Average manual remittance match rate (%)", type: "number", value: "" },
+    { id: "ca_roi_timePerUnmatchedRemittanceMins", label: "Avg. time spent resolving an unmatched remittance (mins)", type: "number", value: "" },
+    { id: "ca_roi_annualBankFeesForManualProcessing", label: "Annual bank fees for manual processing ($)", type: "number", value: "", isCurrency: true },
+  ],
+  collectionManagement: [
+    { id: "col_roi_numOverdueInvoicesManagedMonthly", label: "Number of overdue invoices managed monthly", type: "number", value: "" },
+    { id: "col_roi_avgCollectorTimePerInvoiceMins", label: "Avg. collector time per overdue invoice (mins)", type: "number", value: "" },
+    { id: "col_roi_badDebtPercentageOfRevenue", label: "Current bad debt as a percentage of total revenue (%)", type: "number", value: "" },
+    { id: "col_roi_totalAnnualRevenue", label: "Total Annual Revenue ($)", type: "number", value: "", isCurrency: true },
+  ],
+  creditManagement: [
+    { id: "crm_roi_numCreditAppsPerMonth", label: "Number of credit applications processed per month", type: "number", value: "" },
+    { id: "crm_roi_avgTimeToProcessCreditAppManualHrs", label: "Avg. manual time to process one credit app (hours)", type: "number", value: "" },
+    { id: "crm_roi_annualSalesLostDueToSlowCredit", label: "Est. annual sales lost due to slow credit decisions ($)", type: "number", value: "", isCurrency: true },
+    { id: "crm_roi_costPerManualCreditReview", label: "Avg. cost per manual credit review (labor, tools) ($)", type: "number", value: "", isCurrency: true },
+  ],
+  claimsDeductions: [
+    { id: "cd_roi_numClaimsDeductionsMonthly", label: "Number of claims/deductions processed monthly", type: "number", value: "" },
+    { id: "cd_roi_avgTimePerClaimManualMins", label: "Avg. manual processing time per claim (mins)", type: "number", value: "" },
+    { id: "cd_roi_percentageInvalidDeductionsUnrecovered", label: "Percentage of invalid deductions currently unrecovered (%)", type: "number", value: "" },
+    { id: "cd_roi_avgValueInvalidDeduction", label: "Average value of an invalid deduction ($)", type: "number", value: "", isCurrency: true },
+  ],
+  expenseManagement: [
+    { id: "em_roi_numExpenseReportsMonthly", label: "Number of expense reports processed monthly", type: "number", value: "" },
+    { id: "em_roi_avgTimeProcessReportManualMins", label: "Avg. manual time to process one expense report (mins)", type: "number", value: "" },
+    { id: "em_roi_outOfPolicySpendPercentage", label: "Current out-of-policy spend percentage (%)", type: "number", value: "" },
+    { id: "em_roi_totalAnnualTAndESpend", label: "Total annual T&E spend ($)", type: "number", value: "", isCurrency: true },
+  ],
+  procurement: [
+    { id: "proc_roi_numPurchaseOrdersMonthly", label: "Number of POs processed monthly", type: "number", value: "" },
+    { id: "proc_roi_avgManualPOTimeMins", label: "Avg. manual processing time per PO (mins)", type: "number", value: "" },
+    { id: "proc_roi_maverickSpendPercentage", label: "Current maverick spend as % of indirect spend (%)", type: "number", value: "" },
+    { id: "proc_roi_totalAnnualIndirectSpend", label: "Total annual indirect procurement spend ($)", type: "number", value: "", isCurrency: true },
+  ],
+  invoiceDelivery: [
+    { id: "id_roi_numInvoicesSentMonthly", label: "Number of customer invoices sent monthly", type: "number", value: "" },
+    { id: "id_roi_percentagePaperInvoices", label: "Current percentage of invoices sent as paper (%)", type: "number", value: "" },
+    { id: "id_roi_costPerPaperInvoice", label: "Cost to send one paper invoice (postage, printing) ($)", type: "number", value: "", isCurrency: true },
+    { id: "id_roi_timeSavedPerInvoiceElectronicMins", label: "Admin time saved per invoice by switching to electronic (mins)", type: "number", value: "" },
+  ],
+  supplierManagement: [
+    { id: "sm_roi_numSuppliersOnboardedAnnually", label: "Number of new suppliers onboarded annually", type: "number", value: "" },
+    { id: "sm_roi_avgTimeOnboardSupplierManualHrs", label: "Avg. manual time to onboard one supplier (hours)", type: "number", value: "" },
+    { id: "sm_roi_costOfSupplierDataErrorsAnnual", label: "Annual cost due to supplier data errors ($)", type: "number", value: "", isCurrency: true },
+    { id: "sm_roi_compliancePenaltyRiskCostAnnual", label: "Annual cost of compliance penalties/risk due to poor SM ($)", type: "number", value: "", isCurrency: true },
+  ],
+  documentManagement: [
+    { id: "dm_roi_numEmployeesUsingSystem", label: "Number of employees regularly needing documents", type: "number", value: "" },
+    { id: "dm_roi_avgTimeSearchingDocsPerUserHrsWeek", label: "Avg. time spent searching for documents per user (hours/week)", type: "number", value: "" },
+    { id: "dm_roi_annualPhysicalStorageCost", label: "Annual physical document storage cost ($)", type: "number", value: "", isCurrency: true },
+    { id: "dm_roi_costOfNonComplianceAnnual", label: "Annual cost of non-compliance due to document issues ($)", type: "number", value: "", isCurrency: true },
+  ],
+  workflowManagement: [
+    { id: "wm_roi_numKeyWorkflowsTargeted", label: "Number of key workflows targeted for automation", type: "number", value: "" },
+    { id: "wm_roi_avgInstancesPerWorkflowMonthly", label: "Avg. instances per targeted workflow monthly (total for all types)", type: "number", value: "" },
+    { id: "wm_roi_avgManualTimeSavedPerInstanceHrs", label: "Avg. manual time saved per workflow instance via automation (hours)", type: "number", value: "" },
+    { id: "wm_roi_currentErrorRateInManualWorkflowsPercentage", label: "Error rate in current manual workflows (%)", type: "number", value: ""},
+  ],
+  processMapping: [
+    { id: "pm_roi_numKeyProcessesToMap", label: "Number of key processes to map/re-map", type: "number", value: "" },
+    { id: "pm_roi_avgTimeToMapProcessManuallyHrs", label: "Avg. time to manually map/document one process (hours)", type: "number", value: "" },
+    { id: "pm_roi_annualCostProcessRelatedInefficiencies", label: "Annual estimated cost of process-related inefficiencies ($)", type: "number", value: "", isCurrency: true },
+    { id: "pm_roi_timeReductionForAuditsHrsPerYear", label: "Annual time reduction for audits due to clear process maps (hours)", type: "number", value: "" },
+  ],
   default: [
-    { id: "def_roi_manualTaskTimeHrsWeek", label: "Time Spent on Manual Task (hours/week)", type: "number", value: "" },
-    { id: "def_roi_numberOfEmployeesPerformingTask", label: "Number of Employees Performing Task", type: "number", value: "" },
+    { id: "def_roi_manualTaskTimeHrsWeekPTE", label: "Time Spent on Manual Task (hours/week per FTE)", type: "number", value: "" },
+    { id: "def_roi_numEmployeesPerformingTask", label: "Number of FTEs Performing Task", type: "number", value: "" },
+    { id: "def_roi_errorRateManualTaskPercentage", label: "Error rate in current manual task (%)", type: "number", value: "" },
+    { id: "def_roi_avgTimeToCorrectErrorHrs", label: "Average time to correct an error (hours)", type: "number", value: "" },
   ]
 };
 
@@ -212,7 +274,7 @@ ALL_MODULES.forEach(module => {
     upfrontProfServicesCost: 5000,
     solutionLifespanYears: 3,
     inputs: roiInputTemplate.reduce((acc, input) => {
-      acc[input.id] = input.value;
+      acc[input.id] = input.value; // Initialize with empty string or default from template
       return acc;
     }, {} as { [inputId: string]: string | number }),
     results: null,
@@ -229,9 +291,9 @@ export const TAB_METADATA: TabMetadata[] = [
   { id: TabId.SOLUTION_BUILDER, label: "Solution Builder", roles: [Role.PRESALES], icon: PuzzlePieceIcon },
 ];
 
-export const HOURLY_RATE_DIVISOR = 2080;
-export const AUTOMATION_TIME_SAVING_PERCENTAGE = 0.75;
-export const AUTOMATION_ERROR_REDUCTION_PERCENTAGE = 0.80;
+export const HOURLY_RATE_DIVISOR = 2080; // (40 hours/week * 52 weeks/year)
+export const AUTOMATION_TIME_SAVING_PERCENTAGE = 0.75; // Assumes automation can save 75% of manual time for a task
+export const AUTOMATION_ERROR_REDUCTION_PERCENTAGE = 0.80; // Assumes automation can reduce 80% of errors
 
 // Default Executive Summary, can be adapted by specific modules.
 const defaultExecutiveSummary = (partnerName: string, moduleName: string) => 
@@ -378,7 +440,7 @@ export const MODULE_SPECIFIC_SOLUTION_CONTENT: Record<string, ModuleSolutionCont
   },
   default: {
     technologyPartnerName: "leading automation technologies",
-    executiveSummaryBoilerplate: (partnerName: string) => defaultExecutiveSummary(partnerName, "key business processes"),
+    executiveSummaryBoilerplate: (pn) => defaultExecutiveSummary(pn, "key business processes"),
     solutionOverviewDetails: defaultSolutionOverview,
     coreElements: defaultCoreElements
   }
