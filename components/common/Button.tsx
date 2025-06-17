@@ -1,9 +1,18 @@
 
+
 import React from 'react';
 import { ButtonProps } from '../../types';
 
-const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', size = 'md', className = '', ...props }) => {
-  const baseStyles = "font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm hover:shadow-md";
+const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  variant = 'primary', 
+  size = 'md', 
+  className = '', 
+  icon, 
+  iconPosition = 'left', 
+  ...props 
+}) => {
+  const baseStyles = "font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm hover:shadow-md inline-flex items-center justify-center";
   
   const sizeStyles = {
     sm: "px-3 py-1.5 text-sm",
@@ -18,13 +27,18 @@ const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', size = '
     ghost: "bg-transparent text-blue-600 hover:bg-blue-100 focus:ring-blue-500"
   };
 
+  const iconSize = size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+  const iconMargin = children ? (iconPosition === 'left' ? 'mr-2' : 'ml-2') : '';
+
   return (
     <button
       type="button"
       className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
       {...props}
     >
+      {icon && iconPosition === 'left' && React.cloneElement(icon, { className: `${iconSize} ${iconMargin}` })}
       {children}
+      {icon && iconPosition === 'right' && React.cloneElement(icon, { className: `${iconSize} ${iconMargin}` })}
     </button>
   );
 };

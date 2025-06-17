@@ -19,23 +19,19 @@ const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ settings, onSav
   }, [settings.thresholds]);
 
   const handleInputChange = (field: keyof QualificationAdminSettings['thresholds'], value: string) => {
-    const numValue = parseFloat(value);
-    // Allow values between 0 and 3 (max possible average score)
-    if (!isNaN(numValue) && numValue >= 0 && numValue <= 3) {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 60) { // Max score is 60
         setLocalThresholds(prev => ({ ...prev, [field]: numValue }));
     } else if (value === "") {
-        setLocalThresholds(prev => ({ ...prev, [field]: 0 })); 
+        setLocalThresholds(prev => ({ ...prev, [field]: 0 })); // Allow clearing field, treat as 0 or handle validation
     }
   };
   
   const handleSave = () => {
-    if (localThresholds.qualifiedMinAverage <= localThresholds.clarificationMinAverage) {
-        alert("'Qualified' minimum average must be greater than 'Requires Clarification' minimum average.");
+    // Basic validation: qualified threshold should be higher than clarification
+    if (localThresholds.qualified <= localThresholds.clarification) {
+        alert("Qualified threshold must be greater than Clarification Required threshold.");
         return;
-    }
-    if (localThresholds.clarificationMinAverage < 0 || localThresholds.qualifiedMinAverage < 0 || localThresholds.clarificationMinAverage > 3 || localThresholds.qualifiedMinAverage > 3){
-      alert("Thresholds must be between 0 and 3.");
-      return;
     }
     onSave(localThresholds);
   };
@@ -47,28 +43,26 @@ const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ settings, onSav
         <h3 className="text-xl font-semibold text-gray-800">Admin Settings - Qualification Thresholds</h3>
         
         <Input
-          label="Qualified (Min. Average Score)"
+          label="Qualified Threshold (Score > X)"
           type="number"
-          id="qualifiedMinAverageThreshold"
-          value={localThresholds.qualifiedMinAverage.toString()}
-          onChange={(e) => handleInputChange('qualifiedMinAverage', e.target.value)}
+          id="qualifiedThreshold"
+          value={localThresholds.qualified.toString()}
+          onChange={(e) => handleInputChange('qualified', e.target.value)}
           min="0"
-          max="3"
-          step="0.1"
-          placeholder="e.g., 2.4"
+          max="60"
+          placeholder="e.g., 40"
         />
         <Input
-          label="Requires Clarification (Min. Average Score)"
+          label="Clarification Required Threshold (Score > X)"
           type="number"
-          id="clarificationMinAverageThreshold"
-          value={localThresholds.clarificationMinAverage.toString()}
-          onChange={(e) => handleInputChange('clarificationMinAverage', e.target.value)}
+          id="clarificationThreshold"
+          value={localThresholds.clarification.toString()}
+          onChange={(e) => handleInputChange('clarification', e.target.value)}
           min="0"
-          max="3"
-          step="0.1"
-          placeholder="e.g., 1.7"
+          max="60"
+          placeholder="e.g., 20"
         />
-        <p className="text-xs text-gray-500">'Do Not Proceed' is for scores &lt; 'Requires Clarification' Min. Average. Max average score is 3.</p>
+        <p className="text-xs text-gray-500">Maximum score for each section is 60. 'Not Suitable' is for scores ≤ Clarification threshold.</p>
 
         <div className="flex justify-end space-x-3 pt-4 border-t">
           <Button onClick={onClose} variant="secondary">Back</Button>

@@ -1,4 +1,5 @@
 
+
 export enum Role {
   SALES = "Sales",
   PRESALES = "Presales",
@@ -11,16 +12,18 @@ export enum AutomationType {
 }
 
 export enum TabId {
-  HOME = "Home", // Added Home Tab
+  HOME = "Home",
   OPPORTUNITY_SCORECARD = "Opportunity Scorecard",
   QUALIFICATION = "Qualification",
   DISCOVERY_QUESTIONS = "Discovery Questions",
   ROI_CALCULATOR = "ROI Calculator",
+  SOLUTION_BUILDER = "Solution Builder",
 }
 
 export interface Module {
   id: string;
   name: string;
+  technologyPartner?: "Esker" | "M-Files" | "Nintex" | "Generic"; // Added for clarity
 }
 
 export interface ScorecardQuestion {
@@ -35,48 +38,39 @@ export interface ScorecardState {
   totalScore: number;
 }
 
-export interface QualificationQuestionOption {
-  label: string;
-  value: number; // PDF Rating: 1, 2, or 3
-}
 export interface QualificationQuestion {
   id: string;
   text: string;
-  options: QualificationQuestionOption[];
+  options: { label: string; value: number }[];
 }
 
 export enum QualificationStatus {
   NOT_STARTED = "Not Started",
   QUALIFIED = "Qualified",
-  CLARIFICATION_REQUIRED = "Requires Clarification", // Updated label for consistency
-  NOT_SUITABLE = "Do Not Proceed", // Updated label for consistency
+  CLARIFICATION_REQUIRED = "Clarification Required",
+  NOT_SUITABLE = "Not Suitable",
 }
 
 export interface QualificationSectionState {
-  answers: { [questionId: string]: number | "" }; // Store selected option's PDF rating (1,2,3) or ""
-  averageScore: number; // Calculated average score (0-3)
+  answers: { [key: string]: number | "" }; // Store selected option's value (score)
+  score: number;
   status: QualificationStatus;
 }
 
 export interface QualificationAdminSettings {
   thresholds: {
-    qualifiedMinAverage: number; // e.g., 2.4
-    clarificationMinAverage: number; // e.g., 1.7
+    qualified: number;
+    clarification: number;
   };
   defaultThresholds: {
-    qualifiedMinAverage: number;
-    clarificationMinAverage: number;
+      qualified: number;
+      clarification: number;
   };
 }
 
-export interface QualificationModuleData {
+export interface QualificationState {
   qualitative: QualificationSectionState;
   quantitative: QualificationSectionState;
-}
-export interface QualificationState {
-  moduleData: {
-    [moduleId: string]: QualificationModuleData;
-  };
   adminSettings: QualificationAdminSettings;
   showAdminSettings: boolean;
 }
@@ -106,17 +100,10 @@ export interface DiscoveryQuestionsState {
 export interface RoiInput {
   id: string;
   label: string;
-  type: "number" | "text"; // Can be extended
-  value: string | number; // User input is string, converted for calculation
-  unit?: string; // e.g., "hours/week", "%", "$"
-  isCurrency?: boolean; // Hint for formatting
-  placeholder?: string; // Specific placeholder for this input
-}
-
-export interface RoiCalculationFactors {
-  timeSavingPercentage: number; // Stored as 0-1 (e.g., 0.75 for 75%)
-  errorReductionPercentage: number; // Stored as 0-1
-  // Add other specific factors as needed by various module calculations
+  type: "number" | "text";
+  value: string | number;
+  unit?: string;
+  isCurrency?: boolean;
 }
 
 export interface RoiResults {
@@ -133,25 +120,36 @@ export interface RoiResults {
     year: number;
     grossSavings: number;
     softwareCost: number;
-    investment: number; // Upfront in Y1, 0 otherwise
+    investment: number;
     netCashFlow: number;
     cumulativeNetCashFlow: number;
   }>;
 }
 
 export interface RoiModuleState {
-  annualSalary: number | string; // Allow string for input field
-  annualSoftwareCost: number | string;
-  upfrontProfServicesCost: number | string;
-  solutionLifespanYears: number | string;
-  inputs: { [inputId: string]: string | number }; // Module-specific metrics
+  annualSalary: number;
+  annualSoftwareCost: number;
+  upfrontProfServicesCost: number;
+  solutionLifespanYears: number;
+  inputs: { [inputId: string]: string | number };
   results: RoiResults | null;
-  calculationFactors: RoiCalculationFactors;
-  defaultCalculationFactors: RoiCalculationFactors; // For reset functionality
 }
 
 export interface RoiCalculatorState {
   [moduleId: string]: RoiModuleState;
+}
+
+export interface RequirementBlock {
+  id: string;
+  requirement: string;
+  solution: string;
+}
+
+export interface SolutionBuilderState {
+  selectedCoreModuleId: string | null;
+  requirementBlocks: RequirementBlock[];
+  showDocumentView: boolean;
+  editingBlockId: string | null; 
 }
 
 export enum ExportFormat {
@@ -162,22 +160,30 @@ export enum ExportFormat {
 }
 
 export interface AppState {
+  customerCompany: string;
+  customerName: string;
+  dateCompleted: string; // ISO string format: "YYYY-MM-DD"
   selectedRole: Role;
   selectedAutomationType: AutomationType;
-  selectedModuleId: string | null;
+  selectedModuleId: string | null; 
   activeTab: TabId;
   opportunityScorecard: ScorecardState;
   qualification: QualificationState;
   discoveryQuestions: DiscoveryQuestionsState;
   roiCalculator: RoiCalculatorState;
-  exportFormat: ExportFormat;
-  isRoiAdminModalOpen: boolean; 
+  solutionBuilder: SolutionBuilderState; 
+  exportFormat: ExportFormat; // For general app export
 }
 
-// Props for common components
+export interface IconProps extends React.SVGProps<SVGSVGElement> {
+  size?: number | string;
+}
+
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "ghost";
   size?: "sm" | "md" | "lg";
+  icon?: React.ReactElement<IconProps>;
+  iconPosition?: 'left' | 'right';
 }
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -202,15 +208,32 @@ export interface RadioGroupProps<T extends string | number> {
   label?: string;
 }
 
-export type TabDefinition = {
+// Full TabDefinition including the component
+export interface TabDefinition {
   id: TabId;
   label: string;
   roles: Role[];
   component: React.FC<TabProps>;
-};
+  icon?: React.FC<React.SVGProps<SVGSVGElement>>;
+}
+
+// TabMetadata for defining tabs in constants.ts without direct component import
+export interface TabMetadata {
+  id: TabId;
+  label: string;
+  roles: Role[];
+  icon?: React.FC<React.SVGProps<SVGSVGElement>>;
+}
+
 
 export interface TabProps {
   appState: AppState;
   setAppState: React.Dispatch<React.SetStateAction<AppState>>;
-  // Any other common props for tabs
+}
+
+export interface ModuleSolutionContent {
+  executiveSummaryBoilerplate: (partnerName: string) => string;
+  solutionOverviewDetails: (partnerName: string, moduleName: string) => string;
+  coreElements: (partnerName: string, moduleName: string) => string[]; // New field for core functionalities
+  technologyPartnerName: "Esker" | "M-Files" | "Nintex" | "leading automation technologies";
 }

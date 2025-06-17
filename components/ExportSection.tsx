@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { ExportFormat, AppState } from '../types';
+import { ExportFormat } from '../types';
 import RadioGroup from './common/RadioGroup';
 import Button from './common/Button';
+import { ArrowDownTrayIcon, TrashIcon } from './common/Icons';
 
 interface ExportSectionProps {
   exportFormat: ExportFormat;
@@ -21,7 +22,7 @@ const ExportSection: React.FC<ExportSectionProps> = ({ exportFormat, onFormatCha
 
   return (
     <div className="p-6 bg-white shadow rounded-lg mt-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Export</h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">Actions & Export</h2>
       <div className="space-y-4">
         <RadioGroup
           label="Export Options"
@@ -30,9 +31,25 @@ const ExportSection: React.FC<ExportSectionProps> = ({ exportFormat, onFormatCha
           selectedValue={exportFormat}
           onChange={onFormatChange}
         />
-        <div className="flex space-x-3 pt-4 border-t border-gray-200">
-          <Button onClick={onExport} variant="primary">Export Data</Button>
-          <Button onClick={onClearForm} variant="danger">Clear All Form Data</Button>
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
+          <Button 
+            onClick={onExport} 
+            variant="primary" 
+            icon={<ArrowDownTrayIcon />}
+            iconPosition="left"
+            className="w-full sm:w-auto"
+          >
+            Export Data
+          </Button>
+          <Button 
+            onClick={onClearForm} 
+            variant="danger" 
+            icon={<TrashIcon />}
+            iconPosition="left"
+            className="w-full sm:w-auto"
+          >
+            Clear All Form Data
+          </Button>
         </div>
       </div>
     </div>
