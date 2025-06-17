@@ -61,7 +61,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         const avgTimeToResolveExceptionMins = getInputValue(inputs, 'ap_roi_avgTimeToResolveExceptionMins');
         const annualValueMissedEarlyPaymentDiscounts = getInputValue(inputs, 'ap_roi_annualValueMissedEarlyPaymentDiscounts');
         const annualCostPhysicalInvoiceStorage = getInputValue(inputs, 'ap_roi_annualCostPhysicalInvoiceStorage');
-        const numFTEs = getInputValue(inputs, 'ap_roi_numFTEs');
+        // const numFTEs = getInputValue(inputs, 'ap_roi_numFTEs'); // numFTEs is used in generic if not specific
 
 
         // 1. Labor savings from reduced processing time
@@ -74,14 +74,14 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 category: "Labor Savings (Invoice Processing Time Reduction)",
                 formula: `(${numInvoicesPerMonth} invoices/mo * ${avgManualProcessingTimePerInvoiceMins} mins/invoice * ${AUTOMATION_TIME_SAVING_PERCENTAGE*100}% saved / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
                 result: laborSavingsProcessing,
-                inputsUsed: { numInvoicesPerMonth, avgManualProcessingTimePerInvoiceMins, hourlyRate }
+                inputsUsed: { numInvoicesPerMonth, avgManualProcessingTimePerInvoiceMins, hourlyRate, AUTOMATION_TIME_SAVING_PERCENTAGE }
             });
         }
         
         // 2. Savings from error reduction
         if (numInvoicesPerMonth > 0 && currentInvoiceErrorRatePercentage > 0 && avgTimeToResolveExceptionMins > 0 && hourlyRate > 0) {
             const errorsPerMonth = numInvoicesPerMonth * currentInvoiceErrorRatePercentage;
-            const errorsReducedPerMonth = errorsPerMonth * AUTOMATION_ERROR_REDUCTION_PERCENTAGE;
+            // const errorsReducedPerMonth = errorsPerMonth * AUTOMATION_ERROR_REDUCTION_PERCENTAGE; // This is the reduction amount
             const timeSpentResolvingErrorsMinsPerMonth = errorsPerMonth * avgTimeToResolveExceptionMins;
             const timeSavedResolvingErrorsMinsPerMonth = (timeSpentResolvingErrorsMinsPerMonth * AUTOMATION_ERROR_REDUCTION_PERCENTAGE);
             const errorReductionSavings = (timeSavedResolvingErrorsMinsPerMonth / 60) * 12 * hourlyRate;
@@ -91,11 +91,11 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 category: "Savings (Error Reduction & Resolution Time)",
                 formula: `((${numInvoicesPerMonth} invoices/mo * ${currentInvoiceErrorRatePercentage*100}% error rate * ${avgTimeToResolveExceptionMins} mins/error * ${AUTOMATION_ERROR_REDUCTION_PERCENTAGE*100}% reduction) / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
                 result: errorReductionSavings,
-                inputsUsed: { numInvoicesPerMonth, currentInvoiceErrorRatePercentage, avgTimeToResolveExceptionMins, hourlyRate }
+                inputsUsed: { numInvoicesPerMonth, currentInvoiceErrorRatePercentage, avgTimeToResolveExceptionMins, hourlyRate, AUTOMATION_ERROR_REDUCTION_PERCENTAGE }
             });
         }
 
-        // 3. Captured early payment discounts (assume 100% capture with automation if currently missed)
+        // 3. Captured early payment discounts
         if (annualValueMissedEarlyPaymentDiscounts > 0) {
             totalAnnualGrossSavings += annualValueMissedEarlyPaymentDiscounts;
             savingsCalculationWorkings.push({
@@ -106,7 +106,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             });
         }
 
-        // 4. Reduced physical storage costs (assume 100% reduction with digital solution)
+        // 4. Reduced physical storage costs
         if (annualCostPhysicalInvoiceStorage > 0) {
             totalAnnualGrossSavings += annualCostPhysicalInvoiceStorage;
             savingsCalculationWorkings.push({
@@ -116,10 +116,44 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 inputsUsed: { annualCostPhysicalInvoiceStorage }
             });
         }
+    } else if (selectedModuleId === 'orderManagement') {
+        const numSalesOrdersPerMonth = getInputValue(inputs, 'om_roi_numSalesOrdersPerMonth');
+        const avgManualOrderEntryTimeMins = getInputValue(inputs, 'om_roi_avgManualOrderEntryTimeMins');
+        const currentOrderErrorRatePercentage = getInputValue(inputs, 'om_roi_currentOrderErrorRatePercentage') / 100;
+        const avgCostToReworkOrderError = getInputValue(inputs, 'om_roi_avgCostToReworkOrderError');
+        // const numFTEs = getInputValue(inputs, 'om_roi_numFTEs'); // Used in generic if needed
 
-    } else { // Generic fallback for other modules (can be expanded)
-        const manualTaskTimeHrsWeek = getInputValue(inputs, 'def_roi_manualTaskTimeHrsWeek') || (getInputValue(inputs, 'om_roi_avgManualOrderEntryTimeMins') / 60 * (getInputValue(inputs, 'om_roi_numSalesOrdersPerMonth') / 4.33) ); // Example fallback logic
-        const numEmployees = getInputValue(inputs, 'def_roi_numberOfEmployeesPerformingTask') || getInputValue(inputs, 'ap_roi_numFTEs') || 1; // Prioritize FTEs if available
+        // 1. Labor savings from reduced order entry time
+        if (numSalesOrdersPerMonth > 0 && avgManualOrderEntryTimeMins > 0 && hourlyRate > 0) {
+            const timeSavedPerOrderMins = avgManualOrderEntryTimeMins * AUTOMATION_TIME_SAVING_PERCENTAGE;
+            const annualTimeSavingHours = (numSalesOrdersPerMonth * timeSavedPerOrderMins / 60) * 12;
+            const laborSavingsOrderEntry = annualTimeSavingHours * hourlyRate;
+            totalAnnualGrossSavings += laborSavingsOrderEntry;
+            savingsCalculationWorkings.push({
+                category: "Labor Savings (Order Entry Time Reduction)",
+                formula: `(${numSalesOrdersPerMonth} orders/mo * ${avgManualOrderEntryTimeMins} mins/order * ${AUTOMATION_TIME_SAVING_PERCENTAGE*100}% saved / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
+                result: laborSavingsOrderEntry,
+                inputsUsed: { numSalesOrdersPerMonth, avgManualOrderEntryTimeMins, hourlyRate, AUTOMATION_TIME_SAVING_PERCENTAGE }
+            });
+        }
+
+        // 2. Savings from reduced order errors (direct cost saving)
+        if (numSalesOrdersPerMonth > 0 && currentOrderErrorRatePercentage > 0 && avgCostToReworkOrderError > 0) {
+            const errorsPerMonth = numSalesOrdersPerMonth * currentOrderErrorRatePercentage;
+            const errorsReducedPerMonth = errorsPerMonth * AUTOMATION_ERROR_REDUCTION_PERCENTAGE;
+            const annualErrorCostSavings = errorsReducedPerMonth * avgCostToReworkOrderError * 12;
+            totalAnnualGrossSavings += annualErrorCostSavings;
+            savingsCalculationWorkings.push({
+                category: "Savings (Reduced Order Rework Costs)",
+                formula: `(${numSalesOrdersPerMonth} orders/mo * ${currentOrderErrorRatePercentage*100}% error rate * ${AUTOMATION_ERROR_REDUCTION_PERCENTAGE*100}% reduction * $${avgCostToReworkOrderError}/error * 12 mo)`,
+                result: annualErrorCostSavings,
+                inputsUsed: { numSalesOrdersPerMonth, currentOrderErrorRatePercentage, avgCostToReworkOrderError, AUTOMATION_ERROR_REDUCTION_PERCENTAGE }
+            });
+        }
+
+    } else { // Generic fallback for other modules
+        const manualTaskTimeHrsWeek = getInputValue(inputs, 'def_roi_manualTaskTimeHrsWeek');
+        const numEmployees = getInputValue(inputs, 'def_roi_numberOfEmployeesPerformingTask') || 1;
         
         if (manualTaskTimeHrsWeek > 0 && numEmployees > 0 && hourlyRate > 0) {
             const timeSavedPerWeek = manualTaskTimeHrsWeek * AUTOMATION_TIME_SAVING_PERCENTAGE * numEmployees;
@@ -129,7 +163,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                 category: "Generic Time Savings (Manual Task Reduction)",
                 formula: `(${manualTaskTimeHrsWeek.toFixed(2)} hrs/wk/employee * ${AUTOMATION_TIME_SAVING_PERCENTAGE*100}% saved * ${numEmployees} employees * 52 wks) * $${hourlyRate.toFixed(2)}/hr`,
                 result: genericAnnualSavings,
-                inputsUsed: { manualTaskTimeHrsWeek, numEmployees, hourlyRate }
+                inputsUsed: { manualTaskTimeHrsWeek, numEmployees, hourlyRate, AUTOMATION_TIME_SAVING_PERCENTAGE }
             });
         }
     }
@@ -137,11 +171,12 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     const totalInvestmentOverLifespan = upfrontProfServicesCost + (annualSoftwareCost * solutionLifespanYears);
     const totalSavingsOverLifespan = totalAnnualGrossSavings * solutionLifespanYears;
     const totalNetBenefitOverLifespan = totalSavingsOverLifespan - totalInvestmentOverLifespan;
-    const overallRoiPercentage = totalInvestmentOverLifespan > 0 ? (totalNetBenefitOverLifespan / totalInvestmentOverLifespan) * 100 : 0;
+    const overallRoiPercentage = totalInvestmentOverLifespan > 0 ? (totalNetBenefitOverLifespan / totalInvestmentOverLifespan) * 100 : (totalNetBenefitOverLifespan > 0 ? Infinity : 0);
+
 
     const annualBreakdown: RoiResults['annualBreakdown'] = [];
     let cumulativeNetCashFlow = 0;
-    let paybackPeriodMonths = Infinity;
+    let paybackPeriodMonths = Infinity; // Default to Infinity
 
     for (let i = 1; i <= solutionLifespanYears; i++) {
         const investmentThisYear = (i === 1) ? upfrontProfServicesCost : 0;
@@ -153,25 +188,34 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             year: i,
             grossSavings: totalAnnualGrossSavings,
             softwareCost: annualSoftwareCost,
-            investment: investmentThisYear, // Upfront in Y1
+            investment: investmentThisYear,
             netCashFlow: netCashFlowYear,
             cumulativeNetCashFlow: cumulativeNetCashFlow
         });
 
         if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow >= 0) {
-            if (netCashFlowYear > 0) { 
-                paybackPeriodMonths = ((i - 1) - (prevCumulativeNetCashFlow / netCashFlowYear)) * 12;
-            } else if (prevCumulativeNetCashFlow === 0) { 
-                 paybackPeriodMonths = (i-1) * 12; 
-            } else {
-                 paybackPeriodMonths = i * 12; 
-            }
+          if (netCashFlowYear > 0) { // If positive cash flow in the year payback occurs
+            paybackPeriodMonths = ((i - 1) - (prevCumulativeNetCashFlow / netCashFlowYear)) * 12;
+          } else if (cumulativeNetCashFlow === 0 && prevCumulativeNetCashFlow < 0) { // Payback exactly at year end
+            paybackPeriodMonths = i * 12;
+          } else if (prevCumulativeNetCashFlow === 0 && i === 1 && netCashFlowYear >=0 ) { // Payback at start of first year or during Y1
+             paybackPeriodMonths = 0; // or i * 12 if payback is exactly at year 1 end and cashflow is 0
+          } else if (prevCumulativeNetCashFlow < 0 && netCashFlowYear === 0 && cumulativeNetCashFlow ===0 ) { // If payback happens due to zero cash flow making cumulative zero
+             paybackPeriodMonths = i * 12;
+          } else if (prevCumulativeNetCashFlow === 0 && netCashFlowYear === 0 && i===1) { // starts at 0 and stays 0
+            paybackPeriodMonths = 0; // or Infinity if no investment and no savings
+          } else if (netCashFlowYear <= 0 && cumulativeNetCashFlow >= 0) { // If payback occurs but current year cashflow is not positive (e.g. initial investment paid back by previous positive flows)
+            paybackPeriodMonths = (i-1)*12; // Payback was at end of previous year
+          }
         }
     }
-     if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow < 0) {
-        paybackPeriodMonths = Infinity; 
-    } else if (paybackPeriodMonths < 0) { 
+    
+    if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow < 0) { // If never paid back
+        // Keep paybackPeriodMonths as Infinity
+    } else if (paybackPeriodMonths < 0) { // If paid back instantly or calculation results in negative
         paybackPeriodMonths = 0;
+    } else if (paybackPeriodMonths > solutionLifespanYears * 12) {
+        paybackPeriodMonths = Infinity; // Exceeds lifespan
     }
 
 
@@ -199,12 +243,12 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   }, [currentModuleRoiData, selectedModuleId, setAppState]);
 
   const populateDemoData = useCallback(() => {
-    const demoValues: Partial<RoiModuleState> = {
+    const demoValues: Partial<RoiModuleState> & { inputs: RoiModuleState['inputs'] } = { // Ensure inputs is not partial
         annualSalary: 75000,
         annualSoftwareCost: 12000,
         upfrontProfServicesCost: 8000,
         solutionLifespanYears: 3,
-        inputs: {},
+        inputs: {}, // Initialize inputs
     };
 
     if (selectedModuleId === 'accountsPayable') {
@@ -217,12 +261,21 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             ap_roi_annualCostPhysicalInvoiceStorage: "2000",
             ap_roi_numFTEs: "5",
         };
-    } else { 
+    } else if (selectedModuleId === 'orderManagement') {
         demoValues.inputs = {
-            def_roi_manualTaskTimeHrsWeek: "20",
-            def_roi_numberOfEmployeesPerformingTask: "3",
-            def_roi_errorRatePercentage: "10",
-            def_roi_costPerError: "50",
+            om_roi_numSalesOrdersPerMonth: "2000",
+            om_roi_avgManualOrderEntryTimeMins: "10",
+            om_roi_currentOrderErrorRatePercentage: "4",
+            om_roi_avgCostToReworkOrderError: "25",
+            om_roi_numFTEs: "3",
+        };
+    } else { 
+        // Generic defaults for modules without specific demo data
+        // Ensure these keys exist in ROI_INPUT_TEMPLATES.default
+        demoValues.inputs = {
+            def_roi_manualTaskTimeHrsWeek: "20",       // Make sure this ID is in default template
+            def_roi_numberOfEmployeesPerformingTask: "3", // Make sure this ID is in default template
+            // Add other default keys if necessary, e.g., for error rate or cost per error if your default template uses them
         };
     }
     
@@ -242,7 +295,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         roiCalculator: { ...prev.roiCalculator, [selectedModuleId]: updatedModuleRoiData }
       };
     });
-    setTimeout(calculateRoi, 100);
+    setTimeout(calculateRoi, 100); // Recalculate after state update
   }, [selectedModuleId, setAppState, calculateRoi]);
 
 
@@ -309,7 +362,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         <div className="pt-6 border-t border-gray-200 space-y-6">
           <h3 className="text-lg font-semibold text-blue-700">Estimated ROI Results</h3>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="p-4 bg-blue-50 rounded-lg shadow">
                 <div className="text-xs text-blue-500 uppercase tracking-wider">Total Annual Gross Savings</div>
                 {currentModuleRoiData.results.savingsCalculationWorkings && currentModuleRoiData.results.savingsCalculationWorkings.length > 0 && (
@@ -335,14 +388,18 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             </div>
             <div className="p-4 bg-green-50 rounded-lg shadow">
                 <div className="text-xs text-green-500 uppercase tracking-wider">Overall ROI ({currentModuleRoiData.results.solutionLifespanYears} yrs)</div>
-                <div className="text-2xl font-bold text-green-700">{currentModuleRoiData.results.overallRoiPercentage.toFixed(1)}%</div>
+                <div className="text-2xl font-bold text-green-700">
+                    {isFinite(currentModuleRoiData.results.overallRoiPercentage) ? `${currentModuleRoiData.results.overallRoiPercentage.toFixed(1)}%` : 'N/A'}
+                </div>
             </div>
             <div className="p-4 bg-yellow-50 rounded-lg shadow">
                 <div className="text-xs text-yellow-600 uppercase tracking-wider">Payback Period</div>
                 <div className="text-2xl font-bold text-yellow-700">
                     {isFinite(currentModuleRoiData.results.paybackPeriodMonths) ? 
                      `${currentModuleRoiData.results.paybackPeriodMonths.toFixed(1)} Months` : 
-                     (currentModuleRoiData.results.totalNetBenefitOverLifespan <=0 ? 'N/A (No Payback)' : `> ${currentModuleRoiData.results.solutionLifespanYears*12} Months`)}
+                     (currentModuleRoiData.results.totalNetBenefitOverLifespan <=0 && currentModuleRoiData.results.totalInvestmentOverLifespan > 0 ? 'N/A (No Payback)' : 
+                     (currentModuleRoiData.results.totalInvestmentOverLifespan === 0 && currentModuleRoiData.results.totalAnnualGrossSavings > 0 ? 'Instant' : 
+                     (currentModuleRoiData.results.totalInvestmentOverLifespan === 0 && currentModuleRoiData.results.totalAnnualGrossSavings === 0 ? 'N/A' : `> ${currentModuleRoiData.results.solutionLifespanYears*12} Months`)))}
                 </div>
             </div>
           </div>

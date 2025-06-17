@@ -95,7 +95,7 @@ const formatRoiResultsTextMd = (results: RoiResults | null, format: ExportFormat
 
     content += formatFieldTextMd("Total Annual Gross Savings", formatCurrencyForExport(results.totalAnnualGrossSavings), format);
     content += formatFieldTextMd("Total Investment Over Lifespan", formatCurrencyForExport(results.totalInvestmentOverLifespan), format);
-    content += formatFieldTextMd("Overall ROI Percentage", `${results.overallRoiPercentage.toFixed(1)}%`, format);
+    content += formatFieldTextMd("Overall ROI Percentage", `${isFinite(results.overallRoiPercentage) ? results.overallRoiPercentage.toFixed(1) + '%' : 'N/A'}`, format);
     content += formatFieldTextMd("Payback Period", `${isFinite(results.paybackPeriodMonths) ? results.paybackPeriodMonths.toFixed(1) + ' Months' : 'N/A'}`, format);
     
     content += format === ExportFormat.MD ? "\n**Savings Calculation Workings:**\n" : "\nSAVINGS CALCULATION WORKINGS:\n";
@@ -139,7 +139,7 @@ const htmlStyles = `
   ul, dl { margin-bottom: 1em; padding-left: 20px; }
   li, dt, dd { margin-bottom: 0.4em; }
   dt { font-weight: bold; }
-  dd { margin-left: 20px; }
+  dd { margin-left: 0; } /* Adjusted for requirement block styling */
   table { width: 100%; border-collapse: collapse; margin-bottom: 1.5em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   th, td { border: 1px solid #ced4da; padding: 10px 12px; text-align: left; vertical-align: top; }
   th { background-color: #e9ecef; font-weight: 600; color: #005a9e; }
@@ -152,14 +152,36 @@ const htmlStyles = `
   .status-NOT_SUITABLE { background-color: #f8d7da; color: #721c24; }
   .status-NOT_STARTED { background-color: #e2e3e5; color: #383d41; }
   .note { font-size: 0.9em; color: #6c757d; font-style: italic; }
-  .discovery-item, .solution-block-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #eee; border-radius: 4px; background-color: #fdfdfd;}
-  .discovery-item:last-child, .solution-block-item:last-child { border-bottom: 1px solid #eee; } 
+  .discovery-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #eee; border-radius: 4px; background-color: #fdfdfd;}
+  .discovery-item dt { margin-bottom: 0.3em; }
   .custom-question { font-style: italic; }
   .solution-proposal-section { margin-bottom: 2em; }
   .solution-proposal-section h2, .solution-proposal-section h3 { margin-top: 0.5em;}
   .print-hidden { display: initial; } 
   .core-module-elements { margin-top: 0.5em; margin-bottom: 1em; padding-left: 20px; }
   .core-module-elements li { margin-bottom: 0.3em; }
+  .requirement-block-export {
+    margin-bottom: 1em;
+    padding: 0.8em 1em;
+    border: 1px solid #cce7ff; /* Light blue border */
+    border-radius: 6px;
+    background-color: #f0f8ff; /* AliceBlue */
+  }
+  .requirement-block-export h4 {
+    font-size: 1.1em;
+    color: #005a9e; /* Darker blue */
+    margin-top: 0;
+    margin-bottom: 0.5em;
+  }
+  .requirement-block-export p {
+    font-size: 0.95em;
+    margin-bottom: 0.3em;
+    margin-left: 10px;
+  }
+  .requirement-block-export p strong {
+    color: #333;
+  }
+
   @media print {
     body { margin: 0; padding: 0; background-color: #fff; font-size: 10pt; }
     .container { max-width: 100%; margin: 0; padding: 15px; border: none; box-shadow: none; }
@@ -169,6 +191,7 @@ const htmlStyles = `
     h3.subsection-title { font-size: 1.2em; }
     table { font-size: 9pt; }
     th, td { padding: 6px 8px; }
+    .requirement-block-export { border-color: #ccc; background-color: #f9f9f9; }
   }
 </style>
 `;
@@ -213,7 +236,7 @@ const formatRoiResultsHtml = (results: RoiResults | null, moduleRoiData?: any, m
 
     content += formatFieldHtml("Total Annual Gross Savings", results.totalAnnualGrossSavings, true);
     content += formatFieldHtml("Total Investment Over Lifespan", results.totalInvestmentOverLifespan, true);
-    content += formatFieldHtml("Overall ROI Percentage", `${results.overallRoiPercentage.toFixed(1)}%`);
+    content += formatFieldHtml("Overall ROI Percentage", `${isFinite(results.overallRoiPercentage) ? results.overallRoiPercentage.toFixed(1) + '%' : 'N/A'}`);
     content += formatFieldHtml("Payback Period", `${isFinite(results.paybackPeriodMonths) ? results.paybackPeriodMonths.toFixed(1) + ' Months' : 'N/A'}`);
     
     content += "<h4 class=\"subsection-title\">Savings Calculation Workings:</h4>\n<ul>\n";
@@ -268,7 +291,7 @@ const formatSolutionBuilderContent = (appState: AppState, format: ExportFormat.H
         content += `<p>This document outlines a proposed solution for <strong>${escapeHtml(customerCompany) || 'the client'}</strong> to address challenges and opportunities within <strong>${coreModuleName}</strong> processes. Leveraging industry-leading technologies such as Esker for finance automation, M-Files for intelligent information management, and Nintex for advanced workflow capabilities, this solution aims to deliver significant operational efficiencies, enhanced control, and a strong return on investment.</p>`;
         content += `<div class="executive-summary-boilerplate">${executiveSummaryText}</div>`; // Expecting HTML
         if (roiData) {
-            content += `<p class="mt-2">The financial projections for the <strong>${coreModuleName}</strong> module indicate a potential <strong>Total Annual Gross Savings of ${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}</strong>, an <strong>Overall ROI of ${roiData.overallRoiPercentage.toFixed(1)}%</strong> over ${roiData.solutionLifespanYears} years, and a <strong>Payback Period of approximately ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}</strong>.</p>`;
+            content += `<p class="mt-2">The financial projections for the <strong>${coreModuleName}</strong> module indicate a potential <strong>Total Annual Gross Savings of ${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}</strong>, an <strong>Overall ROI of ${isFinite(roiData.overallRoiPercentage) ? roiData.overallRoiPercentage.toFixed(1) + '%' : 'N/A'}</strong> over ${roiData.solutionLifespanYears} years, and a <strong>Payback Period of approximately ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}</strong>.</p>`;
         }
         content += `</section>`;
 
@@ -290,17 +313,15 @@ const formatSolutionBuilderContent = (appState: AppState, format: ExportFormat.H
             }
             
             if (requirementBlocks.length > 0) {
-                content += `<h3 class="subsection-title" style="margin-top: 1.2em;">Specific Requirements & Solutions:</h3> <dl>`;
+                content += `<h3 class="subsection-title" style="margin-top: 1.2em;">Specific Requirements & Solutions:</h3> <div class="requirement-blocks-container">\n`;
                 requirementBlocks.forEach((block, index) => {
-                    content += `<div class="solution-block-item">
-                        <dt><h4 style="font-size: 1.1em; color: #333; margin-bottom: 0.3em;">Priority ${index + 1}: ${escapeHtml(block.requirement.length > 70 ? block.requirement.substring(0,70)+'...' : block.requirement)}</h4></dt>
-                        <dd>
-                            <p><strong>Requirement:</strong> ${nl2br(escapeHtml(block.requirement))}</p>
-                            <p><strong>Proposed Solution:</strong> ${nl2br(escapeHtml(block.solution))}</p>
-                        </dd>
+                    content += `<div class="requirement-block-export">
+                        <h4>Requirement Block ${index + 1} <span style="font-weight:normal; font-size:0.9em;">(Priority: ${index + 1})</span></h4>
+                        <p><strong>Requirement:</strong> ${nl2br(escapeHtml(block.requirement))}</p>
+                        <p><strong>Proposed Solution:</strong> ${nl2br(escapeHtml(block.solution))}</p>
                     </div>\n`;
                 });
-                content += `</dl>`;
+                content += `</div>`; // Closing requirement-blocks-container
             }
             content += `</section>`;
         }
@@ -312,8 +333,8 @@ const formatSolutionBuilderContent = (appState: AppState, format: ExportFormat.H
                         <ul class="list-disc pl-6">
                             <li><strong>Total Annual Gross Savings:</strong> ${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}</li>
                             <li><strong>Total Net Benefit (${roiData.solutionLifespanYears} years):</strong> ${formatCurrencyForExport(roiData.totalNetBenefitOverLifespan)}</li>
-                            <li><strong>Overall ROI (${roiData.solutionLifespanYears} years):</strong> ${roiData.overallRoiPercentage.toFixed(1)}%</li>
-                            <li><strong>Payback Period:</strong> ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} Months` : (roiData.totalNetBenefitOverLifespan <=0 ? 'Payback not achieved within lifespan' : `Exceeds ${roiData.solutionLifespanYears*12} Months`)}</li>
+                            <li><strong>Overall ROI (${roiData.solutionLifespanYears} years):</strong> ${isFinite(roiData.overallRoiPercentage) ? roiData.overallRoiPercentage.toFixed(1) + '%' : 'N/A'}</li>
+                            <li><strong>Payback Period:</strong> ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} Months` : (roiData.totalNetBenefitOverLifespan <=0 && roiData.totalInvestmentOverLifespan > 0 ? 'Payback not achieved within lifespan' : (roiData.totalInvestmentOverLifespan === 0 && roiData.totalAnnualGrossSavings > 0 ? 'Instant' :(roiData.totalInvestmentOverLifespan === 0 && roiData.totalAnnualGrossSavings === 0 ? 'N/A' : `Exceeds ${roiData.solutionLifespanYears*12} Months`)))}</li>
                             <li><strong>Upfront Investment:</strong> ${formatCurrencyForExport(roiData.upfrontInvestment)}</li>
                             <li><strong>Annual Recurring Software Cost:</strong> ${formatCurrencyForExport(roiData.annualRecurringSoftwareCost)}</li>
                         </ul>
@@ -333,7 +354,7 @@ const formatSolutionBuilderContent = (appState: AppState, format: ExportFormat.H
         let execSummaryBase = `This document outlines a proposed solution for ${customerCompany || 'the client'} to address challenges and opportunities within ${coreModuleName} processes. Leveraging industry-leading technologies such as Esker for finance automation, M-Files for intelligent information management, and Nintex for advanced workflow capabilities, this solution aims to deliver significant operational efficiencies, enhanced control, and a strong return on investment.\n`;
         content += execSummaryBase + stripHtml(executiveSummaryText) + "\n";
         if (roiData) {
-          content += `The financial projections for the ${coreModuleName} module indicate a potential Total Annual Gross Savings of ${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}, an Overall ROI of ${roiData.overallRoiPercentage.toFixed(1)}% over ${roiData.solutionLifespanYears} years, and a Payback Period of approximately ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}.\n\n`;
+          content += `The financial projections for the ${coreModuleName} module indicate a potential Total Annual Gross Savings of ${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}, an Overall ROI of ${isFinite(roiData.overallRoiPercentage) ? roiData.overallRoiPercentage.toFixed(1) + '%' : 'N/A'} over ${roiData.solutionLifespanYears} years, and a Payback Period of approximately ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}.\n\n`;
         }
     
         content += formatSectionTitleTextMd("Overview of the Proposed Solution", 2, format);
@@ -351,9 +372,9 @@ const formatSolutionBuilderContent = (appState: AppState, format: ExportFormat.H
             if (requirementBlocks.length > 0) {
                 content += format === ExportFormat.MD ? `**Specific Requirements & Solutions:**\n` : `SPECIFIC REQUIREMENTS & SOLUTIONS:\n`;
                 requirementBlocks.forEach((block, index) => {
-                    content += format === ExportFormat.MD
-                        ? `  - **Priority ${index + 1}: ${block.requirement}**\n    - **Solution:** ${block.solution}\n`
-                        : `  - Priority ${index + 1}: ${block.requirement}\n    - Solution: ${block.solution}\n`;
+                  content += format === ExportFormat.MD 
+                    ? `\n**Requirement Block ${index + 1} (Priority: ${index + 1})**\n  * **Requirement:** ${block.requirement}\n  * **Solution:** ${block.solution}\n`
+                    : `\nRequirement Block ${index + 1} (Priority: ${index + 1})\n  - Requirement: ${block.requirement}\n  - Solution: ${block.solution}\n`;
                 });
                 content += "\n";
             }
@@ -363,7 +384,7 @@ const formatSolutionBuilderContent = (appState: AppState, format: ExportFormat.H
             content += formatSectionTitleTextMd(`Expected Business Outcomes & ROI Highlights for ${coreModuleName}`, 2, format);
             content += formatFieldTextMd("Total Annual Gross Savings", formatCurrencyForExport(roiData.totalAnnualGrossSavings), format, "  ");
             content += formatFieldTextMd(`Total Net Benefit (${roiData.solutionLifespanYears} years)`, formatCurrencyForExport(roiData.totalNetBenefitOverLifespan), format, "  ");
-            content += formatFieldTextMd(`Overall ROI (${roiData.solutionLifespanYears} years)`, `${roiData.overallRoiPercentage.toFixed(1)}%`, format, "  ");
+            content += formatFieldTextMd(`Overall ROI (${roiData.solutionLifespanYears} years)`, `${isFinite(roiData.overallRoiPercentage) ? roiData.overallRoiPercentage.toFixed(1) + '%' : 'N/A'}`, format, "  ");
             content += formatFieldTextMd("Payback Period", isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} Months` : 'N/A', format, "  ");
             content += "\n";
         } else if (requirementBlocks.length > 0 || coreElementsList.length > 0) {

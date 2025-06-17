@@ -292,14 +292,19 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
 
               {requirementBlocks.length > 0 && (
                 <>
-                  <h3 className="text-lg font-medium text-gray-800 mt-4">Specific Requirements & Solutions:</h3>
-                  {requirementBlocks.map((block, index) => (
-                    <div key={block.id} className="mt-3 py-3 border-t first:border-t-0">
-                      <h4 className="text-md font-semibold text-gray-700">Priority {index + 1}: {block.requirement.length > 70 ? block.requirement.substring(0,70)+'...' : block.requirement}</h4>
-                      <p className="ml-4 text-sm"><strong>Requirement:</strong> {block.requirement}</p>
-                      <p className="ml-4 text-sm"><strong>Proposed Solution:</strong> {block.solution}</p>
-                    </div>
-                  ))}
+                  <h3 className="text-lg font-medium text-gray-800 mt-4 mb-3">Specific Requirements & Solutions:</h3>
+                  <div className="space-y-3">
+                    {requirementBlocks.map((block, index) => (
+                      <div key={block.id} className="p-3 rounded-md shadow border bg-green-50 border-green-200">
+                        <h4 className="font-semibold text-green-800">
+                          Requirement Block {index + 1}
+                          <span className="text-xs font-normal ml-1 text-green-700">(Priority: {index + 1})</span>
+                        </h4>
+                        <p className="text-sm text-gray-700 mt-1"><strong>Requirement:</strong> {block.requirement}</p>
+                        <p className="text-sm text-gray-600 mt-1"><strong>Proposed Solution:</strong> {block.solution}</p>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </section>
@@ -313,8 +318,8 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
               <ul className="list-disc pl-6">
                 <li><strong>Total Annual Gross Savings:</strong> {formatCurrency(roiData.totalAnnualGrossSavings)}</li>
                 <li><strong>Total Net Benefit ({roiData.solutionLifespanYears} years):</strong> {formatCurrency(roiData.totalNetBenefitOverLifespan)}</li>
-                <li><strong>Overall ROI ({roiData.solutionLifespanYears} years):</strong> {roiData.overallRoiPercentage.toFixed(1)}%</li>
-                <li><strong>Payback Period:</strong> {isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} Months` : (roiData.totalNetBenefitOverLifespan <=0 ? 'Payback not achieved within lifespan' : `Exceeds ${roiData.solutionLifespanYears*12} Months`)}</li>
+                <li><strong>Overall ROI ({roiData.solutionLifespanYears} years):</strong> {isFinite(roiData.overallRoiPercentage) ? `${roiData.overallRoiPercentage.toFixed(1)}%` : 'N/A'}</li>
+                <li><strong>Payback Period:</strong> {isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} Months` : (roiData.totalNetBenefitOverLifespan <=0 && roiData.totalInvestmentOverLifespan > 0 ? 'Payback not achieved within lifespan' : (roiData.totalInvestmentOverLifespan === 0 && roiData.totalAnnualGrossSavings > 0 ? 'Instant' :(roiData.totalInvestmentOverLifespan === 0 && roiData.totalAnnualGrossSavings === 0 ? 'N/A' : `Exceeds ${roiData.solutionLifespanYears*12} Months`)))}</li>
                 <li><strong>Upfront Investment:</strong> {formatCurrency(roiData.upfrontInvestment)}</li>
                 <li><strong>Annual Recurring Software Cost:</strong> {formatCurrency(roiData.annualRecurringSoftwareCost)}</li>
               </ul>
@@ -390,7 +395,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
             <h3 className="text-lg font-semibold text-gray-700 flex items-center">
               <BuildingBlocksIcon className="w-6 h-6 mr-2 text-blue-500"/>
-              Current Solution Build: {getSelectedCoreModule()?.name || "N/A"}
+              Solution Build: {getSelectedCoreModule()?.name || "N/A"}
             </h3>
             {(requirementBlocks.length > 0 || defaultCoreElementsListLength > 0 ) && (
                  <Button 

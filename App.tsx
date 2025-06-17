@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { AppState, Role, AutomationType, TabId, ExportFormat, TabDefinition, TabMetadata } from './types';
+import { AppState, Role, AutomationType, TabId, ExportFormat, TabDefinition, DiscoveryAnswer, RoiModuleState } from './types';
 import { INITIAL_STATE, TAB_METADATA, MODULES_BY_AUTOMATION_TYPE, ALL_MODULES, DISCOVERY_QUESTIONS_TEMPLATES, ROI_INPUT_TEMPLATES } from './constants';
 
 import Header from './components/Header';
@@ -30,7 +30,7 @@ const TAB_COMPONENTS: Record<TabId, React.FC<any>> = {
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(() => JSON.parse(JSON.stringify(INITIAL_STATE)));
   const { 
-    customerCompany, customerName, dateCompleted, // New state values
+    customerCompany, customerName, dateCompleted,
     selectedRole, selectedAutomationType, selectedModuleId, activeTab, exportFormat 
   } = appState;
 
@@ -147,10 +147,67 @@ const App: React.FC = () => {
   }, [appState, selectedModuleId, exportFormat, customerCompany, dateCompleted]);
   
   const handleClearForm = useCallback(() => {
-    if(window.confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
-      setAppState(JSON.parse(JSON.stringify(INITIAL_STATE)));
+    if(window.confirm("Are you sure you want to clear ALL data from every tab? This action cannot be undone.")) {
+      // Create a deep clone of INITIAL_STATE which contains all default structures.
+      const freshInitialState = JSON.parse(JSON.stringify(INITIAL_STATE));
+      // Ensure dateCompleted is set to the current day, as INITIAL_STATE's date is fixed at load time.
+      freshInitialState.dateCompleted = new Date().toISOString().slice(0, 10);
+      setAppState(freshInitialState);
     }
-  }, []);
+  }, [setAppState]);
+
+  const handleClearCurrentTabData = useCallback(() => {
+    if (!window.confirm(`Are you sure you want to clear data for the current tab (${activeTab})? This action cannot be undone.`)) {
+      return;
+    }
+    setAppState(prev => {
+      const newState = JSON.parse(JSON.stringify(prev)); // Deep clone current state to modify
+
+      switch (activeTab) {
+        case TabId.OPPORTUNITY_SCORECARD:
+          newState.opportunityScorecard = JSON.parse(JSON.stringify(INITIAL_STATE.opportunityScorecard));
+          break;
+        case TabId.QUALIFICATION:
+          newState.qualification = JSON.parse(JSON.stringify(INITIAL_STATE.qualification));
+          break;
+        case TabId.DISCOVERY_QUESTIONS:
+          if (prev.selectedModuleId && INITIAL_STATE.discoveryQuestions[prev.selectedModuleId]) {
+            newState.discoveryQuestions[prev.selectedModuleId] = JSON.parse(JSON.stringify(INITIAL_STATE.discoveryQuestions[prev.selectedModuleId]));
+          } else if (prev.selectedModuleId) { // Fallback if module somehow not in INITIAL_STATE (should not happen with current setup)
+             const discoveryTemplate = DISCOVERY_QUESTIONS_TEMPLATES[prev.selectedModuleId] || DISCOVERY_QUESTIONS_TEMPLATES.default;
+             newState.discoveryQuestions[prev.selectedModuleId] = {
+                qualitative: discoveryTemplate.qualitative.map(q => ({ questionId: q.id, questionText: q.text, answer: "", isCustom: q.isCustom || false })),
+                quantitative: discoveryTemplate.quantitative.map(q => ({ questionId: q.id, questionText: q.text, answer: "", isCustom: q.isCustom || false })),
+             };
+          }
+          break;
+        case TabId.ROI_CALCULATOR:
+          if (prev.selectedModuleId && INITIAL_STATE.roiCalculator[prev.selectedModuleId]) {
+            newState.roiCalculator[prev.selectedModuleId] = JSON.parse(JSON.stringify(INITIAL_STATE.roiCalculator[prev.selectedModuleId]));
+          } else if (prev.selectedModuleId) { // Fallback (should not happen with current setup)
+            const roiInputTemplate = ROI_INPUT_TEMPLATES[prev.selectedModuleId] || ROI_INPUT_TEMPLATES.default;
+            // Reconstruct a basic initial state for this module's ROI
+            newState.roiCalculator[prev.selectedModuleId] = {
+                annualSalary: 60000, // Default values
+                annualSoftwareCost: 10000,
+                upfrontProfServicesCost: 5000,
+                solutionLifespanYears: 3,
+                inputs: roiInputTemplate.reduce((acc, input) => {
+                    acc[input.id] = input.value; // Reset to template default (empty string)
+                    return acc;
+                }, {} as { [inputId: string]: string | number }),
+                results: null,
+            };
+          }
+          break;
+        case TabId.SOLUTION_BUILDER:
+          newState.solutionBuilder = JSON.parse(JSON.stringify(INITIAL_STATE.solutionBuilder));
+          break;
+        // Home tab and general app controls (customerCompany, etc.) are not cleared by "Clear Current Tab"
+      }
+      return newState;
+    });
+  }, [activeTab, setAppState]);
 
   const ActiveTabComponent = visibleTabs.find(tab => tab.id === activeTab)?.component;
 
@@ -168,7 +225,7 @@ const App: React.FC = () => {
           onModuleChange={handleModuleChange}
         />
         <TabNavigation
-          tabs={visibleTabs} // Pass the fully formed visible tabs
+          tabs={visibleTabs}
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
@@ -180,6 +237,7 @@ const App: React.FC = () => {
           onFormatChange={handleExportFormatChange}
           onExport={handleExportData}
           onClearForm={handleClearForm}
+          onClearCurrentTab={handleClearCurrentTabData} // Pass new handler
         />
       </main>
       <footer className="text-center p-4 text-sm text-gray-500">
