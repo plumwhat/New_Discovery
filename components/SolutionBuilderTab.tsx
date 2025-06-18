@@ -1,8 +1,8 @@
 
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { TabProps, RequirementBlock, Module, RoiResults, ExportFormat } from '../types';
-import { ALL_MODULES, MODULE_SPECIFIC_SOLUTION_CONTENT, RESELLER_COMPANY_NAME } from '../constants';
+import { TabProps, RequirementBlock, Module, RoiResults, ExportFormat, EditableModuleSolutionContentMap } from '../types';
+import { ALL_MODULES, MODULE_SPECIFIC_SOLUTION_CONTENT, RESELLER_COMPANY_NAME } from '../constants'; // Direct import
 import Select from './common/Select';
 import Textarea from './common/Textarea';
 import Button from './common/Button';
@@ -15,7 +15,7 @@ import { generateSolutionDocumentContent, triggerDownload } from '../services/ex
 
 
 const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
-  const { solutionBuilder, roiCalculator, selectedModuleId: currentSelectedModuleIdInApp, customerCompany, dateCompleted } = appState; // Use currentSelectedModuleIdInApp for ROI
+  const { solutionBuilder, roiCalculator, selectedModuleId: currentSelectedModuleIdInApp, customerCompany, dateCompleted } = appState; 
   const { selectedCoreModuleId, requirementBlocks, showDocumentView, editingBlockId } = solutionBuilder;
 
   const [currentRequirement, setCurrentRequirement] = useState('');
@@ -168,7 +168,8 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   }, [setAppState]);
   
   const handleExportSolutionDocument = useCallback((format: ExportFormat.HTML | ExportFormat.MD) => {
-    const content = generateSolutionDocumentContent(appState, format);
+    // Uses hardcoded MODULE_SPECIFIC_SOLUTION_CONTENT from constants directly in generateSolutionDocumentContent
+    const content = generateSolutionDocumentContent(appState, format); // Removed dynamic content argument
     const coreModule = ALL_MODULES.find(m => m.id === selectedCoreModuleId);
     const moduleName = coreModule ? coreModule.name.replace(/\s+/g, '_') : 'Solution';
     const companyNameClean = customerCompany.replace(/\s+/g, '_') || 'Customer';
@@ -188,12 +189,14 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
 
   let defaultCoreElementsListLength = 0;
   if (selectedCoreModuleId) {
-      const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId] || MODULE_SPECIFIC_SOLUTION_CONTENT.default;
+      const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId] || MODULE_SPECIFIC_SOLUTION_CONTENT.default; // Use constant
       const coreModule = ALL_MODULES.find(m => m.id === selectedCoreModuleId);
-      if (coreModule && moduleContentDef) { // Ensure coreModule and moduleContentDef are found
+      if (coreModule && moduleContentDef) { 
           const partnerDisplayName = moduleContentDef.technologyPartnerName;
           const coreModuleNameStr = coreModule.name;
-          const coreElementsFromDef = moduleContentDef.coreElements(partnerDisplayName, coreModuleNameStr);
+          const coreElementsFromDef = moduleContentDef.coreElements.map((template: string) => 
+            template.replace(/{partnerName}/g, partnerDisplayName).replace(/{moduleName}/g, coreModuleNameStr)
+          );
           defaultCoreElementsListLength = coreElementsFromDef ? coreElementsFromDef.length : 0;
       }
   }
@@ -203,12 +206,18 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     const coreModule = getSelectedCoreModule();
     const coreModuleNameStr = coreModule?.name || "N/A";
     
-    const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId || 'default'] || MODULE_SPECIFIC_SOLUTION_CONTENT.default;
+    const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId || 'default'] || MODULE_SPECIFIC_SOLUTION_CONTENT.default; // Use constant
     const partnerDisplayName = moduleContentDef.technologyPartnerName;
 
-    const executiveSummaryHtml = moduleContentDef.executiveSummaryBoilerplate(partnerDisplayName);
-    const solutionOverviewHtml = moduleContentDef.solutionOverviewDetails(partnerDisplayName, coreModuleNameStr);
-    const coreElementsList = moduleContentDef.coreElements(partnerDisplayName, coreModuleNameStr);
+    const executiveSummaryHtml = moduleContentDef.executiveSummaryBoilerplate
+        .replace(/{partnerName}/g, partnerDisplayName)
+        .replace(/{moduleName}/g, coreModuleNameStr);
+    const solutionOverviewHtml = moduleContentDef.solutionOverviewDetails
+        .replace(/{partnerName}/g, partnerDisplayName)
+        .replace(/{moduleName}/g, coreModuleNameStr);
+    const coreElementsList = moduleContentDef.coreElements.map((template: string) => 
+        template.replace(/{partnerName}/g, partnerDisplayName).replace(/{moduleName}/g, coreModuleNameStr)
+    );
     
     const roiData: RoiResults | null = (selectedCoreModuleId && roiCalculator[selectedCoreModuleId]?.results) 
                                         ? roiCalculator[selectedCoreModuleId]!.results 

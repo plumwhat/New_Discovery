@@ -1,78 +1,90 @@
 
+
 import React, { useCallback, useState } from 'react';
-import { TabProps, DiscoveryQuestion, DiscoveryAnswer } from '../types';
-import { DISCOVERY_QUESTIONS_TEMPLATES } from '../constants';
-import Input from './common/Input';
+import { TabProps, DiscoveryQuestion, DiscoveryAnswer, EditableDiscoveryQuestionsTemplates } from '../types';
+import { DISCOVERY_QUESTIONS_TEMPLATES, ALL_MODULES } from '../constants'; 
 import Textarea from './common/Textarea';
 import Button from './common/Button';
+import { TrashIcon } from './common/Icons';
+// Removed: import { useEditableData } from '../hooks/useEditableData';
 
 interface DiscoverySectionProps {
   title: string;
-  questions: DiscoveryAnswer[];
+  questionsAndNotes: DiscoveryAnswer[]; 
+  moduleQuestionsTemplate: DiscoveryQuestion[]; 
   moduleId: string;
   questionType: 'qualitative' | 'quantitative';
   onAnswerChange: (moduleId: string, type: 'qualitative' | 'quantitative', questionId: string, answer: string) => void;
-  onAddCustomQuestion: (moduleId: string, type: 'qualitative' | 'quantitative', questionText: string) => void;
-  onDeleteCustomQuestion: (moduleId: string, type: 'qualitative' | 'quantitative', questionId: string) => void;
+  onAddCustomNote: (moduleId: string, type: 'qualitative' | 'quantitative', noteText: string) => void;
+  onDeleteCustomItem: (moduleId: string, type: 'qualitative' | 'quantitative', itemId: string) => void;
 }
 
 const DiscoverySection: React.FC<DiscoverySectionProps> = ({
   title,
-  questions,
+  questionsAndNotes,
+  moduleQuestionsTemplate,
   moduleId,
   questionType,
   onAnswerChange,
-  onAddCustomQuestion,
-  onDeleteCustomQuestion
+  onAddCustomNote,
+  onDeleteCustomItem
 }) => {
-  const [customQuestionText, setCustomQuestionText] = useState('');
+  const [customNoteText, setCustomNoteText] = useState('');
 
-  const handleAddCustom = () => {
-    if (customQuestionText.trim()) {
-      onAddCustomQuestion(moduleId, questionType, customQuestionText.trim());
-      setCustomQuestionText('');
+  const handleAddNote = () => {
+    if (customNoteText.trim()) {
+      onAddCustomNote(moduleId, questionType, customNoteText.trim());
+      setCustomNoteText('');
     }
   };
   
   return (
     <div className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm">
       <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
-      {questions.map((item, index) => (
-        <div key={item.questionId} className="mb-6 pb-4 border-b border-gray-100 last:border-b-0 last:pb-0">
-          <div className="flex justify-between items-start">
-            <p className="text-md text-gray-700 mb-1 flex-grow">
-              {item.isCustom ? <em>{item.questionText} (Custom)</em> : item.questionText}
-            </p>
-            {item.isCustom && (
-              <Button 
-                onClick={() => onDeleteCustomQuestion(moduleId, questionType, item.questionId)} 
-                variant="danger" 
-                size="sm"
-                className="ml-2 flex-shrink-0 !p-1"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c1.153 0 2.242.078 3.223.226M5.256 5.79c-.087.135-.168.274-.246.414M18.744 5.79c.087.135.168.274.246.414M15 8.25V5.75c0-1.242-1.008-2.25-2.25-2.25H11.25C10.008 3.5 9 4.508 9 5.75v2.5M12 10.5h.008v.008H12v-.008z" />
-                </svg>
-              </Button>
-            )}
+      {questionsAndNotes.map((item) => {
+        const originalQuestion = !item.isCustom ? moduleQuestionsTemplate.find(q => q.id === item.questionId) : null;
+        const placeholder = item.isCustom 
+                            ? "Enter your note or observation..." 
+                            : (originalQuestion?.placeholderHint || "Enter customer's answer...");
+
+        return (
+          <div key={item.questionId} className="mb-6 pb-4 border-b border-gray-100 last:border-b-0 last:pb-0">
+            <div className="flex justify-between items-start">
+              <p className="text-md text-gray-700 mb-1 flex-grow">
+                {item.isCustom ? <strong>Custom Note:</strong> : item.questionText}
+              </p>
+              {item.isCustom && ( 
+                <Button 
+                  onClick={() => onDeleteCustomItem(moduleId, questionType, item.questionId)} 
+                  variant="danger" 
+                  size="sm"
+                  className="ml-2 flex-shrink-0 !p-1"
+                  aria-label="Delete note"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            <Textarea
+              id={`${moduleId}-${questionType}-${item.questionId}`}
+              value={item.answer} 
+              onChange={(e) => onAnswerChange(moduleId, questionType, item.questionId, e.target.value)}
+              placeholder={placeholder}
+              aria-label={item.isCustom ? "Custom note content" : `Answer for: ${item.questionText}`}
+            />
           </div>
-          <Textarea
-            id={`${moduleId}-${questionType}-${item.questionId}`}
-            value={item.answer}
-            onChange={(e) => onAnswerChange(moduleId, questionType, item.questionId, e.target.value)}
-            placeholder="Enter customer's answer (Text)..."
-          />
-        </div>
-      ))}
+        );
+      })}
       <div className="mt-6 space-y-2">
-        <Input
-          type="text"
-          value={customQuestionText}
-          onChange={(e) => setCustomQuestionText(e.target.value)}
-          placeholder="Type your custom question here..."
-          label="Add Custom Question"
+        <Textarea
+          label={`Add Custom Note for ${title}`}
+          id={`${moduleId}-${questionType}-customNoteInput`}
+          value={customNoteText}
+          onChange={(e) => setCustomNoteText(e.target.value)}
+          placeholder="Type your custom note or observation here..."
+          rows={3}
         />
-        <Button onClick={handleAddCustom} variant="secondary" size="sm">Add Question</Button>
+        <Button onClick={handleAddNote} variant="secondary" size="sm">Add Note</Button>
       </div>
     </div>
   );
@@ -82,16 +94,24 @@ const DiscoverySection: React.FC<DiscoverySectionProps> = ({
 const DiscoveryQuestionsTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const { selectedModuleId } = appState;
 
+  // Use static constants directly
+  const dynamicDiscoveryTemplates = DISCOVERY_QUESTIONS_TEMPLATES;
+
   const currentModuleData = selectedModuleId ? appState.discoveryQuestions[selectedModuleId] : null;
+  const currentModuleQuestionsTemplate = selectedModuleId 
+    ? dynamicDiscoveryTemplates[selectedModuleId] || { qualitative: [], quantitative: [] } 
+    : { qualitative: [], quantitative: [] };
+
 
   const handleAnswerChange = useCallback((moduleId: string, type: 'qualitative' | 'quantitative', questionId: string, answer: string) => {
     setAppState(prev => {
-      const moduleState = { ...prev.discoveryQuestions[moduleId] };
-      const questionSet = [...moduleState[type]];
-      const questionIndex = questionSet.findIndex(q => q.questionId === questionId);
-      if (questionIndex !== -1) {
-        questionSet[questionIndex] = { ...questionSet[questionIndex], answer };
-        moduleState[type] = questionSet;
+      const moduleState = { ...(prev.discoveryQuestions[moduleId] || { qualitative: [], quantitative: [] }) };
+      const itemsList = [...(moduleState[type] || [])];
+      const itemIndex = itemsList.findIndex(q => q.questionId === questionId);
+
+      if (itemIndex !== -1) {
+        itemsList[itemIndex] = { ...itemsList[itemIndex], answer };
+        moduleState[type] = itemsList;
         return {
           ...prev,
           discoveryQuestions: { ...prev.discoveryQuestions, [moduleId]: moduleState }
@@ -101,18 +121,19 @@ const DiscoveryQuestionsTab: React.FC<TabProps> = ({ appState, setAppState }) =>
     });
   }, [setAppState]);
 
-  const handleAddCustomQuestion = useCallback((moduleId: string, type: 'qualitative' | 'quantitative', questionText: string) => {
+  const handleAddCustomNote = useCallback((moduleId: string, type: 'qualitative' | 'quantitative', noteText: string) => {
     setAppState(prev => {
-      const newQuestionId = `custom-${crypto.randomUUID()}`;
-      const newQuestion: DiscoveryAnswer = { 
-        questionId: newQuestionId, 
-        questionText: questionText, 
-        answer: '', 
+      const newNoteId = `custom-note-${crypto.randomUUID()}`;
+      const newNote: DiscoveryAnswer = { 
+        questionId: newNoteId, 
+        questionText: `Custom Note (${type})`, 
+        answer: noteText, 
         isCustom: true 
       };
       
-      const moduleState = { ...prev.discoveryQuestions[moduleId] };
-      moduleState[type] = [...moduleState[type], newQuestion];
+      const moduleState = { ...(prev.discoveryQuestions[moduleId] || { qualitative: [], quantitative: [] }) };
+      const currentItems = moduleState[type] ? [...moduleState[type]] : [];
+      moduleState[type] = [...currentItems, newNote];
       
       return {
         ...prev,
@@ -121,10 +142,11 @@ const DiscoveryQuestionsTab: React.FC<TabProps> = ({ appState, setAppState }) =>
     });
   }, [setAppState]);
 
-  const handleDeleteCustomQuestion = useCallback((moduleId: string, type: 'qualitative' | 'quantitative', questionId: string) => {
+  const handleDeleteCustomItem = useCallback((moduleId: string, type: 'qualitative' | 'quantitative', itemId: string) => {
     setAppState(prev => {
-      const moduleState = { ...prev.discoveryQuestions[moduleId] };
-      moduleState[type] = moduleState[type].filter(q => q.questionId !== questionId);
+      const moduleState = { ...(prev.discoveryQuestions[moduleId] || { qualitative: [], quantitative: [] }) };
+      const currentItems = moduleState[type] ? [...moduleState[type]] : [];
+      moduleState[type] = currentItems.filter(item => item.questionId !== itemId);
       return {
         ...prev,
         discoveryQuestions: { ...prev.discoveryQuestions, [moduleId]: moduleState }
@@ -133,33 +155,37 @@ const DiscoveryQuestionsTab: React.FC<TabProps> = ({ appState, setAppState }) =>
   }, [setAppState]);
 
   if (!selectedModuleId) {
-    return <div className="p-6 bg-white shadow rounded-lg text-gray-600">Please select a module first.</div>;
+    return <div className="p-6 bg-white shadow rounded-lg text-gray-600">Please select a module first to view or add discovery questions and notes.</div>;
   }
-  if (!currentModuleData) {
-     // This case should ideally not happen if initial state is populated correctly
-    return <div className="p-6 bg-white shadow rounded-lg text-red-600">Error: Discovery questions not found for this module.</div>;
+  if (!currentModuleData || !currentModuleQuestionsTemplate) {
+    return <div className="p-6 bg-white shadow rounded-lg text-red-600">Error: Discovery questions configuration not found for this module. Please check constants.</div>;
   }
+  
+  const moduleName = appState.selectedModuleId ? ALL_MODULES.find(m => m.id === appState.selectedModuleId)?.name : "Selected Module";
+
 
   return (
     <div className="p-6 bg-white shadow rounded-lg">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">Discovery Questions for {selectedModuleId}</h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-6">Discovery Questions & Notes for {moduleName}</h2>
       <DiscoverySection
-        title="Qualitative Questions"
-        questions={currentModuleData.qualitative}
+        title="Qualitative Insights"
+        questionsAndNotes={currentModuleData.qualitative}
+        moduleQuestionsTemplate={currentModuleQuestionsTemplate.qualitative}
         moduleId={selectedModuleId}
         questionType="qualitative"
         onAnswerChange={handleAnswerChange}
-        onAddCustomQuestion={handleAddCustomQuestion}
-        onDeleteCustomQuestion={handleDeleteCustomQuestion}
+        onAddCustomNote={handleAddCustomNote}
+        onDeleteCustomItem={handleDeleteCustomItem}
       />
       <DiscoverySection
-        title="Quantitative Questions (Metrics)"
-        questions={currentModuleData.quantitative}
+        title="Quantitative Metrics & Data Points"
+        questionsAndNotes={currentModuleData.quantitative}
+        moduleQuestionsTemplate={currentModuleQuestionsTemplate.quantitative}
         moduleId={selectedModuleId}
         questionType="quantitative"
         onAnswerChange={handleAnswerChange}
-        onAddCustomQuestion={handleAddCustomQuestion}
-        onDeleteCustomQuestion={handleDeleteCustomQuestion}
+        onAddCustomNote={handleAddCustomNote}
+        onDeleteCustomItem={handleDeleteCustomItem}
       />
     </div>
   );

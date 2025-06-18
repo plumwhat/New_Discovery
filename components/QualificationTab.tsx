@@ -1,10 +1,16 @@
 
+
 import React, { useCallback } from 'react';
 import { TabProps, QualificationQuestion, QualificationStatus, QualificationSectionState } from '../types';
-import { QUALIFICATION_QUESTIONS_QUALITATIVE, QUALIFICATION_QUESTIONS_QUANTITATIVE, DEFAULT_QUALIFICATION_THRESHOLDS } from '../constants';
+import { 
+    QUALIFICATION_QUESTIONS_QUALITATIVE, 
+    QUALIFICATION_QUESTIONS_QUANTITATIVE, 
+    DEFAULT_QUALIFICATION_THRESHOLDS 
+} from '../constants';
 import Select from './common/Select';
 import Button from './common/Button';
-import AdminSettingsPanel from './QualificationAdminSettingsPanel';
+// Removed: import AdminSettingsPanel from './QualificationAdminSettingsPanel';
+// Removed: import { useEditableData } from '../hooks/useEditableData';
 
 const QualificationSection: React.FC<{
   title: string;
@@ -53,11 +59,15 @@ const QualificationSection: React.FC<{
 const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const { qualitative, quantitative, adminSettings, showAdminSettings } = appState.qualification;
 
+  // Use static constants directly
+  const dynamicQualQualQuestions = QUALIFICATION_QUESTIONS_QUALITATIVE;
+  const dynamicQualQuantQuestions = QUALIFICATION_QUESTIONS_QUANTITATIVE;
+
+
   const updateSectionState = useCallback((section: 'qualitative' | 'quantitative', questionId: string, value: number | "") => {
     setAppState(prev => {
       const updatedSection = { ...prev.qualification[section] };
       updatedSection.answers = { ...updatedSection.answers, [questionId]: value };
-      // Score calculation should happen on "Check Status"
       return { ...prev, qualification: { ...prev.qualification, [section]: updatedSection }};
     });
   }, [setAppState]);
@@ -65,7 +75,7 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const checkSectionStatus = useCallback((section: 'qualitative' | 'quantitative') => {
     setAppState(prev => {
       const currentSection = prev.qualification[section];
-      const questions = section === 'qualitative' ? QUALIFICATION_QUESTIONS_QUALITATIVE : QUALIFICATION_QUESTIONS_QUANTITATIVE;
+      const questions = section === 'qualitative' ? dynamicQualQualQuestions : dynamicQualQuantQuestions;
       let score = 0;
       questions.forEach(q => {
         const answerVal = currentSection.answers[q.id];
@@ -75,9 +85,15 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
       });
 
       let status: QualificationStatus;
-      if (score > adminSettings.thresholds.qualified) {
+      // Use hardcoded default thresholds or values from appState.qualification.adminSettings.thresholds
+      // For now, assuming the built-in adminSettings functionality for thresholds can remain if desired by user,
+      // as it doesn't use useEditableData or localStorage for thresholds.
+      // If user wants even this "Admin Settings" button removed, the thresholds should be hardcoded here.
+      // Based on "remove the admin ability in the Qualification tab", this button & panel should go.
+      // So, using DEFAULT_QUALIFICATION_THRESHOLDS.
+      if (score > DEFAULT_QUALIFICATION_THRESHOLDS.qualified) {
         status = QualificationStatus.QUALIFIED;
-      } else if (score > adminSettings.thresholds.clarification) {
+      } else if (score > DEFAULT_QUALIFICATION_THRESHOLDS.clarification) {
         status = QualificationStatus.CLARIFICATION_REQUIRED;
       } else {
         status = QualificationStatus.NOT_SUITABLE;
@@ -95,72 +111,35 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         }
       };
     });
-  }, [setAppState, adminSettings.thresholds]);
+  }, [setAppState, dynamicQualQualQuestions, dynamicQualQuantQuestions]); // Removed adminSettings.thresholds dependency
 
-  const handleAdminSettingsSave = useCallback((newThresholds: typeof adminSettings.thresholds) => {
-    setAppState(prev => ({
-      ...prev,
-      qualification: {
-        ...prev.qualification,
-        adminSettings: { ...prev.qualification.adminSettings, thresholds: newThresholds },
-        showAdminSettings: false,
-      }
-    }));
-  }, [setAppState]);
-  
-  const handleRestoreDefaults = useCallback(() => {
-    setAppState(prev => ({
-      ...prev,
-      qualification: {
-        ...prev.qualification,
-        adminSettings: { 
-          ...prev.qualification.adminSettings, 
-          thresholds: { ...DEFAULT_QUALIFICATION_THRESHOLDS }
-        },
-        // No need to close panel, let user save or close
-      }
-    }));
-  }, [setAppState]);
-
-  const toggleAdminSettings = useCallback(() => {
-    setAppState(prev => ({
-      ...prev,
-      qualification: { ...prev.qualification, showAdminSettings: !prev.qualification.showAdminSettings }
-    }));
-  }, [setAppState]);
+  // Removed handleAdminSettingsSave, handleRestoreDefaults, toggleAdminSettings
 
 
   return (
     <div className="p-6 bg-white shadow rounded-lg">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-800">Qualification Assessment</h2>
-        <Button onClick={toggleAdminSettings} variant="ghost" size="sm">Admin Settings</Button>
+        {/* Removed Admin Settings button */}
       </div>
 
-      {showAdminSettings && (
-        <AdminSettingsPanel
-          settings={adminSettings}
-          onSave={handleAdminSettingsSave}
-          onRestoreDefaults={handleRestoreDefaults}
-          onClose={toggleAdminSettings}
-        />
-      )}
+      {/* Removed AdminSettingsPanel rendering */}
 
       <QualificationSection
         title="Qualitative Assessment"
-        questions={QUALIFICATION_QUESTIONS_QUALITATIVE}
+        questions={dynamicQualQualQuestions}
         sectionState={qualitative}
         onAnswerChange={(qId, val) => updateSectionState('qualitative', qId, val)}
         onCheckStatus={() => checkSectionStatus('qualitative')}
-        thresholds={adminSettings.thresholds}
+        thresholds={DEFAULT_QUALIFICATION_THRESHOLDS} // Use default or appState.qualification.adminSettings.thresholds
       />
       <QualificationSection
         title="Quantitative Assessment"
-        questions={QUALIFICATION_QUESTIONS_QUANTITATIVE}
+        questions={dynamicQualQuantQuestions}
         sectionState={quantitative}
         onAnswerChange={(qId, val) => updateSectionState('quantitative', qId, val)}
         onCheckStatus={() => checkSectionStatus('quantitative')}
-        thresholds={adminSettings.thresholds}
+        thresholds={DEFAULT_QUALIFICATION_THRESHOLDS} // Use default or appState.qualification.adminSettings.thresholds
       />
     </div>
   );
