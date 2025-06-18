@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { TabProps, ScorecardAnswer } from '../types';
+import { ScorecardAnswer, TabProps } from '../types';
 import { SCORECARD_QUESTIONS } from '../constants';
 import RadioGroup from './common/RadioGroup';
 

@@ -1,7 +1,7 @@
 
 
 import React, { useCallback, useState } from 'react';
-import { TabProps, DiscoveryQuestion, DiscoveryAnswer, EditableDiscoveryQuestionsTemplates } from '../types';
+import { DiscoveryQuestion, DiscoveryAnswer, EditableDiscoveryQuestionsTemplates, TabProps } from '../types';
 import { DISCOVERY_QUESTIONS_TEMPLATES, ALL_MODULES } from '../constants'; 
 import Textarea from './common/Textarea';
 import Button from './common/Button';

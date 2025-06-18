@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { TabProps, RoiInput as RoiInputType, RoiResults, RoiModuleState } from '../types';
+import { RoiInput as RoiInputType, RoiResults, RoiModuleState, TabProps } from '../types';
 import { ROI_INPUT_TEMPLATES, HOURLY_RATE_DIVISOR, ALL_MODULES, AUTOMATION_TIME_SAVING_PERCENTAGE, AUTOMATION_ERROR_REDUCTION_PERCENTAGE } from '../constants';
 import Input from './common/Input';
 import Button from './common/Button';
@@ -12,6 +12,20 @@ const formatCurrency = (value: number) => {
 const getInputValue = (inputs: RoiModuleState['inputs'], key: string): number => {
     const val = inputs[key];
     return typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) || 0 : val || 0;
+};
+
+const getPaybackPeriodDisplay = (results: RoiResults): string => {
+    if (isFinite(results.paybackPeriodMonths)) {
+        return `${results.paybackPeriodMonths.toFixed(1)} Months`;
+    } else if (results.totalNetBenefitOverLifespan <= 0 && results.totalInvestmentOverLifespan > 0) {
+        return 'N/A (No Payback)';
+    } else if (results.totalInvestmentOverLifespan === 0 && results.totalAnnualGrossSavings > 0) {
+        return 'Instant';
+    } else if (results.totalInvestmentOverLifespan === 0 && results.totalAnnualGrossSavings === 0) {
+        return 'N/A';
+    } else { // This implies paybackPeriodMonths is Infinity and not covered by above specific N/A or Instant cases
+        return `> ${results.solutionLifespanYears * 12} Months`;
+    }
 };
 
 
@@ -642,165 +656,147 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         roiCalculator: { ...prev.roiCalculator, [selectedModuleId]: updatedModuleRoiData }
       };
     });
-    setTimeout(calculateRoi, 100); 
-  }, [selectedModuleId, setAppState, calculateRoi]);
-
+  }, [selectedModuleId, setAppState]);
 
   return (
-    <div className="p-6 bg-white shadow rounded-lg space-y-8">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-1">ROI Calculator for {moduleConfig.name}</h2>
-        <p className="text-sm text-gray-500 mb-6">Enter the following metrics to estimate potential ROI.</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6 p-4 border rounded-md bg-gray-50">
-           <Input
-            label="Average Annual Employee Salary ($)"
-            id="annualSalary"
-            type="text" // Changed to text to allow comma formatting, parsed by getInputValue
-            value={currentModuleRoiData.annualSalary.toLocaleString()}
-            onChange={(e) => handleInputChange('annualSalary', e.target.value)}
-            placeholder="e.g., 60,000"
-          />
-          <Input
-            label="Annual Software Cost ($)"
-            id="annualSoftwareCost"
-            type="text"
-            value={currentModuleRoiData.annualSoftwareCost.toLocaleString()}
-            onChange={(e) => handleInputChange('annualSoftwareCost', e.target.value)}
-            placeholder="e.g., 10,000"
-          />
-          <Input
-            label="Upfront Professional Services Cost ($)"
-            id="upfrontProfServicesCost"
-            type="text"
-            value={currentModuleRoiData.upfrontProfServicesCost.toLocaleString()}
-            onChange={(e) => handleInputChange('upfrontProfServicesCost', e.target.value)}
-            placeholder="e.g., 5,000"
-          />
-           <Input
-            label="Solution Lifespan (Years)"
-            id="solutionLifespanYears"
-            type="number"
-            value={currentModuleRoiData.solutionLifespanYears.toString()}
-            onChange={(e) => handleInputChange('solutionLifespanYears', e.target.value)}
-            placeholder="e.g., 3"
-            min="1"
-            max="10"
-          />
-          {moduleInputFields.map(input => (
-            <Input
-              key={input.id}
-              label={`${input.label}${input.unit ? ` (${input.unit})` : ''}`}
-              id={`${selectedModuleId}-${input.id}`}
-              type={input.isCurrency ? "text" : input.type} // Use text for currency to allow formatting
-              value={input.isCurrency && typeof currentModuleRoiData.inputs[input.id] === 'number' ? (currentModuleRoiData.inputs[input.id] as number).toLocaleString() : currentModuleRoiData.inputs[input.id]?.toString() || ""}
-              onChange={(e) => handleInputChange(input.id, e.target.value)}
-              placeholder={`Enter value`}
-            />
-          ))}
-        </div>
-        <div className="flex space-x-3">
-            <Button onClick={calculateRoi} variant="primary">Calculate ROI</Button>
-            <Button onClick={populateDemoData} variant="secondary">Populate with Demo Data</Button>
+    <div className="p-6 bg-white shadow rounded-lg">
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-2">
+        <h2 className="text-xl font-semibold text-gray-800">ROI Calculator for {moduleConfig.name}</h2>
+        <div className="flex space-x-2">
+            <Button onClick={populateDemoData} variant="ghost" size="sm">Load Demo Data</Button>
+            <Button onClick={calculateRoi} variant="primary" size="sm">Calculate ROI</Button>
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-8">
+        <div>
+            <Input
+                label="Average Annual Employee Salary (Blended)"
+                id="annualSalary"
+                type="number"
+                value={currentModuleRoiData.annualSalary.toString()}
+                onChange={(e) => handleInputChange('annualSalary', e.target.value)}
+                className="mb-2"
+            />
+             <p className="text-xs text-gray-500">Used to calculate hourly rate for time savings.</p>
+        </div>
+         <div>
+            <Input
+                label={`Annual Software Cost for ${moduleConfig.name} Solution`}
+                id="annualSoftwareCost"
+                type="number"
+                value={currentModuleRoiData.annualSoftwareCost.toString()}
+                onChange={(e) => handleInputChange('annualSoftwareCost', e.target.value)}
+                className="mb-2"
+            />
+            <p className="text-xs text-gray-500">Estimated annual subscription/licensing cost.</p>
+        </div>
+        <div>
+            <Input
+                label="Upfront Professional Services Cost"
+                id="upfrontProfServicesCost"
+                type="number"
+                value={currentModuleRoiData.upfrontProfServicesCost.toString()}
+                onChange={(e) => handleInputChange('upfrontProfServicesCost', e.target.value)}
+                className="mb-2"
+            />
+            <p className="text-xs text-gray-500">One-time implementation, configuration, training costs.</p>
+        </div>
+         <div>
+            <Input
+                label="Solution Lifespan (Years)"
+                id="solutionLifespanYears"
+                type="number"
+                value={currentModuleRoiData.solutionLifespanYears.toString()}
+                onChange={(e) => handleInputChange('solutionLifespanYears', e.target.value)}
+                min="1"
+                max="10"
+                className="mb-2"
+            />
+            <p className="text-xs text-gray-500">Typical period for ROI calculation (e.g., 3 or 5 years).</p>
+        </div>
+      </div>
+      
+      <h3 className="text-lg font-semibold text-gray-700 mb-4 border-t pt-4">Module Specific Inputs for {moduleConfig.name}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        {moduleInputFields.map(input => (
+          <div key={input.id}>
+            <Input
+              label={`${input.label}${input.unit ? ` (${input.unit})` : ''}${input.isCurrency ? ' ($)' : ''}`}
+              id={input.id}
+              type={input.type}
+              value={(currentModuleRoiData.inputs[input.id] ?? "").toString()}
+              onChange={(e) => handleInputChange(input.id, e.target.value)}
+              placeholder={input.isCurrency ? 'Enter amount' : 'Enter value'}
+            />
+             {input.id === 'ap_roi_numFTEs' && <p className="text-xs text-gray-500 mt-1">Full-Time Equivalents involved in AP processing.</p>}
+             {input.id === 'om_roi_numFTEs' && <p className="text-xs text-gray-500 mt-1">FTEs involved in manual order entry.</p>}
+          </div>
+        ))}
+      </div>
+
       {currentModuleRoiData.results && (
-        <div className="pt-6 border-t border-gray-200 space-y-6">
-          <h3 className="text-lg font-semibold text-blue-700">Estimated ROI Results</h3>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg shadow">
-                <div className="text-xs text-blue-500 uppercase tracking-wider">Total Annual Gross Savings</div>
-                {currentModuleRoiData.results.savingsCalculationWorkings && currentModuleRoiData.results.savingsCalculationWorkings.length > 0 && (
-                  <div className="mt-1 mb-2 text-xs text-blue-600 space-y-0.5">
-                    {currentModuleRoiData.results.savingsCalculationWorkings.map((item, idx) => (
-                      <div key={idx} className="flex justify-between">
-                        <span>{item.category}:</span>
-                        <span className="font-medium">{formatCurrency(item.result)}</span>
-                      </div>
-                    ))}
-                     <hr className="my-1 border-blue-200"/>
-                  </div>
-                )}
-                <div className="text-2xl font-bold text-blue-700">{formatCurrency(currentModuleRoiData.results.totalAnnualGrossSavings)}</div>
+        <div className="mt-10 pt-6 border-t border-gray-300">
+          <h3 className="text-xl font-semibold text-blue-600 mb-6">ROI Calculation Results</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg shadow">
+              <h4 className="text-sm font-medium text-green-700">Total Annual Gross Savings</h4>
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(currentModuleRoiData.results.totalAnnualGrossSavings)}</p>
             </div>
-            <div className="p-4 bg-blue-50 rounded-lg shadow">
-                <div className="text-xs text-blue-500 uppercase tracking-wider">Total Net Benefit ({currentModuleRoiData.results.solutionLifespanYears} yrs)</div>
-                <div className="text-2xl font-bold text-blue-700">{formatCurrency(currentModuleRoiData.results.totalNetBenefitOverLifespan)}</div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg shadow">
+              <h4 className="text-sm font-medium text-blue-700">Total Investment ({currentModuleRoiData.results.solutionLifespanYears} yrs)</h4>
+              <p className="text-2xl font-bold text-blue-600">{formatCurrency(currentModuleRoiData.results.totalInvestmentOverLifespan)}</p>
             </div>
-            <div className="p-4 bg-red-50 rounded-lg shadow">
-                <div className="text-xs text-red-500 uppercase tracking-wider">Total Investment ({currentModuleRoiData.results.solutionLifespanYears} yrs)</div>
-                <div className="text-2xl font-bold text-red-700">{formatCurrency(currentModuleRoiData.results.totalInvestmentOverLifespan)}</div>
+             <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg shadow">
+              <h4 className="text-sm font-medium text-indigo-700">Total Net Benefit ({currentModuleRoiData.results.solutionLifespanYears} yrs)</h4>
+              <p className="text-2xl font-bold text-indigo-600">{formatCurrency(currentModuleRoiData.results.totalNetBenefitOverLifespan)}</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg shadow">
-                <div className="text-xs text-green-500 uppercase tracking-wider">Overall ROI ({currentModuleRoiData.results.solutionLifespanYears} yrs)</div>
-                <div className="text-2xl font-bold text-green-700">
-                    {isFinite(currentModuleRoiData.results.overallRoiPercentage) ? `${currentModuleRoiData.results.overallRoiPercentage.toFixed(1)}%` : 'N/A'}
-                </div>
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg shadow">
+              <h4 className="text-sm font-medium text-purple-700">Overall ROI ({currentModuleRoiData.results.solutionLifespanYears} yrs)</h4>
+              <p className="text-2xl font-bold text-purple-600">{isFinite(currentModuleRoiData.results.overallRoiPercentage) ? `${currentModuleRoiData.results.overallRoiPercentage.toFixed(1)}%` : 'N/A'}</p>
             </div>
-            <div className="p-4 bg-yellow-50 rounded-lg shadow">
-                <div className="text-xs text-yellow-600 uppercase tracking-wider">Payback Period</div>
-                <div className="text-2xl font-bold text-yellow-700">
-                    {isFinite(currentModuleRoiData.results.paybackPeriodMonths) ? 
-                     `${currentModuleRoiData.results.paybackPeriodMonths.toFixed(1)} Months` : 
-                     (currentModuleRoiData.results.totalNetBenefitOverLifespan <=0 && currentModuleRoiData.results.totalInvestmentOverLifespan > 0 ? 'N/A (No Payback)' : 
-                     (currentModuleRoiData.results.totalInvestmentOverLifespan === 0 && currentModuleRoiData.results.totalAnnualGrossSavings > 0 ? 'Instant' : 
-                     (currentModuleRoiData.results.totalInvestmentOverLifespan === 0 && currentModuleRoiData.results.totalAnnualGrossSavings === 0 ? 'N/A' : `> ${currentModuleRoiData.results.solutionLifespanYears*12} Months`)))}
-                </div>
+            <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-lg shadow">
+              <h4 className="text-sm font-medium text-yellow-700">Payback Period</h4>
+              <p className="text-2xl font-bold text-yellow-600">{getPaybackPeriodDisplay(currentModuleRoiData.results)}</p>
             </div>
           </div>
 
-          <div>
-            <h4 className="text-md font-semibold text-gray-700 mb-2">Detailed Savings Calculation Workings:</h4>
-            <div className="space-y-3 text-sm bg-gray-50 p-4 rounded-md">
-              {currentModuleRoiData.results.savingsCalculationWorkings.map((item, idx) => (
-                <div key={idx} className="p-3 border rounded bg-white shadow-sm">
-                  <p className="font-semibold text-gray-700">{item.category}: <span className="font-bold text-green-600">{formatCurrency(item.result)}</span></p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    <span className="font-medium">Formula:</span> {item.formula}
-                  </p>
-                  <details className="text-xs text-gray-500 mt-1">
-                    <summary className="cursor-pointer hover:text-gray-700">Inputs Used</summary>
-                    <ul className="list-disc list-inside pl-2">
-                    {Object.entries(item.inputsUsed).map(([key, value]) => (
-                        <li key={key}>{key}: {typeof value === 'number' ? (key.toLowerCase().includes('percentage') || key.toLowerCase().includes('rate') ? (value*100).toFixed(1)+'%' : value.toFixed(2)) : value}</li>
-                    ))}
-                    </ul>
-                  </details>
-                </div>
+          <div className="mb-8">
+            <h4 className="text-md font-semibold text-gray-700 mb-3">Savings Calculation Workings:</h4>
+            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 bg-gray-50 p-4 rounded-md border">
+              {currentModuleRoiData.results.savingsCalculationWorkings.map((item, index) => (
+                <li key={index}>
+                  <strong>{item.category}:</strong> {formatCurrency(item.result)}
+                  <br />
+                  <small className="text-gray-500"> (Formula: {item.formula})</small>
+                </li>
               ))}
-               {!currentModuleRoiData.results.savingsCalculationWorkings.length && <p className="text-gray-500">No specific savings categories calculated based on current inputs.</p>}
-            </div>
+            </ul>
           </div>
-
+          
           <div>
-            <h4 className="text-md font-semibold text-gray-700 mb-2">Annual Financial Breakdown ({currentModuleRoiData.results.solutionLifespanYears} Years):</h4>
+            <h4 className="text-md font-semibold text-gray-700 mb-3">Annual Breakdown:</h4>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <table className="min-w-full divide-y divide-gray-200 border rounded-lg shadow-sm">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600">Year</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600">Gross Savings</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600">Software Cost</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600">Upfront Investment</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600">Net Cash Flow (Year)</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600">Cumulative Net Cash Flow</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Year</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Gross Savings</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Software Cost</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Investment</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Net Cash Flow (Year)</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Cumulative Net Cash Flow</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200 text-sm">
                   {currentModuleRoiData.results.annualBreakdown.map(item => (
-                    <tr key={item.year}>
-                      <td className="px-3 py-2 whitespace-nowrap">{item.year}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{formatCurrency(item.grossSavings)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{formatCurrency(item.softwareCost)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{formatCurrency(item.investment)}</td>
-                      <td className={`px-3 py-2 whitespace-nowrap font-semibold ${item.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(item.netCashFlow)}
-                      </td>
-                      <td className={`px-3 py-2 whitespace-nowrap font-semibold ${item.cumulativeNetCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(item.cumulativeNetCashFlow)}
-                      </td>
+                    <tr key={item.year} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 whitespace-nowrap">{item.year}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">{formatCurrency(item.grossSavings)}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">{formatCurrency(item.softwareCost)}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">{formatCurrency(item.investment)}</td>
+                      <td className={`px-4 py-2 whitespace-nowrap font-medium ${item.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(item.netCashFlow)}</td>
+                      <td className={`px-4 py-2 whitespace-nowrap font-medium ${item.cumulativeNetCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(item.cumulativeNetCashFlow)}</td>
                     </tr>
                   ))}
                 </tbody>

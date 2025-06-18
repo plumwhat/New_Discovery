@@ -84,6 +84,16 @@ export interface QualificationState {
   showAdminSettings: boolean; // This toggle can remain for the built-in qualification settings panel
 }
 
+// For module-specific qualification questions
+export interface ModuleQualificationQuestions {
+  qualitative: QualificationQuestion[];
+  quantitative: QualificationQuestion[];
+}
+export interface AllModuleQualificationQuestions {
+  [moduleId: string]: ModuleQualificationQuestions;
+}
+
+
 export interface DiscoveryQuestion {
   id: string;
   text: string;
@@ -367,6 +377,11 @@ export interface RadioGroupProps<T extends string | number> {
   label?: string;
 }
 
+export interface TabProps {
+  appState: AppState;
+  setAppState: React.Dispatch<React.SetStateAction<AppState>>;
+}
+
 export interface TabDefinition {
   id: TabId;
   label: string;
@@ -382,11 +397,6 @@ export interface TabMetadata {
   roles: Role[];
   icon?: React.FC<React.SVGProps<SVGSVGElement>>;
   purpose?: string; // Optional: Add purpose here for Home tab display
-}
-
-export interface TabProps {
-  appState: AppState;
-  setAppState: React.Dispatch<React.SetStateAction<AppState>>;
 }
 
 export interface ModuleSolutionContent {

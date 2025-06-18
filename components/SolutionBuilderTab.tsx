@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { TabProps, RequirementBlock, Module, RoiResults, ExportFormat, EditableModuleSolutionContentMap } from '../types';
-import { ALL_MODULES, MODULE_SPECIFIC_SOLUTION_CONTENT, RESELLER_COMPANY_NAME } from '../constants'; // Direct import
+import { ALL_MODULES, MODULE_SPECIFIC_SOLUTION_CONTENT, RESELLER_COMPANY_NAME } from '../constants'; // Removed MODULE_INFOGRAPHICS_HTML from here
 import Select from './common/Select';
 import Textarea from './common/Textarea';
 import Button from './common/Button';
@@ -12,6 +12,7 @@ import {
     ArrowDownTrayIcon
 } from './common/Icons';
 import { generateSolutionDocumentContent, triggerDownload } from '../services/exportService';
+import ModuleInfographic from './common/ModuleInfographic';
 
 
 const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
@@ -168,8 +169,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   }, [setAppState]);
   
   const handleExportSolutionDocument = useCallback((format: ExportFormat.HTML | ExportFormat.MD) => {
-    // Uses hardcoded MODULE_SPECIFIC_SOLUTION_CONTENT from constants directly in generateSolutionDocumentContent
-    const content = generateSolutionDocumentContent(appState, format); // Removed dynamic content argument
+    const content = generateSolutionDocumentContent(appState, format); 
     const coreModule = ALL_MODULES.find(m => m.id === selectedCoreModuleId);
     const moduleName = coreModule ? coreModule.name.replace(/\s+/g, '_') : 'Solution';
     const companyNameClean = customerCompany.replace(/\s+/g, '_') || 'Customer';
@@ -189,7 +189,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
 
   let defaultCoreElementsListLength = 0;
   if (selectedCoreModuleId) {
-      const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId] || MODULE_SPECIFIC_SOLUTION_CONTENT.default; // Use constant
+      const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId] || MODULE_SPECIFIC_SOLUTION_CONTENT.default; 
       const coreModule = ALL_MODULES.find(m => m.id === selectedCoreModuleId);
       if (coreModule && moduleContentDef) { 
           const partnerDisplayName = moduleContentDef.technologyPartnerName;
@@ -206,7 +206,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     const coreModule = getSelectedCoreModule();
     const coreModuleNameStr = coreModule?.name || "N/A";
     
-    const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId || 'default'] || MODULE_SPECIFIC_SOLUTION_CONTENT.default; // Use constant
+    const moduleContentDef = MODULE_SPECIFIC_SOLUTION_CONTENT[selectedCoreModuleId || 'default'] || MODULE_SPECIFIC_SOLUTION_CONTENT.default; 
     const partnerDisplayName = moduleContentDef.technologyPartnerName;
 
     const executiveSummaryHtml = moduleContentDef.executiveSummaryBoilerplate
@@ -269,7 +269,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           
           <section>
             <h2 className="text-xl font-semibold text-blue-600 border-b pb-2 mb-3">Executive Summary</h2>
-            <p>This document outlines a proposed solution for <strong>{customerCompany || 'the client'}</strong> to address challenges and opportunities within <strong>{coreModuleNameStr}</strong> processes. Leveraging industry-leading technologies such as Esker for finance automation, M-Files for intelligent information management, and Nintex for advanced workflow capabilities, this solution aims to deliver significant operational efficiencies, enhanced control, and a strong return on investment.</p>
+            <p>This document outlines a proposed solution for <strong>{customerCompany || 'the client'}</strong> to address challenges and opportunities within <strong>{coreModuleNameStr}</strong> processes. The primary technology leveraged for this {coreModuleNameStr} solution will be <strong>{partnerDisplayName}</strong>, a leader in its respective field.</p>
             <div dangerouslySetInnerHTML={{ __html: executiveSummaryHtml }} />
              {roiData && (
                 <p className="mt-2">
@@ -284,7 +284,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             <h2 className="text-xl font-semibold text-blue-600 border-b pb-2 mb-3">Overview of the Proposed Solution</h2>
             <div dangerouslySetInnerHTML={{ __html: solutionOverviewHtml }} />
           </section>
-
+          
           {(requirementBlocks.length > 0 || coreElementsList.length > 0) && (
             <section className="mt-6">
               <h2 className="text-xl font-semibold text-blue-600 border-b pb-2 mb-3">Detailed Customer Solution & Requirements</h2>
@@ -338,6 +338,9 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           {!roiData && (requirementBlocks.length > 0 || coreElementsList.length > 0) && (
              <p className="mt-4 text-sm text-gray-600"><i>Quantitative ROI analysis for the <strong>{coreModuleNameStr}</strong> module can be performed in the 'ROI Calculator' tab to complement this solution outline.</i></p>
           )}
+
+          {/* ModuleInfographic moved here, to appear at the end of the document view */}
+          {selectedCoreModuleId && <ModuleInfographic moduleId={selectedCoreModuleId} />} 
         </div>
       </div>
     );

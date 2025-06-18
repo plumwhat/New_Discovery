@@ -1,16 +1,15 @@
 
 
-import React, { useCallback } from 'react';
-import { TabProps, QualificationQuestion, QualificationStatus, QualificationSectionState } from '../types';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { QualificationQuestion, QualificationStatus, QualificationSectionState, ModuleQualificationQuestions, TabProps } from '../types';
 import { 
-    QUALIFICATION_QUESTIONS_QUALITATIVE, 
-    QUALIFICATION_QUESTIONS_QUANTITATIVE, 
-    DEFAULT_QUALIFICATION_THRESHOLDS 
+    QUALIFICATION_QUESTIONS_BY_MODULE, 
+    DEFAULT_QUALIFICATION_THRESHOLDS,
+    ALL_MODULES, // Import ALL_MODULES to get module name
+    initialQualificationSectionState
 } from '../constants';
 import Select from './common/Select';
 import Button from './common/Button';
-// Removed: import AdminSettingsPanel from './QualificationAdminSettingsPanel';
-// Removed: import { useEditableData } from '../hooks/useEditableData';
 
 const QualificationSection: React.FC<{
   title: string;
@@ -18,8 +17,8 @@ const QualificationSection: React.FC<{
   sectionState: QualificationSectionState;
   onAnswerChange: (questionId: string, value: number | "") => void;
   onCheckStatus: () => void;
-  thresholds: { qualified: number; clarification: number };
-}> = ({ title, questions, sectionState, onAnswerChange, onCheckStatus, thresholds }) => {
+  moduleName?: string; // Optional module name for dynamic question text
+}> = ({ title, questions, sectionState, onAnswerChange, onCheckStatus, moduleName }) => {
   
   const getStatusColor = (status: QualificationStatus) => {
     switch (status) {
@@ -33,18 +32,24 @@ const QualificationSection: React.FC<{
   return (
     <div className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm">
       <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
-      {questions.map(q => (
-        <div key={q.id} className="mb-4">
-          <Select
-            label={q.text}
-            id={`${title.toLowerCase().replace(/\s/g, '-')}-${q.id}`}
-            value={sectionState.answers[q.id] || ""}
-            onChange={(e) => onAnswerChange(q.id, e.target.value === "" ? "" : parseInt(e.target.value))}
-            options={q.options.map(opt => ({ value: opt.value, label: opt.label }))}
-            placeholder="Select an option"
-          />
-        </div>
-      ))}
+      {questions.map(q => {
+        // Replace placeholder in question text if moduleName is provided
+        const questionText = moduleName && q.text.includes("[Module Name]") 
+                           ? q.text.replace(/\[Module Name\]/g, moduleName) 
+                           : q.text;
+        return (
+            <div key={q.id} className="mb-4">
+            <Select
+                label={questionText}
+                id={`${title.toLowerCase().replace(/\s/g, '-')}-${q.id}`}
+                value={sectionState.answers[q.id] || ""}
+                onChange={(e) => onAnswerChange(q.id, e.target.value === "" ? "" : parseInt(e.target.value))}
+                options={q.options.map(opt => ({ value: opt.value, label: opt.label }))}
+                placeholder="Select an option"
+            />
+            </div>
+        );
+      })}
       <div className="mt-6 flex items-center justify-between">
         <Button onClick={onCheckStatus} variant="primary">Check Status</Button>
         <div className={`px-4 py-2 rounded-md text-sm font-medium ${getStatusColor(sectionState.status)}`}>
@@ -57,17 +62,43 @@ const QualificationSection: React.FC<{
 
 
 const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
-  const { qualitative, quantitative, adminSettings, showAdminSettings } = appState.qualification;
+  const { qualitative, quantitative } = appState.qualification;
+  const { selectedModuleId } = appState;
 
-  // Use static constants directly
-  const dynamicQualQualQuestions = QUALIFICATION_QUESTIONS_QUALITATIVE;
-  const dynamicQualQuantQuestions = QUALIFICATION_QUESTIONS_QUANTITATIVE;
+  const currentModuleName = useMemo(() => {
+    if (!selectedModuleId) return "Selected Module";
+    const module = ALL_MODULES.find(m => m.id === selectedModuleId);
+    return module ? module.name : "Selected Module";
+  }, [selectedModuleId]);
+  
+  const {
+    qualitative: dynamicQualQualQuestions,
+    quantitative: dynamicQualQuantQuestions
+  }: ModuleQualificationQuestions = useMemo(() => {
+    if (selectedModuleId && QUALIFICATION_QUESTIONS_BY_MODULE[selectedModuleId]) {
+      return QUALIFICATION_QUESTIONS_BY_MODULE[selectedModuleId];
+    }
+    return QUALIFICATION_QUESTIONS_BY_MODULE.default;
+  }, [selectedModuleId]);
+
+  // Reset qualification answers when module changes
+  useEffect(() => {
+    setAppState(prev => ({
+      ...prev,
+      qualification: {
+        ...prev.qualification,
+        qualitative: { ...initialQualificationSectionState },
+        quantitative: { ...initialQualificationSectionState },
+      }
+    }));
+  }, [selectedModuleId, setAppState]);
 
 
   const updateSectionState = useCallback((section: 'qualitative' | 'quantitative', questionId: string, value: number | "") => {
     setAppState(prev => {
       const updatedSection = { ...prev.qualification[section] };
       updatedSection.answers = { ...updatedSection.answers, [questionId]: value };
+      // Do not recalculate score/status here, let Check Status button do it
       return { ...prev, qualification: { ...prev.qualification, [section]: updatedSection }};
     });
   }, [setAppState]);
@@ -85,15 +116,10 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
       });
 
       let status: QualificationStatus;
-      // Use hardcoded default thresholds or values from appState.qualification.adminSettings.thresholds
-      // For now, assuming the built-in adminSettings functionality for thresholds can remain if desired by user,
-      // as it doesn't use useEditableData or localStorage for thresholds.
-      // If user wants even this "Admin Settings" button removed, the thresholds should be hardcoded here.
-      // Based on "remove the admin ability in the Qualification tab", this button & panel should go.
-      // So, using DEFAULT_QUALIFICATION_THRESHOLDS.
-      if (score > DEFAULT_QUALIFICATION_THRESHOLDS.qualified) {
+      // Using default thresholds for now, can be made dynamic later if needed
+      if (score >= DEFAULT_QUALIFICATION_THRESHOLDS.qualified) {
         status = QualificationStatus.QUALIFIED;
-      } else if (score > DEFAULT_QUALIFICATION_THRESHOLDS.clarification) {
+      } else if (score >= DEFAULT_QUALIFICATION_THRESHOLDS.clarification) {
         status = QualificationStatus.CLARIFICATION_REQUIRED;
       } else {
         status = QualificationStatus.NOT_SUITABLE;
@@ -111,19 +137,22 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         }
       };
     });
-  }, [setAppState, dynamicQualQualQuestions, dynamicQualQuantQuestions]); // Removed adminSettings.thresholds dependency
+  }, [setAppState, dynamicQualQualQuestions, dynamicQualQuantQuestions]);
 
-  // Removed handleAdminSettingsSave, handleRestoreDefaults, toggleAdminSettings
 
+  if (!selectedModuleId) {
+    return (
+        <div className="p-6 bg-white shadow rounded-lg text-gray-600">
+            Please select a module first to view module-specific qualification questions.
+        </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-white shadow rounded-lg">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Qualification Assessment</h2>
-        {/* Removed Admin Settings button */}
+        <h2 className="text-xl font-semibold text-gray-800">Qualification Assessment for {currentModuleName}</h2>
       </div>
-
-      {/* Removed AdminSettingsPanel rendering */}
 
       <QualificationSection
         title="Qualitative Assessment"
@@ -131,7 +160,7 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         sectionState={qualitative}
         onAnswerChange={(qId, val) => updateSectionState('qualitative', qId, val)}
         onCheckStatus={() => checkSectionStatus('qualitative')}
-        thresholds={DEFAULT_QUALIFICATION_THRESHOLDS} // Use default or appState.qualification.adminSettings.thresholds
+        moduleName={currentModuleName}
       />
       <QualificationSection
         title="Quantitative Assessment"
@@ -139,7 +168,7 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         sectionState={quantitative}
         onAnswerChange={(qId, val) => updateSectionState('quantitative', qId, val)}
         onCheckStatus={() => checkSectionStatus('quantitative')}
-        thresholds={DEFAULT_QUALIFICATION_THRESHOLDS} // Use default or appState.qualification.adminSettings.thresholds
+        moduleName={currentModuleName}
       />
     </div>
   );

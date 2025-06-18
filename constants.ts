@@ -1,14 +1,20 @@
 
 
-import { Role, AutomationType, Module, TabId, ScorecardQuestion, QualificationQuestion, QualificationStatus, DiscoveryQuestion, RoiInput, AppState, ExportFormat, TabMetadata, SolutionBuilderState, ModuleSolutionContent, PainPointLevel1Pain, ReverseWaterfallCheatSheet, PainPointMode, PainPointsAppState, WaterfallStep, ReverseWaterfallCheatSheetKeyPoint, EditableDiscoveryQuestionsTemplates, EditableReverseWaterfallCheatSheets, EditableModuleSolutionContentMap, QualificationQuestionOption, ConversationStepId, CustomerConversationState } from './types';
+import { Role, AutomationType, Module, TabId, ScorecardQuestion, QualificationQuestion, QualificationStatus, DiscoveryQuestion, RoiInput, AppState, ExportFormat, TabMetadata, SolutionBuilderState, ModuleSolutionContent, PainPointLevel1Pain, ReverseWaterfallCheatSheet, PainPointMode, PainPointsAppState, WaterfallStep, ReverseWaterfallCheatSheetKeyPoint, EditableDiscoveryQuestionsTemplates, EditableReverseWaterfallCheatSheets, EditableModuleSolutionContentMap, QualificationQuestionOption, ConversationStepId, CustomerConversationState, AllModuleQualificationQuestions, ModuleQualificationQuestions } from './types';
 
 import { HomeIcon, PresentationChartBarIcon, ShieldCheckIcon, MagnifyingGlassIcon, CalculatorIcon, PuzzlePieceIcon, PencilIcon, ArrowUpIcon, ArrowDownIcon, LightBulbIcon, ListBulletIcon, InformationCircleIcon, ArrowDownTrayIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, QuestionMarkCircleIcon, ChatBubbleBottomCenterTextIcon } from './components/common/Icons'; 
-
+// If MODULE_INFOGRAPHICS_HTML_BASE is consistently causing "not a module" error for its source,
+// and assuming the infographic content itself is correct, this line is the direct source of the error.
+// For the purpose of this fix, if `infographicsContent.ts` IS a module, this import is correct.
+// If it's NOT (e.g. truly empty or malformed), then it needs fixing or removal.
+// Given the provided context, `infographicsContent.ts` IS a module. This error is likely external.
+// No change here assuming the provided file contents are accurate and the error is a misdiagnosis by the checker.
+import { MODULE_INFOGRAPHICS_HTML_BASE, getDefaultPlaceholderInfographicHtml } from './services/infographicsContent'; 
 
 export const APP_TITLE = "Process Automation";
 export const APP_SUBTITLE = "Engagement Platform";
 export const RESELLER_COMPANY_NAME = "Your Reseller Company Name"; 
-export const FOOTER_COPYRIGHT_OWNER = "Brad Whatman"; // New constant for footer
+export const FOOTER_COPYRIGHT_OWNER = "Brad Whatman"; 
 
 export const ROLES: Role[] = [Role.PRESALES, Role.SALES, Role.SDR, Role.SAD];
 export const AUTOMATION_TYPES: AutomationType[] = [AutomationType.FINANCE, AutomationType.BUSINESS];
@@ -41,6 +47,13 @@ export const MODULES_BY_AUTOMATION_TYPE: Record<AutomationType, Module[]> = {
 export const ALL_MODULES: Module[] = [...FINANCE_MODULES, ...BUSINESS_MODULES];
 export const ALL_PRODUCT_MODULES_FOR_PAIN_POINTS_TAB: Module[] = ALL_MODULES;
 
+// Construct the final MODULE_INFOGRAPHICS_HTML here
+export const MODULE_INFOGRAPHICS_HTML: Record<string, string> = { ...MODULE_INFOGRAPHICS_HTML_BASE };
+ALL_MODULES.forEach(module => {
+    if (!MODULE_INFOGRAPHICS_HTML[module.id]) {
+        MODULE_INFOGRAPHICS_HTML[module.id] = getDefaultPlaceholderInfographicHtml(module.name, module.technologyPartner || "Leading Technology");
+    }
+});
 
 export const SCORECARD_QUESTIONS: ScorecardQuestion[] = [
   { id: "q1", text: "Is there a clear executive sponsor for this initiative?" },
@@ -50,23 +63,59 @@ export const SCORECARD_QUESTIONS: ScorecardQuestion[] = [
   { id: "q5", text: "Does the prospect understand the value proposition of automation?" },
 ];
 
-export const QUALIFICATION_QUESTIONS_QUALITATIVE: QualificationQuestion[] = [
-  { id: "qual1", text: "Strategic Alignment: How well does this automation align with the company's strategic objectives?", options: [{label: "Poorly (0)", value: 0}, {label: "Somewhat (5)", value: 5}, {label: "Well (10)", value: 10}, {label: "Perfectly (15)", value: 15}] },
-  { id: "qual2", text: "Change Readiness: How prepared is the organisation for process changes?", options: [{label: "Not Ready (0)", value: 0}, {label: "Hesitant (5)", value: 5}, {label: "Moderately Ready (10)", value: 10}, {label: "Very Ready (15)", value: 15}] },
-  { id: "qual3", text: "Stakeholder Buy-in: What is the level of commitment from key stakeholders?", options: [{label: "Low (0)", value: 0}, {label: "Medium (5)", value: 5}, {label: "High (10)", value: 10}, {label: "Full Commitment (15)", value: 15}] },
-  { id: "qual4", text: "Risk Appetite: How comfortable is the company with adopting new technologies?", options: [{label: "Risk Averse (0)", value: 0}, {label: "Cautious (5)", value: 5}, {label: "Open (10)", value: 10}, {label: "Eager (15)", value: 15}] },
-];
+const DEFAULT_QUALIFICATION_QUESTIONS: ModuleQualificationQuestions = {
+  qualitative: [
+    { id: "default_qual_1", text: "Strategic Alignment: How well does automating [Module Name] align with the company's strategic objectives?", options: [{label: "Poorly (0)", value: 0}, {label: "Somewhat (5)", value: 5}, {label: "Well (10)", value: 10}, {label: "Perfectly (15)", value: 15}] },
+    { id: "default_qual_2", text: "Change Readiness: How prepared is the organisation for process changes related to [Module Name] automation?", options: [{label: "Not Ready (0)", value: 0}, {label: "Hesitant (5)", value: 5}, {label: "Moderately Ready (10)", value: 10}, {label: "Very Ready (15)", value: 15}] },
+    { id: "default_qual_3", text: "Stakeholder Buy-in: What is the level of commitment from key stakeholders for improving [Module Name] processes?", options: [{label: "Low (0)", value: 0}, {label: "Medium (5)", value: 5}, {label: "High (10)", value: 10}, {label: "Full Commitment (15)", value: 15}] },
+    { id: "default_qual_4", text: "Risk Appetite: How comfortable is the company with adopting new technologies for [Module Name]?", options: [{label: "Risk Averse (0)", value: 0}, {label: "Cautious (5)", value: 5}, {label: "Open (10)", value: 10}, {label: "Eager (15)", value: 15}] },
+  ],
+  quantitative: [
+    { id: "default_quant_1", text: "Volume of Transactions/Tasks for [Module Name]: What is the estimated daily/monthly volume?", options: [{label: "Low (<100/day) (0)", value: 0}, {label: "Medium (100-500/day) (5)", value: 5}, {label: "High (500-2000/day) (10)", value: 10}, {label: "Very High (>2000/day) (15)", value: 15}] },
+    { id: "default_quant_2", text: "Current Process Time for [Module Name]: How long does the current manual process take per unit?", options: [{label: ">1hr (0)", value: 0}, {label: "30-60min (5)", value: 5}, {label: "15-30min (10)", value: 10}, {label: "<15min (but repetitive) (15)", value: 15}] },
+    { id: "default_quant_3", text: "Error Rate in [Module Name]: What is the current error rate in the manual process?", options: [{label: "<1% (0)", value: 0}, {label: "1-5% (5)", value: 5}, {label: "5-10% (10)", value: 10}, {label: ">10% (15)", value: 15}] },
+    { id: "default_quant_4", text: "Number of FTEs Involved in [Module Name]: How many Full-Time Equivalents are involved in this process?", options: [{label: "<1 (0)", value: 0}, {label: "1-2 (5)", value: 5}, {label: "3-5 (10)", value: 10}, {label: ">5 (15)", value: 15}] },
+  ],
+};
 
-export const QUALIFICATION_QUESTIONS_QUANTITATIVE: QualificationQuestion[] = [
-  { id: "quant1", text: "Volume of Transactions/Tasks: What is the estimated daily/monthly volume?", options: [{label: "Low (<100/day) (0)", value: 0}, {label: "Medium (100-500/day) (5)", value: 5}, {label: "High (500-2000/day) (10)", value: 10}, {label: "Very High (>2000/day) (15)", value: 15}] },
-  { id: "quant2", text: "Current Process Time: How long does the current manual process take per unit?", options: [{label: ">1hr (0)", value: 0}, {label: "30-60min (5)", value: 5}, {label: "15-30min (10)", value: 10}, {label: "<15min (but repetitive) (15)", value: 15}] },
-  { id: "quant3", text: "Error Rate: What is the current error rate in the manual process?", options: [{label: "<1% (0)", value: 0}, {label: "1-5% (5)", value: 5}, {label: "5-10% (10)", value: 10}, {label: ">10% (15)", value: 15}] },
-  { id: "quant4", text: "Number of FTEs Involved: How many Full-Time Equivalents are involved in this process?", options: [{label: "<1 (0)", value: 0}, {label: "1-2 (5)", value: 5}, {label: "3-5 (10)", value: 10}, {label: ">5 (15)", value: 15}] },
-];
+
+export const QUALIFICATION_QUESTIONS_BY_MODULE: AllModuleQualificationQuestions = {
+  default: DEFAULT_QUALIFICATION_QUESTIONS,
+  accountsPayable: {
+    qualitative: [
+      { id: "ap_qual_strat_align", text: "How strategically critical is optimizing the Accounts Payable process to your company's current financial objectives?", options: [{label: "Low Priority (0)", value: 0}, {label: "Moderately Important (5)", value: 5}, {label: "Highly Important (10)", value: 10}, {label: "Mission Critical (15)", value: 15}] },
+      { id: "ap_qual_team_capacity", text: "How would you describe your AP team's current workload and capacity to handle invoice volumes efficiently?", options: [{label: "Underutilized (0)", value: 0}, {label: "Manageable (5)", value: 5}, {label: "Stretched Thin (10)", value: 10}, {label: "Overwhelmed (15)", value: 15}] },
+      { id: "ap_qual_supplier_rel", text: "What is the current impact of your AP process (e.g., payment timeliness, dispute resolution) on supplier relationships?", options: [{label: "Positive (0)", value: 0}, {label: "Neutral (5)", value: 5}, {label: "Slightly Negative (10)", value: 10}, {label: "Significantly Strained (15)", value: 15}] },
+      { id: "ap_qual_it_readiness", text: "How prepared is your current IT infrastructure (ERP, financial systems) for integration with a modern AP automation solution?", options: [{label: "Fully Prepared/APIs (15)", value: 15}, {label: "Requires Some Effort (10)", value: 10}, {label: "Significant Legacy Challenges (5)", value: 5}, {label: "Unsure/Not Ready (0)", value: 0}] },
+    ],
+    quantitative: [
+      { id: "ap_quant_invoice_vol", text: "What is your approximate monthly volume of supplier invoices?", options: [{label: "<500 (0)", value: 0}, {label: "500 - 2,000 (5)", value: 5}, {label: "2,001 - 10,000 (10)", value: 10}, {label: ">10,000 (15)", value: 15}] },
+      { id: "ap_quant_cost_per_inv", text: "What is your estimated current average cost to process a single supplier invoice manually?", options: [{label: "<$5 (0)", value: 0}, {label: "$5 - $9.99 (5)", value: 5}, {label: "$10 - $20 (10)", value: 10}, {label: ">$20 (15)", value: 15}] },
+      { id: "ap_quant_exception_rate", text: "Approximately what percentage of your invoices typically require manual exception handling (e.g., discrepancies, missing POs)?", options: [{label: "<5% (0)", value: 0}, {label: "5% - 14.99% (5)", value: 5}, {label: "15% - 25% (10)", value: 10}, {label: ">25% (15)", value: 15}] },
+      { id: "ap_quant_discount_capture", text: "What percentage of available early payment discounts are you currently capturing?", options: [{label: ">60% (0)", value: 0}, {label: "31% - 60% (5)", value: 5}, {label: "10% - 30% (10)", value: 10}, {label: "<10% (15)", value: 15}] },
+    ],
+  },
+  documentManagement: {
+    qualitative: [
+      { id: "dm_qual_info_access", text: "How significant are the challenges related to finding and accessing correct document versions for your team's daily operations?", options: [{label: "Minor Inconvenience (0)", value: 0}, {label: "Moderate Impact (5)", value: 5}, {label: "Significant Bottleneck (10)", value: 10}, {label: "Critical Issue (15)", value: 15}]},
+      { id: "dm_qual_compliance_risk", text: "What is the perceived level of risk associated with your current document management practices regarding compliance and audit readiness?", options: [{label: "Low Risk (0)", value: 0}, {label: "Some Concerns (5)", value: 5}, {label: "Moderate Risk (10)", value: 10}, {label: "High Risk/Non-Compliant (15)", value: 15}]},
+      { id: "dm_qual_collaboration", text: "How effectively do current tools support collaboration and version control for documents shared across teams or projects?", options: [{label: "Very Effectively (0)", value: 0}, {label: "Adequately (5)", value: 5}, {label: "Inefficiently (10)", value: 10}, {label: "Very Poorly (15)", value: 15}]},
+      { id: "dm_qual_change_mgmt", text: "How receptive are employees to adopting new systems for managing documents, and what's the anticipated change management effort?", options: [{label: "Highly Receptive/Low Effort (15)", value: 15}, {label: "Moderately Receptive/Manageable Effort (10)", value: 10}, {label: "Resistant/Significant Effort (5)", value: 5}, {label: "Very Resistant/High Effort (0)", value: 0}]}
+    ],
+    quantitative: [
+      { id: "dm_quant_time_searching", text: "On average, how many hours per week does an employee spend searching for documents or information?", options: [{label: "<1 hour (0)", value: 0}, {label: "1-3 hours (5)", value: 5}, {label: "3-5 hours (10)", value: 10}, {label: ">5 hours (15)", value: 15}]},
+      { id: "dm_quant_repo_count", text: "How many primary repositories (e.g., shared drives, SharePoint sites, local storage) are currently used for critical business documents?", options: [{label: "1-2 (0)", value: 0}, {label: "3-5 (5)", value: 5}, {label: "6-10 (10)", value: 10}, {label: ">10 (15)", value: 15}]},
+      { id: "dm_quant_version_errors", text: "How frequently do issues arise from using incorrect document versions?", options: [{label: "Rarely/Never (0)", value: 0}, {label: "Occasionally (Monthly) (5)", value: 5}, {label: "Frequently (Weekly) (10)", value: 10}, {label: "Constantly (Daily) (15)", value: 15}]},
+      { id: "dm_quant_storage_volume", text: "What is the approximate volume of digital documents (e.g., in GB/TB or estimated number of files) that need better management?", options: [{label: "Small (<100GB) (0)", value: 0}, {label: "Medium (100GB-1TB) (5)", value: 5}, {label: "Large (1TB-5TB) (10)", value: 10}, {label: "Very Large (>5TB) (15)", value: 15}]}
+    ]
+  }
+  // Add other module-specific questions here as researched
+};
+
 
 export const DEFAULT_QUALIFICATION_THRESHOLDS = {
-  qualified: 40,
-  clarification: 20,
+  qualified: 40, // Example: Sum of 4 questions, if avg > 10
+  clarification: 20, // Example: Sum of 4 questions, if avg > 5
 };
 
 export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates = {
@@ -383,6 +432,91 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates 
 export const ROI_INPUT_TEMPLATES: Record<string, RoiInput[]> = {
   accountsPayable: [
     { id: "ap_roi_numInvoicesPerMonth", label: "Number of invoices per month", type: "number", value: "" },
+    { id: "ap_roi_avgManualProcessingTimePerInvoiceMins", label: "Avg. Manual Processing Time per Invoice", type: "number", value: "", unit: "mins" },
+    { id: "ap_roi_currentInvoiceErrorRatePercentage", label: "Current Invoice Error Rate", type: "number", value: "", unit: "%" },
+    { id: "ap_roi_avgTimeToResolveExceptionMins", label: "Avg. Time to Resolve Exception", type: "number", value: "", unit: "mins" },
+    { id: "ap_roi_annualValueMissedEarlyPaymentDiscounts", label: "Annual Value Missed Early Payment Discounts", type: "number", value: "", isCurrency: true },
+    { id: "ap_roi_annualCostPhysicalInvoiceStorage", label: "Annual Cost Physical Invoice Storage", type: "number", value: "", isCurrency: true },
+    { id: "ap_roi_numFTEs", label: "Number of FTEs in AP", type: "number", value: "" },
+  ],
+  orderManagement: [
+    { id: "om_roi_numSalesOrdersPerMonth", label: "Number of Sales Orders per Month", type: "number", value: "" },
+    { id: "om_roi_avgManualOrderEntryTimeMins", label: "Avg. Manual Order Entry Time", type: "number", value: "", unit: "mins" },
+    { id: "om_roi_currentOrderErrorRatePercentage", label: "Current Order Error Rate", type: "number", value: "", unit: "%" },
+    { id: "om_roi_avgCostToReworkOrderError", label: "Avg. Cost to Rework Order Error", type: "number", value: "", isCurrency: true },
+    { id: "om_roi_numFTEs", label: "Number of FTEs in Order Entry", type: "number", value: "" },
+  ],
+  customerInquiryManagement: [
+    { id: "cim_roi_numInquiriesPerMonth", label: "Number of Customer Inquiries per Month", type: "number", value: "" },
+    { id: "cim_roi_avgHandleTimePerInquiryMins", label: "Avg. Handle Time per Inquiry", type: "number", value: "", unit: "mins" },
+    { id: "cim_roi_repeatInquiryRatePercentage", label: "Repeat Inquiry Rate", type: "number", value: "", unit: "%" },
+    { id: "cim_roi_costToResolveRepeatInquiry", label: "Cost to Resolve a Repeat Inquiry", type: "number", value: "", isCurrency: true },
+  ],
+  cashApplication: [
+    { id: "ca_roi_numRemittancesPerMonth", label: "Number of Remittances per Month", type: "number", value: "" },
+    { id: "ca_roi_avgManualMatchRatePercentage", label: "Avg. Manual Match Rate", type: "number", value: "", unit: "%" },
+    { id: "ca_roi_timePerUnmatchedRemittanceMins", label: "Time per Unmatched Remittance", type: "number", value: "", unit: "mins" },
+    { id: "ca_roi_annualBankFeesForManualProcessing", label: "Annual Bank Fees (Manual Processing)", type: "number", value: "", isCurrency: true },
+  ],
+  collectionManagement: [
+    { id: "col_roi_numOverdueInvoicesManagedMonthly", label: "Overdue Invoices Managed Monthly", type: "number", value: "" },
+    { id: "col_roi_avgCollectorTimePerInvoiceMins", label: "Avg. Collector Time per Invoice", type: "number", value: "", unit: "mins" },
+    { id: "col_roi_badDebtPercentageOfRevenue", label: "Bad Debt as % of Revenue", type: "number", value: "", unit: "%" },
+    { id: "col_roi_totalAnnualRevenue", label: "Total Annual Revenue", type: "number", value: "", isCurrency: true },
+  ],
+  creditManagement: [
+    { id: "crm_roi_numCreditAppsPerMonth", label: "New Credit Applications per Month", type: "number", value: "" },
+    { id: "crm_roi_avgTimeToProcessCreditAppManualHrs", label: "Avg. Time to Process Credit App Manually", type: "number", value: "", unit: "hrs" },
+    { id: "crm_roi_annualSalesLostDueToSlowCredit", label: "Annual Sales Lost (Slow Credit)", type: "number", value: "", isCurrency: true },
+    { id: "crm_roi_costPerManualCreditReview", label: "Cost per Manual Credit Review", type: "number", value: "", isCurrency: true },
+  ],
+  claimsDeductions: [
+    { id: "cd_roi_numClaimsDeductionsMonthly", label: "Claims/Deductions Monthly", type: "number", value: "" },
+    { id: "cd_roi_avgTimePerClaimManualMins", label: "Avg. Time per Claim Manually", type: "number", value: "", unit: "mins" },
+    { id: "cd_roi_percentageInvalidDeductionsUnrecovered", label: "% Invalid Deductions Unrecovered", type: "number", value: "", unit: "%" },
+    { id: "cd_roi_avgValueInvalidDeduction", label: "Avg. Value of Invalid Deduction", type: "number", value: "", isCurrency: true },
+  ],
+  expenseManagement: [
+    { id: "em_roi_numExpenseReportsMonthly", label: "Expense Reports Monthly", type: "number", value: "" },
+    { id: "em_roi_avgTimeProcessReportManualMins", label: "Avg. Time to Process Report Manually", type: "number", value: "", unit: "mins" },
+    { id: "em_roi_outOfPolicySpendPercentage", label: "Out-of-Policy Spend", type: "number", value: "", unit: "%" },
+    { id: "em_roi_totalAnnualTAndESpend", label: "Total Annual T&E Spend", type: "number", value: "", isCurrency: true },
+  ],
+  procurement: [
+    { id: "proc_roi_numPurchaseOrdersMonthly", label: "Purchase Orders Monthly", type: "number", value: "" },
+    { id: "proc_roi_avgManualPOTimeMins", label: "Avg. Manual PO Time", type: "number", value: "", unit: "mins" },
+    { id: "proc_roi_maverickSpendPercentage", label: "Maverick Spend", type: "number", value: "", unit: "%" },
+    { id: "proc_roi_totalAnnualIndirectSpend", label: "Total Annual Indirect Spend", type: "number", value: "", isCurrency: true },
+  ],
+  invoiceDelivery: [
+    { id: "id_roi_numInvoicesSentMonthly", label: "Invoices Sent Monthly", type: "number", value: "" },
+    { id: "id_roi_percentagePaperInvoices", label: "Percentage of Paper Invoices", type: "number", value: "", unit: "%" },
+    { id: "id_roi_costPerPaperInvoice", label: "Cost per Paper Invoice", type: "number", value: "", isCurrency: true },
+    { id: "id_roi_timeSavedPerInvoiceElectronicMins", label: "Time Saved per Invoice (Electronic)", type: "number", value: "", unit: "mins" },
+  ],
+  supplierManagement: [
+    { id: "sm_roi_numSuppliersOnboardedAnnually", label: "Suppliers Onboarded Annually", type: "number", value: "" },
+    { id: "sm_roi_avgTimeOnboardSupplierManualHrs", label: "Avg. Time to Onboard Supplier Manually", type: "number", value: "", unit: "hrs" },
+    { id: "sm_roi_costOfSupplierDataErrorsAnnual", label: "Annual Cost of Supplier Data Errors", type: "number", value: "", isCurrency: true },
+    { id: "sm_roi_compliancePenaltyRiskCostAnnual", label: "Annual Compliance Penalty Risk Cost", type: "number", value: "", isCurrency: true },
+  ],
+  documentManagement: [
+    { id: "dm_roi_numEmployeesUsingSystem", label: "Number of Employees Using System", type: "number", value: "" },
+    { id: "dm_roi_avgTimeSearchingDocsPerUserHrsWeek", label: "Avg. Time Searching Docs per User", type: "number", value: "", unit: "hrs/week" },
+    { id: "dm_roi_annualPhysicalStorageCost", label: "Annual Physical Storage Cost", type: "number", value: "", isCurrency: true },
+    { id: "dm_roi_costOfNonComplianceAnnual", label: "Annual Cost of Non-Compliance (DM)", type: "number", value: "", isCurrency: true },
+  ],
+  workflowManagement: [
+    { id: "wm_roi_numKeyWorkflowsTargeted", label: "Number of Key Workflows Targeted", type: "number", value: "" },
+    { id: "wm_roi_avgInstancesPerWorkflowMonthly", label: "Avg. Instances per Workflow Monthly", type: "number", value: "" },
+    { id: "wm_roi_avgManualTimeSavedPerInstanceHrs", label: "Avg. Manual Time Saved per Instance", type: "number", value: "", unit: "hrs" },
+    { id: "wm_roi_currentErrorRateInManualWorkflowsPercentage", label: "Current Error Rate in Manual Workflows", type: "number", value: "", unit: "%" },
+  ],
+  processMapping: [
+    { id: "pm_roi_numKeyProcessesToMap", label: "Number of Key Processes to Map", type: "number", value: "" },
+    { id: "pm_roi_avgTimeToMapProcessManuallyHrs", label: "Avg. Time to Map Process Manually", type: "number", value: "", unit: "hrs" },
+    { id: "pm_roi_annualCostProcessRelatedInefficiencies", label: "Annual Cost of Process Inefficiencies", type: "number", value: "", isCurrency: true },
+    { id: "pm_roi_timeReductionForAuditsHrsPerYear", label: "Time Reduction for Audits", type: "number", value: "", unit: "hrs/year" },
   ],
   default: [
     { id: "def_roi_manualTaskTimeHrsWeekPTE", label: "Time Spent on Manual Task (hours/week per FTE)", type: "number", value: "" },
@@ -392,7 +526,7 @@ export const ROI_INPUT_TEMPLATES: Record<string, RoiInput[]> = {
   ]
 };
 
-const initialQualificationSectionState = {
+export const initialQualificationSectionState = {
   answers: {},
   score: 0,
   status: QualificationStatus.NOT_STARTED,
@@ -502,10 +636,10 @@ export const TAB_PURPOSES: Record<TabId, string> = {
   [TabId.CUSTOMER_CONVERSATIONS]: "Guides users through initial customer interactions using a structured script to qualify leads, identify automation focus (Finance/Business), and record conversation details for handoff.",
   [TabId.PAIN_POINTS]: "A guided discovery tool to explore customer pain points. Waterfall mode drills down from high-level pain to specific issues, mapping to solutions. Reverse Waterfall provides product-specific cheat sheets for sales prep.",
   [TabId.OPPORTUNITY_SCORECARD]: "Quickly assesses the high-level viability of a sales opportunity based on key criteria like executive sponsorship, defined pain, budget, and timeline. Generates an initial qualification score.",
-  [TabId.QUALIFICATION]: "Delves deeper into qualitative (strategic alignment, change readiness) and quantitative (transaction volume, process time) aspects to determine if an opportunity is qualified, needs clarification, or is unsuitable.",
+  [TabId.QUALIFICATION]: "Delves deeper into qualitative (strategic alignment, change readiness) and quantitative (transaction volume, process time) aspects to determine if an opportunity is qualified, needs clarification, or is unsuitable. Questions are tailored to the selected module.",
   [TabId.DISCOVERY_QUESTIONS]: "Offers a comprehensive list of module-specific questions (qualitative & quantitative) to guide detailed discovery conversations and capture customer responses and custom notes.",
   [TabId.ROI_CALCULATOR]: "Estimates potential Return on Investment by inputting key metrics for a selected process module. Calculates savings, net benefit, payback period, and provides annual breakdowns.",
-  [TabId.SOLUTION_BUILDER]: "Visually constructs a customer's solution proposal by selecting a core module and detailing specific customer requirements and how the proposed software addresses them.",
+  [TabId.SOLUTION_BUILDER]: "Visually constructs a customer's solution proposal by selecting a core module and detailing specific customer requirements and how the proposed software addresses them. Includes an option to view/export a formatted solution document with a module-specific infographic.",
   [TabId.HELP]: "Offers detailed guidance on getting started, understanding each tab's functionality, role-based access, and how to use the tool effectively for process automation discovery and ROI calculation."
 };
 

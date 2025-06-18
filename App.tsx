@@ -10,8 +10,9 @@ import {
     DISCOVERY_QUESTIONS_TEMPLATES as defaultDiscoveryTemplatesConst, 
     ROI_INPUT_TEMPLATES as defaultRoiInputTemplatesConst, 
     FOOTER_COPYRIGHT_OWNER, 
-    QUALIFICATION_QUESTIONS_QUALITATIVE as defaultQualQualQuestionsConst, 
-    QUALIFICATION_QUESTIONS_QUANTITATIVE as defaultQualQuantQuestionsConst, 
+    // QUALIFICATION_QUESTIONS_QUALITATIVE as defaultQualQualQuestionsConst, // Removed
+    // QUALIFICATION_QUESTIONS_QUANTITATIVE as defaultQualQuantQuestionsConst, // Removed
+    QUALIFICATION_QUESTIONS_BY_MODULE, // Keep this for potential future use if needed for direct access, though currently QualificationTab handles its own questions.
     initialPainPointsState,
     initialCustomerConversationState
 } from './constants';
