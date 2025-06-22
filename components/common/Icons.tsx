@@ -48,6 +48,12 @@ export const PlusCircleIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
+export const MinusCircleIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
 export const TrashIcon: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c1.153 0 2.242.078 3.223.226M5.256 5.79c-.087.135-.168.274-.246.414M18.744 5.79c.087.135.168.274.246.414M15 8.25V5.75c0-1.242-1.008-2.25-2.25-2.25H11.25C10.008 3.5 9 4.508 9 5.75v2.5M12 10.5h.008v.008H12v-.008z" />
@@ -84,8 +90,9 @@ export const ListBulletIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
-export const InformationCircleIcon: React.FC<IconProps> = (props) => (
+export const InformationCircleIcon: React.FC<IconProps> = ({ title, ...props }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    {title && <title>{title}</title>}
     <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
   </svg>
 );
@@ -125,6 +132,13 @@ export const ChatBubbleLeftRightIcon: React.FC<IconProps> = (props) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3.696-3.696A1.5 1.5 0 0014.25 16.5h-1.5a1.5 1.5 0 01-1.5-1.5v-1.5m0-3l.621-.621a2.25 2.25 0 00-.02-3.185l-1.423-1.423A2.25 2.25 0 0010.5 5.25h-1.5a2.25 2.25 0 00-2.25 2.25v1.5m3 0A2.25 2.25 0 0010.5 12h1.5a2.25 2.25 0 002.25-2.25m-3.75 0V5.25m0 3.75h.008v.008H9.75v-.008zm0 0H6.75m0 0h.008v.008H6.75v-.008zm-3 0h.008v.008H3.75v-.008zm0 0h-.008v.008H3.75v-.008z" />
   </svg>
 );
+
+export const ChatBubbleLeftIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-6.375 2.25H12M3 7.5M3 7.5v9A2.25 2.25 0 005.25 18.75h13.5A2.25 2.25 0 0021 16.5v-9A2.25 2.25 0 0018.75 5.25H5.25A2.25 2.25 0 003 7.5z" />
+  </svg>
+);
+
 
 export const ChevronDownIcon: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>

@@ -1,145 +1,162 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
-import { ALL_MODULES, MODULE_INFOGRAPHICS_HTML } from '../../constants';
-import { ChevronDownIcon, ChevronRightIcon } from './Icons';
+import { ALL_MODULES } from '../../constants/moduleConstants';
+import { MODULE_INFOGRAPHICS_HTML } from '../../constants/infographicConstants';
+import { ChevronDownIcon, ChevronRightIcon, InformationCircleIcon } from './Icons';
 
+// Add all module-specific chart initializer function types here
 declare global {
   interface Window {
     Chart?: any; 
-    initializeOrderManagementCharts?: () => void; // For OM Infographic
-    initializeAPCharts?: () => void; // For AP Infographic
-    // Add other potential global init functions here if needed
+    initializeOrderManagementCharts?: () => void;
+    initializeAccountsPayableCharts?: () => void;
+    initializeDocumentManagementCharts?: () => void;
+    initializeWorkflowManagementCharts?: () => void;
+    initializeProcessMappingCharts?: () => void;
+    initializeSupplierManagementCharts?: () => void;
+    initializeCollectionManagementCharts?: () => void;
+    initializeCustomerInquiryManagementCharts?: () => void;
+    initializeCashApplicationCharts?: () => void;
+    initializeCreditManagementCharts?: () => void;
+    initializeClaimsDeductionsCharts?: () => void;
+    initializeExpenseManagementCharts?: () => void;
+    initializeProcurementCharts?: () => void;
+    initializeInvoiceDeliveryCharts?: () => void;
+    // ITS Modules
+    initializeManagedITSupportCharts?: () => void; 
+    initializeCybersecurityServicesCharts?: () => void; 
+    initializeCloudSolutionsCharts?: () => void;
+    initializeNetworkServicesCharts?: () => void;
+    initializeModernWorkplaceITSCharts?: () => void;
+    initializeITConsultingCharts?: () => void;
+    // Generic Fallback (if used dynamically)
+    [key: `initialize${string}Charts`]: (() => void) | undefined;
   }
 }
-declare var Chart: any;
-
 
 interface ModuleInfographicProps {
   moduleId: string | null;
 }
 
-const ModuleInfographic: React.FC<ModuleInfographicProps> = ({ moduleId }) => {
+export const ModuleInfographic: React.FC<ModuleInfographicProps> = ({ moduleId }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const module = moduleId ? ALL_MODULES.find(m => m.id === moduleId) : null;
   const infographicContent = moduleId ? MODULE_INFOGRAPHICS_HTML[moduleId] : null;
   const contentRef = useRef<HTMLDivElement>(null);
-  const scriptsExecutedRef = useRef(false); // To prevent re-executing scripts on every render if expanded
+  const scriptsExecutedRef = useRef(false);
+  const chartJsLibRef = useRef<HTMLScriptElement | null>(null);
 
   useEffect(() => {
-    if (isExpanded && infographicContent && contentRef.current && !scriptsExecutedRef.current) {
-      const container = contentRef.current;
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = infographicContent; // Parse the HTML string
+    const executeSpecificChartsInitializer = (attempt = 1) => {
+        if (!moduleId) return;
 
-      const scriptsToExecute: HTMLScriptElement[] = [];
-      const chartJsScriptTags = Array.from(tempDiv.getElementsByTagName('script')).filter(
-        (script) => script.src.includes('chart.js')
-      );
-      const inlineScriptTags = Array.from(tempDiv.getElementsByTagName('script')).filter(
-        (script) => !script.src && script.textContent // Inline scripts
-      );
-      
-      let chartJsLoaded = !!window.Chart;
-
-      const executeInlineScripts = () => {
-        inlineScriptTags.forEach((scriptTag) => {
-          const scriptContent = scriptTag.textContent || "";
-          try {
-            if (scriptContent.includes("initializeOrderManagementCharts")) {
-                 window.initializeOrderManagementCharts?.();
-            } else if (scriptContent.includes("initializeAPCharts")) {
-                 window.initializeAPCharts?.();
-            } else { // Fallback for other inline scripts that might not follow the pattern
-                // This is a basic way to re-execute; might need refinement for complex scripts
-                const newScript = document.createElement('script');
-                newScript.textContent = scriptContent;
-                document.body.appendChild(newScript).remove();
+        if (typeof window.Chart === 'undefined') {
+            if (attempt < 5) { 
+                console.warn(`ModuleInfographic: Chart.js not ready for ${moduleId}. Retrying (Attempt ${attempt}).`);
+                setTimeout(() => executeSpecificChartsInitializer(attempt + 1), 300 * attempt);
+            } else {
+                console.error(`ModuleInfographic: Chart.js failed to initialise after ${attempt} attempts for ${moduleId}. Charts may not render.`);
             }
-
-          } catch (e) {
-            console.error("Error executing inline script from infographic:", scriptContent, e);
-          }
-        });
-        scriptsExecutedRef.current = true; // Mark as executed for this content load
-      };
-
-      if (!chartJsLoaded && chartJsScriptTags.length > 0) {
-        const chartJsUrl = chartJsScriptTags[0].src;
-        let existingChartScript = document.querySelector(`script[src="${chartJsUrl}"]`);
-        
-        if (!existingChartScript) {
-            const chartLibScript = document.createElement('script');
-            chartLibScript.src = chartJsUrl;
-            chartLibScript.async = true;
-            chartLibScript.onload = () => {
-              console.log("Chart.js loaded dynamically for infographic.");
-              window.Chart = Chart; 
-              executeInlineScripts();
-            };
-            chartLibScript.onerror = () => {
-                console.error("Failed to load Chart.js dynamically for infographic.");
-            };
-            document.head.appendChild(chartLibScript);
-        } else if (window.Chart) { 
-             executeInlineScripts();
-        } else { 
-            const handleLoad = () => {
-                console.log("Chart.js (already in DOM) finished loading for infographic.");
-                executeInlineScripts();
-            };
-            existingChartScript.addEventListener('load', handleLoad);
-            existingChartScript.addEventListener('error', () => console.error("Error for existing Chart.js script."));
+            return;
         }
+        console.log(`ModuleInfographic: Chart.js is ready for ${moduleId}. Attempting to initialise charts.`);
 
-      } else if (chartJsLoaded) {
-        executeInlineScripts();
+        const pascalCaseModuleId = moduleId.charAt(0).toUpperCase() + moduleId.slice(1).replace(/[^a-zA-Z0-9]/g, '');
+        const initializerFunctionName = `initialize${pascalCaseModuleId}Charts`;
+        
+        const initializerFunction = window[initializerFunctionName];
+
+        if (typeof initializerFunction === 'function') {
+            try {
+                initializerFunction();
+                console.log(`ModuleInfographic: Successfully called ${initializerFunctionName} for ${moduleId}.`);
+            } catch (e) {
+                console.error(`ModuleInfographic: Error executing ${initializerFunctionName} for ${moduleId}:`, e);
+            }
+        } else {
+            console.warn(`ModuleInfographic: Chart initialiser function '${initializerFunctionName}' NOT FOUND on window object for module ID: ${moduleId}. This could be due to a script error in the infographic HTML or a naming mismatch.`);
+        }
+        scriptsExecutedRef.current = true;
+    };
+    
+    if (isExpanded && infographicContent && contentRef.current && !scriptsExecutedRef.current) {
+      console.log(`ModuleInfographic: Expanding and attempting to initialise scripts for ${moduleId}`);
+      
+      if (typeof window.Chart === 'undefined') {
+        if (!chartJsLibRef.current) {
+            console.log('ModuleInfographic: Chart.js not found. Loading Chart.js dynamically...');
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
+            script.async = true;
+            script.onload = () => {
+                console.log('ModuleInfographic: Chart.js loaded successfully.');
+                if(chartJsLibRef.current) chartJsLibRef.current.dataset.loaded = "true";
+                executeSpecificChartsInitializer();
+            };
+            script.onerror = () => {
+                console.error('ModuleInfographic: Failed to load Chart.js.');
+            };
+            document.body.appendChild(script);
+            chartJsLibRef.current = script;
+        } else if (chartJsLibRef.current.dataset.loaded === "true") {
+             console.log('ModuleInfographic: Chart.js script tag exists and was loaded. Initializing module charts.');
+            executeSpecificChartsInitializer();
+        } else {
+             console.log('ModuleInfographic: Chart.js script tag exists but still loading. Waiting for onload.');
+        }
       } else {
-        console.warn('Chart.js library script not found in infographic HTML and not globally available. Charts may not render.');
-        executeInlineScripts(); 
+        console.log('ModuleInfographic: Chart.js already available globally. Initializing module charts.');
+        executeSpecificChartsInitializer();
       }
+    } else if (!isExpanded) {
+        scriptsExecutedRef.current = false; 
     }
 
-    if (!isExpanded || !infographicContent) {
-        scriptsExecutedRef.current = false;
-    }
+    return () => {
+      // Basic cleanup, more robust script management might be needed for multiple instances
+      // if (chartJsLibRef.current && chartJsLibRef.current.parentNode === document.body && !window.Chart) {
+      //    console.log("ModuleInfographic: Cleanup - Chart.js script potentially removed if not globally loaded.");
+      // }
+    };
 
-  }, [isExpanded, infographicContent]);
+  }, [isExpanded, infographicContent, moduleId]);
 
-  if (!infographicContent) {
-    return (
-        <div className="my-4 p-4 border border-gray-200 rounded-lg bg-gray-50 print:hidden">
-            <p className="text-sm text-gray-500">
-                Visual infographic for this module is not available or a module is not selected.
-            </p>
-        </div>
-    );
+  if (!moduleId) {
+    return null; 
   }
-
+  
   return (
-    <div className="my-6 print:hidden"> 
+    <div className="mt-6 mb-6 pt-4 border-t border-gray-200 print-hidden">
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex justify-between items-center p-3 bg-gray-100 hover:bg-gray-200 rounded-md text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+        onClick={() => {
+          if (!isExpanded) { 
+            scriptsExecutedRef.current = false;
+          }
+          setIsExpanded(!isExpanded);
+        }}
+        className="flex items-center justify-between w-full text-left text-gray-700 hover:text-[#01916D] focus:outline-none py-2"
         aria-expanded={isExpanded}
-        aria-controls={`infographic-content-${moduleId}`}
+        aria-controls={`infographic-${moduleId}-content`}
       >
-        <span className="text-lg font-semibold text-gray-700">
-          {isExpanded ? 'Hide' : 'Show'} Module Insights & Benefits Infographic for {ALL_MODULES.find(m=>m.id === moduleId)?.name || 'Selected Module'}
+        <span className="text-md font-semibold flex items-center">
+          <InformationCircleIcon className="w-5 h-5 mr-2 text-[#01916D]" />
+          Module Insights: {module?.name || 'Details'}
         </span>
-        {isExpanded ? <ChevronDownIcon className="w-6 h-6 text-gray-600" /> : <ChevronRightIcon className="w-6 h-6 text-gray-600" />}
+        {isExpanded ? <ChevronDownIcon className="w-5 h-5" /> : <ChevronRightIcon className="w-5 h-5" />}
       </button>
-      {isExpanded && (
-        <div
-          id={`infographic-content-${moduleId}`}
-          className="mt-2 p-0 border border-gray-300 rounded-md overflow-hidden"
-        >
-          <div className="infographic-wrapper bg-white" ref={contentRef}> 
-            <div dangerouslySetInnerHTML={{ __html: infographicContent }} />
-          </div>
+      {isExpanded && infographicContent && (
+        <div 
+          id={`infographic-${moduleId}-content`}
+          ref={contentRef}
+          className="mt-2 p-2 md:p-4 border border-gray-200 rounded-md bg-white shadow-sm infographic-body-wrapper print:shadow-none print:border-none overflow-hidden"
+          dangerouslySetInnerHTML={{ __html: infographicContent }}
+        />
+      )}
+       {isExpanded && !infographicContent && (
+        <div className="mt-2 p-4 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-500">
+            No specific visual insights available for the "{module?.name}" module at this time.
         </div>
       )}
     </div>
   );
 };
-
-export default ModuleInfographic;

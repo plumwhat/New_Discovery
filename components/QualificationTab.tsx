@@ -1,15 +1,15 @@
 
-
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { QualificationQuestion, QualificationStatus, QualificationSectionState, ModuleQualificationQuestions, TabProps } from '../types';
-import { 
-    QUALIFICATION_QUESTIONS_BY_MODULE, 
+import { QualificationQuestion, QualificationStatus, QualificationSectionState, ModuleQualificationQuestions, TabProps, TabId } from '../types';
+import {
+    QUALIFICATION_QUESTIONS_BY_MODULE,
     DEFAULT_QUALIFICATION_THRESHOLDS,
-    ALL_MODULES, // Import ALL_MODULES to get module name
     initialQualificationSectionState
-} from '../constants';
-import Select from './common/Select';
+} from '../constants/qualificationConstants';
+import { ALL_MODULES } from '../constants/moduleConstants';
+import RadioGroup from './common/RadioGroup'; // Changed from Select
 import Button from './common/Button';
+import { evaluateQualificationSection } from '../services/qualificationService';
 
 const QualificationSection: React.FC<{
   title: string;
@@ -18,41 +18,43 @@ const QualificationSection: React.FC<{
   onAnswerChange: (questionId: string, value: number | "") => void;
   onCheckStatus: () => void;
   moduleName?: string; // Optional module name for dynamic question text
-}> = ({ title, questions, sectionState, onAnswerChange, onCheckStatus, moduleName }) => {
-  
+  sectionId: string; // For unique heading IDs
+}> = ({ title, questions, sectionState, onAnswerChange, onCheckStatus, moduleName, sectionId }) => {
+
   const getStatusColor = (status: QualificationStatus) => {
     switch (status) {
-      case QualificationStatus.QUALIFIED: return "text-green-600 bg-green-100";
-      case QualificationStatus.CLARIFICATION_REQUIRED: return "text-yellow-600 bg-yellow-100";
-      case QualificationStatus.NOT_SUITABLE: return "text-red-600 bg-red-100";
-      default: return "text-gray-600 bg-gray-100";
+      case QualificationStatus.QUALIFIED: return "text-green-700 bg-green-100"; // Adjusted for better contrast
+      case QualificationStatus.CLARIFICATION_REQUIRED: return "text-yellow-700 bg-yellow-100"; // Adjusted
+      case QualificationStatus.NOT_SUITABLE: return "text-red-700 bg-red-100"; // Adjusted
+      default: return "text-gray-700 bg-gray-100"; // Adjusted
     }
   };
 
   return (
     <div className="mb-8 p-6 border border-gray-200 rounded-lg shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
+      <h3 id={`${sectionId}-heading`} className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
       {questions.map(q => {
-        // Replace placeholder in question text if moduleName is provided
-        const questionText = moduleName && q.text.includes("[Module Name]") 
-                           ? q.text.replace(/\[Module Name\]/g, moduleName) 
+        const questionText = moduleName && q.text.includes("[Module Name]")
+                           ? q.text.replace(/\[Module Name\]/g, moduleName)
                            : q.text;
         return (
-            <div key={q.id} className="mb-4">
-            <Select
+            <div key={q.id} className="mb-6"> {/* Increased margin for radio groups */}
+            <RadioGroup
                 label={questionText}
-                id={`${title.toLowerCase().replace(/\s/g, '-')}-${q.id}`}
-                value={sectionState.answers[q.id] || ""}
-                onChange={(e) => onAnswerChange(q.id, e.target.value === "" ? "" : parseInt(e.target.value))}
+                name={`${sectionId}-${q.id}-radio`}
                 options={q.options.map(opt => ({ value: opt.value, label: opt.label }))}
-                placeholder="Select an option"
+                selectedValue={sectionState.answers[q.id] === "" ? undefined : sectionState.answers[q.id]} // Handle empty string for unanswered
+                onChange={(value) => onAnswerChange(q.id, value)}
             />
             </div>
         );
       })}
       <div className="mt-6 flex items-center justify-between">
         <Button onClick={onCheckStatus} variant="primary">Check Status</Button>
-        <div className={`px-4 py-2 rounded-md text-sm font-medium ${getStatusColor(sectionState.status)}`}>
+        <div 
+            className={`px-4 py-2 rounded-md text-sm font-medium ${getStatusColor(sectionState.status)}`}
+            aria-live="polite" // Announce status and score changes
+        >
           Status: {sectionState.status} (Score: {sectionState.score})
         </div>
       </div>
@@ -62,15 +64,16 @@ const QualificationSection: React.FC<{
 
 
 const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
-  const { qualitative, quantitative } = appState.qualification;
+  const { qualitative, quantitative } = appState.qualification; 
   const { selectedModuleId } = appState;
+  const tabId = TabId.QUALIFICATION;
 
   const currentModuleName = useMemo(() => {
     if (!selectedModuleId) return "Selected Module";
     const module = ALL_MODULES.find(m => m.id === selectedModuleId);
     return module ? module.name : "Selected Module";
   }, [selectedModuleId]);
-  
+
   const {
     qualitative: dynamicQualQualQuestions,
     quantitative: dynamicQualQuantQuestions
@@ -81,7 +84,6 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     return QUALIFICATION_QUESTIONS_BY_MODULE.default;
   }, [selectedModuleId]);
 
-  // Reset qualification answers when module changes
   useEffect(() => {
     setAppState(prev => ({
       ...prev,
@@ -98,39 +100,29 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     setAppState(prev => {
       const updatedSection = { ...prev.qualification[section] };
       updatedSection.answers = { ...updatedSection.answers, [questionId]: value };
-      // Do not recalculate score/status here, let Check Status button do it
+      // No need to recalculate score/status here, it's done on "Check Status"
       return { ...prev, qualification: { ...prev.qualification, [section]: updatedSection }};
     });
   }, [setAppState]);
 
   const checkSectionStatus = useCallback((section: 'qualitative' | 'quantitative') => {
     setAppState(prev => {
-      const currentSection = prev.qualification[section];
-      const questions = section === 'qualitative' ? dynamicQualQualQuestions : dynamicQualQuantQuestions;
-      let score = 0;
-      questions.forEach(q => {
-        const answerVal = currentSection.answers[q.id];
-        if (typeof answerVal === 'number') {
-          score += answerVal;
-        }
-      });
+      const currentSectionState = prev.qualification[section];
+      const questionsForSection = section === 'qualitative' ? dynamicQualQualQuestions : dynamicQualQuantQuestions;
+      const thresholds = DEFAULT_QUALIFICATION_THRESHOLDS;
 
-      let status: QualificationStatus;
-      // Using default thresholds for now, can be made dynamic later if needed
-      if (score >= DEFAULT_QUALIFICATION_THRESHOLDS.qualified) {
-        status = QualificationStatus.QUALIFIED;
-      } else if (score >= DEFAULT_QUALIFICATION_THRESHOLDS.clarification) {
-        status = QualificationStatus.CLARIFICATION_REQUIRED;
-      } else {
-        status = QualificationStatus.NOT_SUITABLE;
-      }
-      
+      const { score, status } = evaluateQualificationSection(
+        currentSectionState.answers,
+        questionsForSection,
+        thresholds
+      );
+
       return {
         ...prev,
         qualification: {
           ...prev.qualification,
           [section]: {
-            ...currentSection,
+            ...currentSectionState,
             score,
             status,
           }
@@ -142,16 +134,25 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
 
   if (!selectedModuleId) {
     return (
-        <div className="p-6 bg-white shadow rounded-lg text-gray-600">
+        <section 
+            className="p-6 bg-white shadow rounded-lg text-gray-600"
+            role="region"
+            aria-labelledby={`${tabId}-placeholder-heading`}
+        >
+            <h2 id={`${tabId}-placeholder-heading`} className="sr-only">Qualification Information</h2>
             Please select a module first to view module-specific qualification questions.
-        </div>
+        </section>
     );
   }
 
   return (
-    <div className="p-6 bg-white shadow rounded-lg">
+    <section 
+      className="p-6 bg-white shadow rounded-lg"
+      role="region"
+      aria-labelledby={`${tabId}-heading`}
+    >
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Qualification Assessment for {currentModuleName}</h2>
+        <h2 id={`${tabId}-heading`} className="text-xl font-semibold text-gray-800">Qualification Assessment for {currentModuleName}</h2>
       </div>
 
       <QualificationSection
@@ -161,6 +162,7 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         onAnswerChange={(qId, val) => updateSectionState('qualitative', qId, val)}
         onCheckStatus={() => checkSectionStatus('qualitative')}
         moduleName={currentModuleName}
+        sectionId={`${tabId}-qualitative`}
       />
       <QualificationSection
         title="Quantitative Assessment"
@@ -169,8 +171,9 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         onAnswerChange={(qId, val) => updateSectionState('quantitative', qId, val)}
         onCheckStatus={() => checkSectionStatus('quantitative')}
         moduleName={currentModuleName}
+        sectionId={`${tabId}-quantitative`}
       />
-    </div>
+    </section>
   );
 };
 

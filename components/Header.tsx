@@ -1,22 +1,36 @@
 
 import React from 'react';
-import { APP_TITLE, APP_SUBTITLE } from '../constants';
-// Removed Button and Cog6ToothIcon imports as Admin toggle is removed.
-// Removed AppState import.
+import { getAppTitle, getAppSubtitle } from '../services/configService';
+import { Cog6ToothIcon } from './common/Icons';
+import Button from './common/Button';
 
 interface HeaderProps {
-  // No props needed now as admin toggle is removed
+  toggleAdminPanel: () => void;
 }
 
-const Header: React.FC<HeaderProps> = () => {
+const Header: React.FC<HeaderProps> = ({ toggleAdminPanel }) => {
+  const appTitle = getAppTitle();
+  const appSubtitle = getAppSubtitle();
+
   return (
-    <header className="bg-blue-600 text-white p-6 shadow-md">
+    <header className="bg-[#01916D] text-white p-6 shadow-md print-hidden">
       <div className="container mx-auto flex justify-between items-center max-w-7xl">
         <div>
-          <h1 className="text-3xl font-bold">{APP_TITLE}</h1>
-          <p className="text-lg opacity-90">{APP_SUBTITLE}</p>
+          <h1 className="text-3xl font-bold">{appTitle}</h1>
+          <p className="text-lg opacity-90">{appSubtitle}</p>
         </div>
-        {/* Admin toggle button removed */}
+        <div>
+          <Button 
+            onClick={toggleAdminPanel}
+            variant="ghost"
+            size="sm"
+            className="!text-white hover:!bg-[#017a59]"
+            aria-label="Open Admin Settings"
+            title="Admin Settings"
+          >
+            <Cog6ToothIcon className="w-6 h-6" />
+          </Button>
+        </div>
       </div>
     </header>
   );

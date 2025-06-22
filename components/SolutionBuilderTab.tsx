@@ -1,8 +1,10 @@
 
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { TabProps, RequirementBlock, Module, RoiResults, ExportFormat, EditableModuleSolutionContentMap } from '../types';
-import { ALL_MODULES, MODULE_SPECIFIC_SOLUTION_CONTENT, RESELLER_COMPANY_NAME } from '../constants'; // Removed MODULE_INFOGRAPHICS_HTML from here
+import { TabProps, RequirementBlock, Module, RoiResults, ExportFormat, EditableModuleSolutionContentMap, TabId } from '../types';
+import { ALL_MODULES } from '../constants/moduleConstants';
+import { MODULE_SPECIFIC_SOLUTION_CONTENT } from '../constants/solutionContentConstants';
+import { RESELLER_COMPANY_NAME } from '../constants/appConfigConstants';
 import Select from './common/Select';
 import Textarea from './common/Textarea';
 import Button from './common/Button';
@@ -12,17 +14,17 @@ import {
     ArrowDownTrayIcon
 } from './common/Icons';
 import { generateSolutionDocumentContent, triggerDownload } from '../services/exportService';
-import ModuleInfographic from './common/ModuleInfographic';
+import { ModuleInfographic } from './common/ModuleInfographic';
 
 
 const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const { solutionBuilder, roiCalculator, selectedModuleId: currentSelectedModuleIdInApp, customerCompany, dateCompleted } = appState; 
   const { selectedCoreModuleId, requirementBlocks, showDocumentView, editingBlockId } = solutionBuilder;
+  const tabIdValue = TabId.SOLUTION_BUILDER;
 
   const [currentRequirement, setCurrentRequirement] = useState('');
   const [currentSolution, setCurrentSolution] = useState('');
 
-  // Effect to populate form when editingBlockId changes
   useEffect(() => {
     if (editingBlockId) {
       const blockToEdit = requirementBlocks.find(block => block.id === editingBlockId);
@@ -224,9 +226,13 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                                         : null;
 
     return (
-      <div className="p-4 md:p-6 bg-white shadow rounded-lg space-y-6">
+      <section 
+        className="p-4 md:p-6 bg-white shadow rounded-lg space-y-6"
+        role="region"
+        aria-labelledby={`${tabIdValue}-document-heading`}
+      >
         <div className="flex flex-wrap justify-between items-center gap-2 print:hidden">
-          <h2 className="text-xl font-semibold text-gray-800">Solution Proposal Document</h2>
+          <h2 id={`${tabIdValue}-document-heading`} className="text-xl font-semibold text-gray-800">Solution Proposal Document</h2>
           <div className="flex flex-wrap gap-2">
             <Button 
                 onClick={() => handleExportSolutionDocument(ExportFormat.HTML)}
@@ -259,7 +265,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         </div>
         
         <div className="prose max-w-none p-4 md:p-6 border border-gray-300 rounded-md bg-gray-50 print:border-none print:shadow-none print:bg-white">
-          <h1 className="text-center text-2xl md:text-3xl font-bold text-blue-700 mb-6">Solution Proposal for {coreModuleNameStr}</h1>
+          <h1 className="text-center text-2xl md:text-3xl font-bold text-[#017a59] mb-6">Solution Proposal for {coreModuleNameStr}</h1>
           <p className="text-center text-sm text-gray-600 mb-2">
             Prepared for: <strong>{customerCompany || "Valued Client"}</strong>
           </p>
@@ -268,7 +274,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           </p>
           
           <section>
-            <h2 className="text-xl font-semibold text-blue-600 border-b pb-2 mb-3">Executive Summary</h2>
+            <h2 className="text-xl font-semibold text-[#01916D] border-b pb-2 mb-3">Executive Summary</h2>
             <p>This document outlines a proposed solution for <strong>{customerCompany || 'the client'}</strong> to address challenges and opportunities within <strong>{coreModuleNameStr}</strong> processes. The primary technology leveraged for this {coreModuleNameStr} solution will be <strong>{partnerDisplayName}</strong>, a leader in its respective field.</p>
             <div dangerouslySetInnerHTML={{ __html: executiveSummaryHtml }} />
              {roiData && (
@@ -281,13 +287,13 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           </section>
 
           <section className="mt-6">
-            <h2 className="text-xl font-semibold text-blue-600 border-b pb-2 mb-3">Overview of the Proposed Solution</h2>
+            <h2 className="text-xl font-semibold text-[#01916D] border-b pb-2 mb-3">Overview of the Proposed Solution</h2>
             <div dangerouslySetInnerHTML={{ __html: solutionOverviewHtml }} />
           </section>
           
           {(requirementBlocks.length > 0 || coreElementsList.length > 0) && (
             <section className="mt-6">
-              <h2 className="text-xl font-semibold text-blue-600 border-b pb-2 mb-3">Detailed Customer Solution & Requirements</h2>
+              <h2 className="text-xl font-semibold text-[#01916D] border-b pb-2 mb-3">Detailed Customer Solution & Requirements</h2>
               <h3 className="text-lg font-medium text-gray-800" style={{marginTop:0}}>Core Module: {coreModuleNameStr}</h3>
               {coreElementsList.length > 0 ? (
                 <ul className="list-disc pl-5 my-2">
@@ -322,7 +328,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
 
           {roiData && (
             <section className="mt-6">
-              <h2 className="text-xl font-semibold text-blue-600 border-b pb-2 mb-3">Expected Business Outcomes & ROI Highlights for {coreModuleNameStr}</h2>
+              <h2 className="text-xl font-semibold text-[#01916D] border-b pb-2 mb-3">Expected Business Outcomes & ROI Highlights for {coreModuleNameStr}</h2>
               <p>The implementation of the proposed {coreModuleNameStr} solution, leveraging {partnerDisplayName}, is projected to yield significant financial and operational benefits:</p>
               <ul className="list-disc pl-6">
                 <li><strong>Total Annual Gross Savings:</strong> {formatCurrency(roiData.totalAnnualGrossSavings)}</li>
@@ -339,22 +345,25 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
              <p className="mt-4 text-sm text-gray-600"><i>Quantitative ROI analysis for the <strong>{coreModuleNameStr}</strong> module can be performed in the 'ROI Calculator' tab to complement this solution outline.</i></p>
           )}
 
-          {/* ModuleInfographic moved here, to appear at the end of the document view */}
           {selectedCoreModuleId && <ModuleInfographic moduleId={selectedCoreModuleId} />} 
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="p-6 bg-white shadow rounded-lg space-y-8">
+    <section 
+      className="p-6 bg-white shadow rounded-lg space-y-8"
+      role="region"
+      aria-labelledby={`${tabIdValue}-heading`}
+    >
       <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-1">Solution Builder</h2>
-        <p className="text-sm text-gray-500 mb-6">Visually construct the customer's solution. Start by selecting a core module, then add and prioritize requirement blocks.</p>
+        <h2 id={`${tabIdValue}-heading`} className="text-xl font-semibold text-gray-800 mb-1">Solution Builder</h2>
+        <p className="text-sm text-gray-500 mb-6">Visually construct the customer's solution. Start by selecting a core module, then add and prioritise requirement blocks.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        <div className="md:col-span-1 space-y-4 p-4 border border-blue-200 rounded-lg bg-blue-50 shadow">
+        <div className="md:col-span-1 space-y-4 p-4 border border-[#B3DDD4] rounded-lg bg-[#E6F4F1] shadow">
           <Select
             label="1. Select Core Module for Solution"
             id="coreModuleSelect"
@@ -363,7 +372,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
             options={ALL_MODULES.map(module => ({ value: module.id, label: module.name }))}
             placeholder="Choose a core module..."
           />
-           <p className="text-xs text-blue-700">This module forms the foundation of the solution proposal.</p>
+           <p className="text-xs text-[#017a59]">This module forms the foundation of the solution proposal.</p>
         </div>
 
         <div className="md:col-span-2 space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50 shadow">
@@ -406,7 +415,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         <div className="mt-8">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
             <h3 className="text-lg font-semibold text-gray-700 flex items-center">
-              <BuildingBlocksIcon className="w-6 h-6 mr-2 text-blue-500"/>
+              <BuildingBlocksIcon className="w-6 h-6 mr-2 text-[#01916D]"/>
               Solution Build: {getSelectedCoreModule()?.name || "N/A"}
             </h3>
             {(requirementBlocks.length > 0 || defaultCoreElementsListLength > 0 ) && (
@@ -423,7 +432,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           </div>
           
           <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 min-h-[200px] flex flex-col items-center">
-            <div className="bg-blue-600 text-white p-4 rounded-md shadow-lg text-center mb-6 min-w-[200px] max-w-xs">
+            <div className="bg-[#01916D] text-white p-4 rounded-md shadow-lg text-center mb-6 min-w-[200px] max-w-xs">
               <h4 className="font-bold text-lg">{getSelectedCoreModule()?.name || "N/A"}</h4>
               <p className="text-xs opacity-80">(Core Module)</p>
             </div>
@@ -440,29 +449,29 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                       <div className="flex items-center space-x-1">
                         <Button 
                             onClick={() => handleMoveBlock(block.id, 'up')}
-                            variant="ghost" size="sm" className="!p-1" title="Move Up"
+                            variant="ghost" size="sm" className="!p-1" aria-label="Move Up"
                             disabled={index === 0}
                             icon={<ArrowUpIcon className={`w-4 h-4 ${index === 0 ? 'text-gray-300': 'text-slate-600 hover:text-slate-800'}`}/>}
                         />
                         <Button 
                             onClick={() => handleMoveBlock(block.id, 'down')}
-                            variant="ghost" size="sm" className="!p-1" title="Move Down"
+                            variant="ghost" size="sm" className="!p-1" aria-label="Move Down"
                             disabled={index === requirementBlocks.length - 1}
                             icon={<ArrowDownIcon className={`w-4 h-4 ${index === requirementBlocks.length - 1 ? 'text-gray-300': 'text-slate-600 hover:text-slate-800'}`}/>}
                         />
                          <Button 
                           onClick={() => handleEditBlock(block.id)} 
-                          variant="ghost" size="sm" className="!p-1" title="Edit Block"
-                          icon={<PencilIcon className="w-4 h-4 text-blue-600 hover:text-blue-800"/>}
+                          variant="ghost" size="sm" className="!p-1" aria-label="Edit Block"
+                          icon={<PencilIcon className="w-4 h-4 text-[#01916D] hover:text-[#017a59]"/>}
                         />
                         <Button 
                           onClick={() => handleDuplicateBlock(block.id)} 
-                          variant="ghost" size="sm" className="!p-1" title="Duplicate Block"
+                          variant="ghost" size="sm" className="!p-1" aria-label="Duplicate Block"
                           icon={<DocumentDuplicateIcon className="w-4 h-4 text-purple-600 hover:text-purple-800"/>}
                         />
                         <Button 
                           onClick={() => handleDeleteBlock(block.id)} 
-                          variant="ghost" size="sm" className="!p-1" title="Delete Block"
+                          variant="ghost" size="sm" className="!p-1" aria-label="Delete Block"
                           icon={<TrashIcon className="w-4 h-4 text-red-500 hover:text-red-700"/>}
                         />
                       </div>
@@ -478,7 +487,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

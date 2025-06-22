@@ -1,15 +1,15 @@
 
-
 export enum Role {
   SALES = "Sales",
   PRESALES = "Presales",
-  SDR = "SDR",
+  CSM = "Customer Success Manager", // Changed from SDR
   SAD = "SAD",
 }
 
-export enum AutomationType {
+export enum ServiceType { // Renamed from AutomationType
   FINANCE = "Finance Automation",
   BUSINESS = "Business Automation",
+  ITS = "IT Services", // Added ITS
 }
 
 export enum TabId {
@@ -27,7 +27,7 @@ export enum TabId {
 export interface Module {
   id: string;
   name: string;
-  technologyPartner?: "Esker" | "M-Files" | "Nintex" | "Generic"; 
+  technologyPartner?: "Esker" | "M-Files" | "Nintex" | "Generic" | "Fujifilm Business Innovation"; // Added Fujifilm
 }
 
 export interface ScorecardQuestion {
@@ -43,6 +43,7 @@ export interface ScorecardState {
 }
 
 export interface QualificationQuestionOption { 
+  id: string; // Added ID for easier management in admin panel
   label: string; 
   value: number;
 }
@@ -66,25 +67,11 @@ export interface QualificationSectionState {
   status: QualificationStatus;
 }
 
-export interface QualificationAdminSettings { // This remains for in-app qualification threshold setting, not full admin panel
-  thresholds: {
-    qualified: number;
-    clarification: number;
-  };
-  defaultThresholds: {
-      qualified: number;
-      clarification: number;
-  };
-}
-
 export interface QualificationState {
   qualitative: QualificationSectionState;
   quantitative: QualificationSectionState;
-  adminSettings: QualificationAdminSettings;
-  showAdminSettings: boolean; // This toggle can remain for the built-in qualification settings panel
 }
 
-// For module-specific qualification questions
 export interface ModuleQualificationQuestions {
   qualitative: QualificationQuestion[];
   quantitative: QualificationQuestion[];
@@ -117,7 +104,6 @@ export interface DiscoveryQuestionsState {
   [moduleId: string]: DiscoveryModuleState;
 }
 
-// Describes the structure of DISCOVERY_QUESTIONS_TEMPLATES in constants.ts
 export interface EditableDiscoveryQuestionsTemplates {
     [moduleId: string]: {
         qualitative: DiscoveryQuestion[];
@@ -130,7 +116,7 @@ export interface RoiInput {
   id: string;
   label: string;
   type: "number" | "text";
-  value: string | number;
+  value: string | number; // Value is instance data, not part of template structure for editing.
   unit?: string;
   isCurrency?: boolean;
 }
@@ -144,6 +130,7 @@ export interface RoiResults {
   overallRoiPercentage: number;
   totalNetBenefitOverLifespan: number;
   paybackPeriodMonths: number;
+  monthlyCostOfDelay: number; 
   savingsCalculationWorkings: Array<{ category: string; formula: string; result: number; inputsUsed: Record<string, string | number> }>;
   annualBreakdown: Array<{
     year: number;
@@ -188,7 +175,6 @@ export enum ExportFormat {
   HTML = "html",
 }
 
-// --- Pain Points Tab Types ---
 export enum PainPointMode {
   WATERFALL = "Waterfall",
   REVERSE_WATERFALL = "ReverseWaterfall",
@@ -196,7 +182,7 @@ export enum PainPointMode {
 
 export interface PainPointSolutionMapping {
   painIdentified: string;
-  suggestedSolutionsProductIds: string[]; // Module IDs
+  suggestedSolutionsProductIds: string[]; 
 }
 
 export interface PainPointAnswerOption {
@@ -221,10 +207,11 @@ export interface PainPointLevel2Pain {
 export interface PainPointLevel1Pain {
   id: string;
   text: string;
-  level2Pains: PainPointLevel2Pain[];
+  level2Pains: PainPointLevel2Pain[]; 
 }
 
 export interface ReverseWaterfallCheatSheetKeyPoint {
+    id: string; // Added ID for list management
     question: string;
     aligningAnswer: string;
 }
@@ -234,9 +221,9 @@ export interface ReverseWaterfallCheatSheet {
   highLevelPain: string; 
   specificProcessPain: string; 
   keyDiscoveryPoints: ReverseWaterfallCheatSheetKeyPoint[];
+  keyBenefits?: string[]; 
 }
 
-// Describes the structure of REVERSE_WATERFALL_CHEAT_SHEETS in constants.ts
 export interface EditableReverseWaterfallCheatSheets {
     [moduleId: string]: ReverseWaterfallCheatSheet;
 }
@@ -267,7 +254,6 @@ export interface AccumulatedSolutionInfo {
 
 export interface PainPointsAppState {
   activeMode: PainPointMode;
-  // Waterfall State
   currentWaterfallStep: WaterfallStep; 
   selectedL1PainId: string | null;
   selectedL2PainId: string | null;
@@ -285,44 +271,52 @@ export interface PainPointsAppState {
 
   waterfallConversationLog: WaterfallLogEntry[]; 
   showConversationView: boolean; 
-  // Reverse Waterfall State
   selectedProductForCheatSheet: string | null; 
 }
 
-// --- Customer Conversations Tab Types ---
 export enum ConversationStepId {
-  INTRODUCTION_OBJECTIVES = "Introduction & Objectives", // Step 1
-  EXPLORATION_CHALLENGES = "Exploration & Challenges",   // Step 2
-  INTRODUCE_SOLUTION = "Introduce Solution",           // Step 3
-  QUALIFY_ARRANGE_FOLLOW_UP = "Qualify & Arrange Follow-Up", // Step 4
-  WRAP_UP = "Wrap-Up",                             // Step 5
+  INTRODUCTION_OBJECTIVES = "Introduction & Objectives", 
+  EXPLORATION_CHALLENGES = "Exploration & Challenges",   
+  INTRODUCE_SOLUTION = "Introduce Solution",           
+  QUALIFY_ARRANGE_FOLLOW_UP = "Qualify & Arrange Follow-Up", 
+  WRAP_UP = "Wrap-Up",                             
 }
 
-export interface ConversationExchange {
-  id: string; // Unique ID for each Q/A pair or script block
-  stepId: ConversationStepId; // To which step this exchange belongs
-  type: 'script' | 'question' | 'note' | 'module_question_group'; // Type of exchange
-  prompt: string; // The script text or question posed, or title for module_question_group
-  answer: string; // User-recorded answer or notes. For module_question_group, this might be a summary or not applicable.
-  automationFocus?: AutomationType | null; // If this exchange leads to a focus
-  modulePrompts?: Array<{ moduleId: string; moduleName: string; promptQuestion: string; answer: string }>; // Specific module prompts if applicable (used with type 'module_question_group')
+export interface ConversationExchange { 
+  id: string; 
+  sectionId: ConversationStepId; 
+  scriptItemId?: string; 
+  type: 'section_completed' | 'focus_determined' | 'script_presented' | 'question_answered' | 'note_taken' | 'module_question_answered' | 'follow_up_details';
+  promptText?: string; 
+  answerText?: string; 
+  moduleKey?: string; 
+  details?: any; 
 }
+
+export type ScriptItemType = 'script' | 'input_prompt' | 'question_textarea' | 'module_question_group' | 'radio_group' | 'final_notes' | 'interest_buttons';
+
 
 export interface CustomerConversationState {
-  currentStep: ConversationStepId;
-  exchanges: ConversationExchange[]; // Log of all interactions
-  currentAutomationFocus: AutomationType | null; // Tracks if conversation leans Finance or Business
-  explorationInput: string; // User input to decide automation focus for step 2
+  activeSectionId: ConversationStepId; 
+  completedSectionIds: ConversationStepId[]; 
+
+  exchangeAnswers: Record<string, string>; 
+  moduleExchangeAnswers: Record<string, Record<string, string>>; 
+  
+  exchanges: ConversationExchange[]; 
+
+  currentServiceFocus: ServiceType | null; // Renamed from currentAutomationFocus
+  explorationInput: string; 
   followUpDetails: {
     interestConfirmed: boolean | null;
     contactName: string;
     contactEmail: string;
     meetingDate: string;
     meetingTime: string;
-    specialistNeeded: AutomationType | null;
+    specialistNeeded: ServiceType | null; // Changed from AutomationType
     notes: string;
   };
-  generalNotes: string; // Overall notes for the conversation
+  generalNotes: string; 
 }
 
 
@@ -331,7 +325,7 @@ export interface AppState {
   customerName: string;
   dateCompleted: string; 
   selectedRole: Role;
-  selectedAutomationType: AutomationType;
+  selectedServiceType: ServiceType; // Renamed from selectedAutomationType
   selectedModuleId: string | null; 
   activeTab: TabId;
   opportunityScorecard: ScorecardState;
@@ -342,10 +336,12 @@ export interface AppState {
   painPoints: PainPointsAppState; 
   customerConversations: CustomerConversationState; 
   exportFormat: ExportFormat;
+  isAdminPanelVisible?: boolean; // Added for Admin Panel Phase 2
 }
 
 export interface IconProps extends React.SVGProps<SVGSVGElement> {
   size?: number | string;
+  title?: string; 
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -357,6 +353,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  isCurrency?: boolean; 
+  unit?: string; 
 }
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -372,7 +370,7 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 export interface RadioGroupProps<T extends string | number> {
   name: string;
   options: Array<{ value: T; label: string }>;
-  selectedValue: T;
+  selectedValue: T | undefined; // Allow undefined for unanswered
   onChange: (value: T) => void;
   label?: string;
 }
@@ -388,7 +386,7 @@ export interface TabDefinition {
   roles: Role[];
   component: React.FC<TabProps>;
   icon?: React.FC<React.SVGProps<SVGSVGElement>>;
-  purpose?: string; // Optional: Add purpose here for Home tab display
+  purpose?: string; 
 }
 
 export interface TabMetadata {
@@ -396,23 +394,70 @@ export interface TabMetadata {
   label: string;
   roles: Role[];
   icon?: React.FC<React.SVGProps<SVGSVGElement>>;
-  purpose?: string; // Optional: Add purpose here for Home tab display
+  purpose?: string; 
 }
 
 export interface ModuleSolutionContent {
   executiveSummaryBoilerplate: (partnerName: string) => string;
   solutionOverviewDetails: (partnerName: string, moduleName: string) => string; 
   coreElements: (partnerName: string, moduleName: string) => string[];
-  technologyPartnerName: "Esker" | "M-Files" | "Nintex" | "leading automation technologies";
+  technologyPartnerName: "Esker" | "M-Files" | "Nintex" | "leading automation technologies" | "Fujifilm Business Innovation";
 }
 
-// Describes the structure of MODULE_SPECIFIC_SOLUTION_CONTENT in constants.ts
 export interface EditableModuleSolutionContent {
     executiveSummaryBoilerplate: string; 
     solutionOverviewDetails: string; 
-    coreElements: string[]; 
-    technologyPartnerName: "Esker" | "M-Files" | "Nintex" | "leading automation technologies";
+    coreElements: string[]; // List of strings
+    technologyPartnerName: "Esker" | "M-Files" | "Nintex" | "leading automation technologies" | "Fujifilm Business Innovation" | "Generic";
 }
 export interface EditableModuleSolutionContentMap {
     [moduleId: string]: EditableModuleSolutionContent;
+}
+export interface ScriptItem {
+  id: string;
+  type: ScriptItemType;
+  text: string;
+  placeholder?: string;
+  options?: Array<{ label: string; value: string }>;
+  targetStateProperty?: keyof CustomerConversationState['followUpDetails'] | 'explorationInput' | 'generalNotes';
+  moduleServiceFocus?: ServiceType; // Renamed from moduleAutomationFocus
+}
+export interface ConversationSectionConfig {
+  id: ConversationStepId;
+  title: string;
+  scriptItems: ScriptItem[];
+  nextSectionId?: ConversationStepId;
+  preLogic?: (state: CustomerConversationState) => Partial<CustomerConversationState>;
+  postLogic?: (state: CustomerConversationState, answers: Record<string, string>) => Partial<Pick<CustomerConversationState, 'currentServiceFocus' | 'followUpDetails' | 'explorationInput'>>; // Changed currentAutomationFocus to currentServiceFocus
+}
+
+// Admin Configuration Types
+export interface RoiCalculationConstants {
+  hourlyRateDivisor?: number;
+  automationTimeSavingPercentage?: number;
+  automationErrorReductionPercentage?: number;
+}
+
+export interface AdminConfigStructure {
+  // Phase 1
+  appTitle?: string;
+  scorecardQuestions?: ScorecardQuestion[];
+  roiInputTemplates?: Record<string, RoiInput[]>; // Key: moduleID
+  roiCalculationConstants?: RoiCalculationConstants;
+
+  // Phase 2
+  appSubtitle?: string;
+  resellerCompanyName?: string;
+  footerCopyrightOwner?: string;
+  
+  // Phase 3
+  qualificationQuestions?: AllModuleQualificationQuestions;
+  qualificationThresholds?: { qualified: number; clarification: number };
+  discoveryQuestionsTemplates?: EditableDiscoveryQuestionsTemplates;
+  painPointHierarchy?: PainPointLevel1Pain[];
+  reverseWaterfallCheatSheets?: EditableReverseWaterfallCheatSheets;
+  moduleSolutionContent?: EditableModuleSolutionContentMap;
+  
+  // Future
+  tabMetadata?: TabMetadata[];
 }

@@ -19,13 +19,13 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ tabs, activeTab, onTabCha
             className={`whitespace-nowrap py-3 px-3 md:px-4 border-b-2 font-medium text-sm focus:outline-none flex items-center group
               ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  ? 'border-[#01916D] text-[#01916D] bg-[#E6F4F1]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }
             `}
             aria-current={activeTab === tab.id ? 'page' : undefined}
           >
-            {tab.icon && React.createElement(tab.icon, { className: `w-5 h-5 mr-2 ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}` })}
+            {tab.icon && React.createElement(tab.icon, { className: `w-5 h-5 mr-2 ${activeTab === tab.id ? 'text-[#01916D]' : 'text-gray-400 group-hover:text-gray-500'}` })}
             {tab.label}
           </button>
         ))}

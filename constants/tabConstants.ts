@@ -1,0 +1,27 @@
+
+import { Role, TabId, TabMetadata } from '../types';
+import { HomeIcon, PresentationChartBarIcon, ShieldCheckIcon, MagnifyingGlassIcon, CalculatorIcon, PuzzlePieceIcon, InformationCircleIcon, ChatBubbleLeftRightIcon, ChatBubbleBottomCenterTextIcon } from '../components/common/Icons';
+
+export const TAB_PURPOSES: Record<TabId, string> = {
+  [TabId.HOME]: "Provides a high-level overview of the tool, its tabs, and their purposes, assisting users in navigating the platform effectively.",
+  [TabId.CUSTOMER_CONVERSATIONS]: "Guides users (primarily Sales, CSM, SAD) through structured initial customer interactions. Aims to identify needs, determine the relevant Service Type (Finance, Business, ITS), qualify leads, and record key discussion points for handoff to specialists. Includes prompts and answer fields for a comprehensive conversation flow.",
+  [TabId.PAIN_POINTS]: "A versatile discovery tool to explore customer pain points. Waterfall mode interactively drills down from a customer's high-level pain, through specific process issues, to conversational L3 questions; answers help map identified pains to potential product solutions. Reverse Waterfall mode allows selection of a product module to generate a 'Sales Cheat Sheet', providing key discovery questions and typical aligning answers, useful for pre-call preparation or training. Includes key benefits for each module.",
+  [TabId.OPPORTUNITY_SCORECARD]: "Enables Sales roles to quickly assess the high-level viability of an opportunity. Uses a simple Yes/No/Unsure format for key qualifying questions (e.g., executive sponsor, budget acknowledged, defined pain, agreed timeline) to generate an initial qualification score.",
+  [TabId.QUALIFICATION]: "Delves deeper into qualitative (e.g., strategic alignment, change readiness) and quantitative (e.g., transaction volumes, process times) aspects. Helps to determine if an opportunity is qualified, requires further clarification, or is not suitable. Questions are dynamically tailored to the selected module.",
+  [TabId.DISCOVERY_QUESTIONS]: "Offers a comprehensive list of module-specific questions (both qualitative and quantitative) designed to guide Presales, CSM, and SAD roles in conducting detailed discovery conversations. Facilitates capturing customer responses and custom notes to build a thorough understanding of requirements.",
+  [TabId.ROI_CALCULATOR]: "Assists Sales and Presales roles in estimating the potential Return on Investment for a specific solution. Users input key metrics for a selected process module (e.g., invoice volumes, processing times, error rates) along with general costs (e.g., average salary, software cost). The tool calculates projected annual gross savings, total net benefit over a defined lifespan, payback period, and provides an annual financial breakdown.",
+  [TabId.SOLUTION_BUILDER]: "Primarily for Presales roles to construct a tailored solution proposal. Users select a core module and then detail specific customer requirements and how the proposed software capabilities address them. Features an option to view and export a formatted solution document, which can include a module-specific infographic and ROI highlights.",
+  [TabId.HELP]: "Offers comprehensive guidance on using the Engagement Platform. Covers getting started, understanding each tab's functionality, role-based access, data export options, and tips for effective utilisation in process automation and IT service engagements."
+};
+
+export const TAB_METADATA: TabMetadata[] = [
+  { id: TabId.HOME, label: "Home", roles: [Role.SALES, Role.PRESALES, Role.CSM, Role.SAD], icon: HomeIcon, purpose: TAB_PURPOSES[TabId.HOME] },
+  { id: TabId.CUSTOMER_CONVERSATIONS, label: "Customer Conversations", roles: [Role.SALES, Role.CSM, Role.SAD], icon: ChatBubbleBottomCenterTextIcon, purpose: TAB_PURPOSES[TabId.CUSTOMER_CONVERSATIONS] },
+  { id: TabId.PAIN_POINTS, label: "Pain Points", roles: [Role.SALES, Role.PRESALES, Role.CSM, Role.SAD], icon: ChatBubbleLeftRightIcon, purpose: TAB_PURPOSES[TabId.PAIN_POINTS] },
+  { id: TabId.OPPORTUNITY_SCORECARD, label: "Opportunity Scorecard", roles: [Role.SALES], icon: PresentationChartBarIcon, purpose: TAB_PURPOSES[TabId.OPPORTUNITY_SCORECARD] },
+  { id: TabId.QUALIFICATION, label: "Qualification", roles: [Role.SALES, Role.PRESALES, Role.CSM, Role.SAD], icon: ShieldCheckIcon, purpose: TAB_PURPOSES[TabId.QUALIFICATION] },
+  { id: TabId.DISCOVERY_QUESTIONS, label: "Discovery Questions", roles: [Role.PRESALES, Role.CSM, Role.SAD], icon: MagnifyingGlassIcon, purpose: TAB_PURPOSES[TabId.DISCOVERY_QUESTIONS] },
+  { id: TabId.ROI_CALCULATOR, label: "ROI Calculator", roles: [Role.SALES, Role.PRESALES], icon: CalculatorIcon, purpose: TAB_PURPOSES[TabId.ROI_CALCULATOR] },
+  { id: TabId.SOLUTION_BUILDER, label: "Solution Builder", roles: [Role.PRESALES], icon: PuzzlePieceIcon, purpose: TAB_PURPOSES[TabId.SOLUTION_BUILDER] },
+  { id: TabId.HELP, label: "Help", roles: [Role.SALES, Role.PRESALES, Role.CSM, Role.SAD], icon: InformationCircleIcon, purpose: TAB_PURPOSES[TabId.HELP] },
+];

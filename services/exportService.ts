@@ -1,73 +1,46 @@
 
+import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat, RequirementBlock, TabMetadata, PainPointLevel1Pain, EditableReverseWaterfallCheatSheets, QualificationQuestion, EditableDiscoveryQuestionsTemplates, EditableModuleSolutionContentMap, DiscoveryQuestion, ConversationExchange, ConversationStepId, ServiceType, CustomerConversationState, PainPointMode, QualificationQuestionOption, ModuleQualificationQuestions } from '../types'; // Renamed AutomationType to ServiceType
+import { SCORECARD_QUESTIONS } from '../constants/scorecardConstants';
+import { QUALIFICATION_QUESTIONS_BY_MODULE, DEFAULT_QUALIFICATION_THRESHOLDS } from '../constants/qualificationConstants';
+import { DISCOVERY_QUESTIONS_TEMPLATES } from '../constants/discoveryConstants';
+import { TAB_METADATA } from '../constants/tabConstants';
+import { ALL_MODULES, FINANCE_MODULES, BUSINESS_MODULES, ITS_MODULES } from '../constants/moduleConstants'; // Added ITS_MODULES
+import { MODULE_SPECIFIC_SOLUTION_CONTENT } from '../constants/solutionContentConstants';
+import { RESELLER_COMPANY_NAME } from '../constants/appConfigConstants';
+import { PAIN_POINT_HIERARCHY, REVERSE_WATERFALL_CHEAT_SHEETS, initialPainPointsState } from '../constants/painPointConstants';
+import { initialCustomerConversationState } from '../constants/initialStateConstants';
+import { MODULE_INFOGRAPHICS_HTML } from '../constants/infographicConstants';
+import { ROI_INPUT_TEMPLATES } from '../constants/roiConstants';
+import { formatCurrency } from '../utils/formattingUtils'; 
+import { escapeHtml, nl2br, stripHtml } from '../utils/textUtils'; 
 
-import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat, RequirementBlock, TabMetadata, PainPointLevel1Pain, EditableReverseWaterfallCheatSheets, QualificationQuestion, EditableDiscoveryQuestionsTemplates, EditableModuleSolutionContentMap, DiscoveryQuestion, ConversationExchange, ConversationStepId, AutomationType, CustomerConversationState, PainPointMode, QualificationQuestionOption, ModuleQualificationQuestions } from '../types';
-import { 
-    SCORECARD_QUESTIONS, 
-    QUALIFICATION_QUESTIONS_BY_MODULE, // Corrected import
-    DISCOVERY_QUESTIONS_TEMPLATES, 
-    TAB_METADATA, 
-    ALL_MODULES, 
-    MODULE_SPECIFIC_SOLUTION_CONTENT, 
-    RESELLER_COMPANY_NAME,  
-    PAIN_POINT_HIERARCHY, 
-    REVERSE_WATERFALL_CHEAT_SHEETS,
-    FINANCE_MODULES,
-    BUSINESS_MODULES,
-    MODULE_INFOGRAPHICS_HTML,
-    DEFAULT_QUALIFICATION_THRESHOLDS,
-    ROI_INPUT_TEMPLATES,
-    initialPainPointsState,
-    initialCustomerConversationState
-} from '../constants'; 
-
+/**
+ * Retrieves a module object by its ID.
+ * @param id - The ID of the module to retrieve.
+ * @returns The module object if found, otherwise undefined.
+ */
 const getModuleById = (id: string | null): Module | undefined => {
     if (!id) return undefined;
     return ALL_MODULES.find(m => m.id === id);
 }
 
+/**
+ * Formats a numerical value as currency for export.
+ * @param value - The numerical value to format.
+ * @returns The formatted currency string, or 'N/A' if value is undefined/null.
+ */
 const formatCurrencyForExport = (value?: number): string => {
-    if (value === undefined || value === null) return 'N/A';
-    return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-};
-
-const escapeHtml = (unsafe: string): string => {
-    if (typeof unsafe !== 'string') return '';
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
-};
-
-const nl2br = (str: string): string => {
-    if (typeof str !== 'string') return '';
-    const tempToken = '___TEMP_BR_TOKEN___';
-    str = str.replace(/<br\s*\/?>/gi, tempToken);
-    str = str.replace(/\r\n|\n\r|\r|\n/g, '<br />'); // Ensure all newline types are caught
-    str = str.replace(new RegExp(tempToken, 'g'), '<br />');
-    return str;
-};
-
-const stripHtml = (html: string): string => {
-    if (typeof html !== 'string') return '';
-    // First, convert <p> and <br> to newlines for basic structure in text.
-    let text = html.replace(/<p.*?>/gi, '\n').replace(/<\/p>/gi, '\n');
-    text = text.replace(/<br\s*\/?>/gi, '\n');
-    // Replace <li> with a newline and a dash for list items.
-    text = text.replace(/<li>/gi, '\n- ').replace(/<\/li>/gi, '');
-    // Replace <h4> with **text** for emphasis, then strip other tags.
-    text = text.replace(/<h[1-6].*?>(.*?)<\/h[1-6]>/gi, '\n\n**$1**\n');
-    // Strip all other HTML tags.
-    text = text.replace(/<[^>]+>/g, '');
-    // Clean up: remove leading/trailing whitespace, multiple newlines.
-    text = text.replace(/&nbsp;/gi, ' ');
-    text = text.replace(/\n\s*\n/g, '\n\n'); // Reduce multiple newlines to two
-    return text.trim();
+    return formatCurrency(value, 'N/A');
 };
 
 
-// --- TXT/MD Formatting Helpers ---
+/**
+ * Formats a section title for text-based exports (TXT, MD, AI_PROMPT).
+ * @param title - The title string.
+ * @param level - The heading level (e.g., 2 for H2).
+ * @param format - The export format.
+ * @returns The formatted title string.
+ */
 const formatSectionTitleTextMd = (title: string, level: number = 2, format: ExportFormat.MD | ExportFormat.TXT | ExportFormat.AI_PROMPT): string => {
     switch (format) {
         case ExportFormat.MD:
@@ -75,35 +48,47 @@ const formatSectionTitleTextMd = (title: string, level: number = 2, format: Expo
         case ExportFormat.TXT:
         case ExportFormat.AI_PROMPT:
             return `${title.toUpperCase()}\n${'-'.repeat(title.length)}\n\n`;
-        // No default needed as ExportFormat union type ensures exhaustiveness if strictNullChecks is on.
-        // If not, a default can be added:
         default:
-            // const _exhaustiveCheck: never = format; // This line causes an error if format is not exhaustive
             console.warn(`Unhandled format in formatSectionTitleTextMd: ${format}`);
             return `${title.toUpperCase()}\n${'-'.repeat(title.length)}\n\n`; 
     }
 };
 
+/**
+ * Formats a field (label-value pair) for text-based exports.
+ * @param label - The field label.
+ * @param value - The field value.
+ * @param format - The export format.
+ * @param indent - Optional indentation string.
+ * @returns The formatted field string.
+ */
 const formatFieldTextMd = (label: string, value: string | number | undefined | null, format: ExportFormat.MD | ExportFormat.TXT | ExportFormat.AI_PROMPT, indent: string = ""): string => {
     const valStr = (value !== undefined && value !== null && value !== "") ? value.toString() : 'Not answered';
     if (format === ExportFormat.MD) return `${indent}**${label}:** ${valStr}\n`;
     return `${indent}${label}: ${valStr}\n`;
 };
 
+/**
+ * Formats discovery questions and answers for text-based exports.
+ * @param answers - Array of discovery answers.
+ * @param type - The type of discovery insights (e.g., "Qualitative").
+ * @param format - The export format.
+ * @returns The formatted discovery insights string.
+ */
 const formatDiscoveryAnswersTextMd = (answers: DiscoveryAnswer[], type: string, format: ExportFormat.MD | ExportFormat.TXT | ExportFormat.AI_PROMPT): string => {
     let content = format === ExportFormat.MD ? `**${type} Insights:**\n` : `${type.toUpperCase()} INSIGHTS:\n`;
     if (answers.length === 0) {
         content += "  No questions, answers, or notes for this section.\n";
     } else {
         answers.forEach(item => {
-            if (item.isCustom) { // Custom Note
+            if (item.isCustom) { 
                 const noteText = item.answer || 'Empty note';
                 if (format === ExportFormat.MD) {
                     content += `  - **Note:** ${noteText}\n`;
                 } else {
                     content += `  Note: ${noteText}\n`;
                 }
-            } else { // Standard Question
+            } else { 
                 const qText = item.questionText;
                 const aText = item.answer || 'Not answered';
                 if (format === ExportFormat.MD) {
@@ -117,6 +102,13 @@ const formatDiscoveryAnswersTextMd = (answers: DiscoveryAnswer[], type: string, 
     return content + "\n";
 };
 
+/**
+ * Formats ROI calculation results for text-based exports.
+ * @param results - The ROI results object.
+ * @param format - The export format.
+ * @param moduleRoiData - Optional module-specific ROI input data.
+ * @returns The formatted ROI results string.
+ */
 const formatRoiResultsTextMd = (results: RoiResults | null, format: ExportFormat.MD | ExportFormat.TXT | ExportFormat.AI_PROMPT, moduleRoiData?: any): string => {
     if (!results) return "ROI Calculation not performed or no results.\n\n";
     
@@ -134,6 +126,7 @@ const formatRoiResultsTextMd = (results: RoiResults | null, format: ExportFormat
     content += formatFieldTextMd("Total Investment Over Lifespan", formatCurrencyForExport(results.totalInvestmentOverLifespan), format);
     content += formatFieldTextMd("Overall ROI Percentage", `${isFinite(results.overallRoiPercentage) ? results.overallRoiPercentage.toFixed(1) + '%' : 'N/A'}`, format);
     content += formatFieldTextMd("Payback Period", `${isFinite(results.paybackPeriodMonths) ? results.paybackPeriodMonths.toFixed(1) + ' Months' : 'N/A'}`, format);
+    content += formatFieldTextMd("Monthly Cost of Delay", formatCurrencyForExport(results.monthlyCostOfDelay), format);
     
     content += format === ExportFormat.MD ? "\n**Savings Calculation Workings:**\n" : "\nSAVINGS CALCULATION WORKINGS:\n";
     results.savingsCalculationWorkings.forEach(item => {
@@ -160,82 +153,62 @@ const formatRoiResultsTextMd = (results: RoiResults | null, format: ExportFormat
     return content + "\n";
 };
 
-// --- HTML Formatting Helpers ---
 const htmlStyles = `
 <style>
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f8f9fa; color: #333; }
-  .container { max-width: 900px; margin: 0 auto; padding: 25px; background-color: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.07); }
-  h1, h2, h3, h4 { color: #005a9e; margin-top: 1.5em; margin-bottom: 0.6em; }
-  h1.main-title { font-size: 2.2em; border-bottom: 3px solid #005a9e; padding-bottom: 0.3em; text-align: center; }
-  h2.section-title { font-size: 1.8em; border-bottom: 2px solid #0078D4; padding-bottom: 0.2em; margin-top: 2em; }
-  h3.subsection-title { font-size: 1.4em; color: #0078D4; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-colour: #f8f9fa; colour: #333; }
+  .container { max-width: 900px; margin: 0 auto; padding: 25px; background-colour: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.07); }
+  h1, h2, h3, h4 { colour: #017a59; margin-top: 1.5em; margin-bottom: 0.6em; } 
+  h1.main-title { font-size: 2.2em; border-bottom: 3px solid #017a59; padding-bottom: 0.3em; text-align: centre; } 
+  h2.section-title { font-size: 1.8em; border-bottom: 2px solid #01916D; padding-bottom: 0.2em; margin-top: 2em; } 
+  h3.subsection-title { font-size: 1.4em; colour: #01916D; } 
   p, .field { margin-bottom: 0.8em; }
   .field { display: flex; flex-wrap: wrap; margin-bottom: 0.5em; }
-  .field-label { font-weight: bold; color: #495057; min-width: 180px; padding-right:10px; }
-  .field-value { color: #212529; }
+  .field-label { font-weight: bold; colour: #495057; min-width: 180px; padding-right:10px; }
+  .field-value { colour: #212529; }
   ul, dl { margin-bottom: 1em; padding-left: 20px; }
   li, dt, dd { margin-bottom: 0.4em; }
   dt { font-weight: bold; }
-  dd { margin-left: 0; } /* Adjusted for requirement block styling */
+  dd { margin-left: 0; } 
   table { width: 100%; border-collapse: collapse; margin-bottom: 1.5em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   th, td { border: 1px solid #ced4da; padding: 10px 12px; text-align: left; vertical-align: top; }
-  th { background-color: #e9ecef; font-weight: 600; color: #005a9e; }
-  tr:nth-child(even) td { background-color: #f8f9fa; }
-  .section-divider { border-top: 2px dashed #0078D4; margin: 2.5em 0; }
+  th { background-colour: #e9ecef; font-weight: 600; colour: #017a59; } 
+  tr:nth-child(even) td { background-colour: #f8f9fa; }
+  .section-divider { border-top: 2px dashed #01916D; margin: 2.5em 0; } 
   .currency { font-weight: bold; }
   .status { padding: 0.2em 0.5em; border-radius: 4px; font-weight: bold; }
-  .status-QUALIFIED { background-color: #d4edda; color: #155724; }
-  .status-CLARIFICATION_REQUIRED { background-color: #fff3cd; color: #856404; }
-  .status-NOT_SUITABLE { background-color: #f8d7da; color: #721c24; }
-  .status-NOT_STARTED { background-color: #e2e3e5; color: #383d41; }
-  .note { font-size: 0.9em; color: #6c757d; font-style: italic; }
-  .discovery-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #eee; border-radius: 4px; background-color: #fdfdfd;}
+  .status-QUALIFIED { background-colour: #d4edda; colour: #155724; }
+  .status-CLARIFICATION_REQUIRED { background-colour: #fff3cd; colour: #856404; }
+  .status-NOT_SUITABLE { background-colour: #f8d7da; colour: #721c24; }
+  .status-NOT_STARTED { background-colour: #e2e3e5; colour: #383d41; }
+  .note { font-size: 0.9em; colour: #6c757d; font-style: italic; }
+  .discovery-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #eee; border-radius: 4px; background-colour: #fdfdfd;}
   .discovery-item dt { margin-bottom: 0.3em; }
-  .custom-note-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #e0e0e0; border-left: 4px solid #757575; border-radius: 4px; background-color: #f9f9f9;}
-  .custom-note-item .note-label { font-weight: bold; color: #555; display: block; margin-bottom: 0.3em; }
-  .custom-note-item .note-content { color: #333; }
+  .custom-note-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #e0e0e0; border-left: 4px solid #757575; border-radius: 4px; background-colour: #f9f9f9;}
+  .custom-note-item .note-label { font-weight: bold; colour: #555; display: block; margin-bottom: 0.3em; }
+  .custom-note-item .note-content { colour: #333; }
   .solution-proposal-section { margin-bottom: 2em; }
   .solution-proposal-section h2, .solution-proposal-section h3 { margin-top: 0.5em;}
   .print-hidden { display: initial; } 
   .core-module-elements { margin-top: 0.5em; margin-bottom: 1em; padding-left: 20px; }
   .core-module-elements li { margin-bottom: 0.3em; }
-  .requirement-block-export {
-    margin-bottom: 1em;
-    padding: 0.8em 1em;
-    border: 1px solid #cce7ff; /* Light blue border */
-    border-radius: 6px;
-    background-color: #f0f8ff; /* AliceBlue */
-  }
-  .requirement-block-export h4 {
-    font-size: 1.1em;
-    color: #005a9e; /* Darker blue */
-    margin-top: 0;
-    margin-bottom: 0.5em;
-  }
-  .requirement-block-export p {
-    font-size: 0.95em;
-    margin-bottom: 0.3em;
-    margin-left: 10px;
-  }
-  .requirement-block-export p strong {
-    color: #333;
-  }
-  .conversation-exchange { border: 1px solid #e0e0e0; padding: 10px 15px; margin-bottom: 15px; background-color: #f9f9f9; border-radius: 6px;}
-  .conversation-exchange .step-id { font-size: 0.85em; color: #666; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
-  .conversation-exchange .prompt-label { font-weight: bold; color: #005a9e; }
-  .conversation-exchange .prompt-text, .conversation-exchange .answer-text { margin-top: 3px; color: #333; white-space: pre-wrap; display: block; }
-  .conversation-exchange .answer-label { font-weight: bold; color: #28a745; margin-top: 5px;}
-  .conversation-exchange .module-prompt-group { margin-top:10px; padding-left:15px; border-left: 3px solid #a2cffe; }
-  .conversation-exchange .module-prompt-item { margin-bottom: 10px; padding: 8px; background-color: #eff6ff; border-radius: 4px; }
-  .conversation-exchange .automation-focus { font-size: 0.9em; font-style: italic; color: #555; margin-top: 5px; }
-
-  /* Infographic specific styles if not already covered by Tailwind in the infographic HTML itself */
-  .infographic-section-export { margin-top: 2em; margin-bottom: 2em; padding: 1em; border: 1px dashed #0078D4; border-radius: 8px; background-color: #f0f8ff; }
-  .infographic-section-export .infographic-body { background-color: transparent !important; /* Override if infographic has its own body bg */ }
-
+  .requirement-block-export { margin-bottom: 1em; padding: 0.8em 1em; border: 1px solid #B3DDD4; border-radius: 6px; background-colour: #E6F4F1; } 
+  .requirement-block-export h4 { font-size: 1.1em; colour: #017a59; margin-top: 0; margin-bottom: 0.5em; } 
+  .requirement-block-export p { font-size: 0.95em; margin-bottom: 0.3em; margin-left: 10px; }
+  .requirement-block-export p strong { colour: #333; }
+  .conversation-exchange { border: 1px solid #e0e0e0; padding: 10px 15px; margin-bottom: 15px; background-colour: #f9f9f9; border-radius: 6px;}
+  .conversation-exchange .section-id { font-size: 1.1em; font-weight:bold; colour: #017a59; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; } 
+  .conversation-exchange .exchange-item { margin-bottom: 8px; padding-left: 10px; }
+  .conversation-exchange .prompt-label { font-weight: bold; colour: #333; }
+  .conversation-exchange .prompt-text, .conversation-exchange .answer-text { margin-top: 3px; colour: #333; white-space: pre-wrap; display: block; padding-left: 15px; }
+  .conversation-exchange .answer-label { font-weight: bold; colour: #28a745; margin-top: 5px;}
+  .conversation-exchange .module-prompt-group { margin-top:10px; padding-left:15px; border-left: 3px solid #80C7B8; } 
+  .conversation-exchange .module-prompt-item { margin-bottom: 10px; padding: 8px; background-colour: #E6F4F1; border-radius: 4px; } 
+  .conversation-exchange .automation-focus { font-size: 0.9em; font-style: italic; colour: #555; margin-top: 5px; }
+  .infographic-section-export { margin-top: 2em; margin-bottom: 2em; padding: 1em; border: 1px dashed #01916D; border-radius: 8px; background-colour: #E6F4F1; } 
+  .infographic-section-export .infographic-body { background-colour: transparent !important; }
 
   @media print {
-    body { margin: 0; padding: 0; background-color: #fff; font-size: 10pt; }
+    body { margin: 0; padding: 0; background-colour: #fff; font-size: 10pt; }
     .container { max-width: 100%; margin: 0; padding: 15px; border: none; box-shadow: none; }
     .print-hidden { display: none !important; }
     h1.main-title { font-size: 1.8em; }
@@ -243,9 +216,9 @@ const htmlStyles = `
     h3.subsection-title { font-size: 1.2em; }
     table { font-size: 9pt; }
     th, td { padding: 6px 8px; }
-    .requirement-block-export { border-color: #ccc; background-color: #f9f9f9; }
-    .conversation-exchange { background-color: #f8f8f8; }
-    .infographic-section-export { border: none; padding: 0; margin-top: 1em; margin-bottom: 1em; background-color: #fff; }
+    .requirement-block-export { border-colour: #ccc; background-colour: #f9f9f9; }
+    .conversation-exchange { background-colour: #f8f8f8; }
+    .infographic-section-export { border: none; padding: 0; margin-top: 1em; margin-bottom: 1em; background-colour: #fff; }
   }
 </style>
 `;
@@ -253,13 +226,19 @@ const htmlStyles = `
 const formatSectionTitleHtml = (title: string, level: number = 2, mainTitle: boolean = false): string => `<h${level} class="${mainTitle ? 'main-title' : (level === 2 ? 'section-title' : 'subsection-title')}">${escapeHtml(title)}</h${level}>\n`;
 const formatFieldHtml = (label: string, value: string | number | undefined | null, isCurrency: boolean = false): string => {
     let valStr = (value !== undefined && value !== null && value !== "") ? escapeHtml(value.toString()) : '<span class="note">Not answered</span>';
-    if (isCurrency && typeof value === 'number') valStr = `<span class="currency">${formatCurrencyForExport(value)}</span>`;
-    else if (isCurrency && typeof value === 'string' && value.startsWith('$')) valStr = `<span class="currency">${escapeHtml(value)}</span>`;
+    if (isCurrency && (typeof value === 'number' || (typeof value === 'string' && value.startsWith('$')))) {
+         valStr = `<span class="currency">${formatCurrencyForExport(typeof value === 'number' ? value : parseFloat(value.replace('$', '').replace(/,/g, '')))}</span>`;
+    }
     
     return `<div class="field"><span class="field-label">${escapeHtml(label)}:</span> <span class="field-value">${valStr}</span></div>\n`;
 };
 
-
+/**
+ * Formats discovery questions and answers for HTML export.
+ * @param answers - Array of discovery answers.
+ * @param type - The type of discovery insights (e.g., "Qualitative").
+ * @returns The formatted HTML string for discovery insights.
+ */
 const formatDiscoveryAnswersHtml = (answers: DiscoveryAnswer[], type: string): string => {
     let content = `<h3 class="subsection-title">${escapeHtml(type)} Insights</h3>\n`;
     if (answers.length === 0) {
@@ -267,10 +246,10 @@ const formatDiscoveryAnswersHtml = (answers: DiscoveryAnswer[], type: string): s
     } else {
         content += "<dl>\n";
         answers.forEach(item => {
-            if (item.isCustom) { // Custom Note
+            if (item.isCustom) { 
                 const noteText = item.answer ? nl2br(escapeHtml(item.answer)) : '<span class="note">Empty note</span>';
                 content += `<div class="custom-note-item"><span class="note-label">Custom Note:</span><div class="note-content">${noteText}</div></div>\n`;
-            } else { // Standard Question
+            } else { 
                 const qText = escapeHtml(item.questionText);
                 const aText = item.answer ? nl2br(escapeHtml(item.answer)) : '<span class="note">Not answered</span>';
                 content += `<div class="discovery-item"><dt>${qText}</dt><dd>${aText}</dd></div>\n`;
@@ -281,6 +260,13 @@ const formatDiscoveryAnswersHtml = (answers: DiscoveryAnswer[], type: string): s
     return content;
 };
 
+/**
+ * Formats ROI calculation results for HTML export.
+ * @param results - The ROI results object.
+ * @param moduleRoiData - Optional module-specific ROI input data.
+ * @param moduleName - Optional name of the module.
+ * @returns The formatted HTML string for ROI results.
+ */
 const formatRoiResultsHtml = (results: RoiResults | null, moduleRoiData?: any, moduleName?: string): string => {
     if (!results) return "<p class=\"note\">ROI Calculation not performed or no results.</p>\n";
     
@@ -297,7 +283,8 @@ const formatRoiResultsHtml = (results: RoiResults | null, moduleRoiData?: any, m
     content += formatFieldHtml("Total Investment Over Lifespan", results.totalInvestmentOverLifespan, true);
     content += formatFieldHtml("Overall ROI Percentage", `${isFinite(results.overallRoiPercentage) ? results.overallRoiPercentage.toFixed(1) + '%' : 'N/A'}`);
     content += formatFieldHtml("Payback Period", `${isFinite(results.paybackPeriodMonths) ? results.paybackPeriodMonths.toFixed(1) + ' Months' : 'N/A'}`);
-    
+    content += formatFieldHtml("Monthly Cost of Delay", results.monthlyCostOfDelay, true);
+
     content += "<h4 class=\"subsection-title\">Savings Calculation Workings:</h4>\n<ul>\n";
     results.savingsCalculationWorkings.forEach(item => {
         content += `<li><strong>${escapeHtml(item.category)}:</strong> <span class="currency">${formatCurrencyForExport(item.result)}</span><br /><small class="note">Formula: ${escapeHtml(item.formula)}</small></li>\n`;
@@ -312,18 +299,23 @@ const formatRoiResultsHtml = (results: RoiResults | null, moduleRoiData?: any, m
             <td><span class="currency">${formatCurrencyForExport(item.grossSavings)}</span></td>
             <td><span class="currency">${formatCurrencyForExport(item.softwareCost)}</span></td>
             <td><span class="currency">${formatCurrencyForExport(item.investment)}</span></td>
-            <td><span class="currency" style="color:${item.netCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.netCashFlow)}</span></td>
-            <td><span class="currency" style="color:${item.cumulativeNetCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.cumulativeNetCashFlow)}</span></td>
+            <td><span class="currency" style="colour:${item.netCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.netCashFlow)}</span></td>
+            <td><span class="currency" style="colour:${item.cumulativeNetCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.cumulativeNetCashFlow)}</span></td>
         </tr>\n`;
     });
     content += "</tbody></table>\n";
     return content;
 };
 
-// Renamed from formatSolutionBuilderContent and completed
+/**
+ * Generates the content for a solution proposal document.
+ * @param appState - The current application state.
+ * @param format - The desired export format (HTML or MD).
+ * @returns The generated solution document content as a string.
+ */
 export const generateSolutionDocumentContent = (
     appState: AppState,
-    format: ExportFormat.HTML | ExportFormat.MD // Specific for solution doc
+    format: ExportFormat.HTML | ExportFormat.MD 
 ): string => {
     const { solutionBuilder, roiCalculator, customerCompany, customerName, dateCompleted, selectedModuleId: appSelectedModuleId } = appState;
     const { selectedCoreModuleId, requirementBlocks } = solutionBuilder;
@@ -359,22 +351,19 @@ export const generateSolutionDocumentContent = (
         content += `<div class="field"><span class="field-label">Prepared by:</span> <span class="field-value">${escapeHtml(RESELLER_COMPANY_NAME)}</span></div>\n`;
         
         content += formatSectionTitleHtml("Executive Summary", 2);
-        // Assuming executiveSummaryText from constants might contain HTML, so nl2br and direct injection
         content += `<div class="prose">${nl2br(executiveSummaryText)}</div>`; 
         if (roiData) {
-          content += `<p class="mt-2 text-sm">Key financial projections include: Total Annual Gross Savings of <span class="currency">${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}</span>, Overall ROI of <span class="font-bold">${roiData.overallRoiPercentage.toFixed(1)}%</span> over ${roiData.solutionLifespanYears} years, and a Payback Period of approximately <span class="font-bold">${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}</span>.</p>`;
+          content += `<p class="mt-2 text-sm">Key financial projections include: Total Annual Gross Savings of <span class="currency">${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}</span>, Overall ROI of <span class="font-bold">${roiData.overallRoiPercentage.toFixed(1)}%</span> over ${roiData.solutionLifespanYears} years, a Payback Period of approximately <span class="font-bold">${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}</span>, and a Monthly Cost of Delay of <span class="currency">${formatCurrencyForExport(roiData.monthlyCostOfDelay)}</span>.</p>`;
         }
 
 
         content += formatSectionTitleHtml("Overview of the Proposed Solution", 2);
-        // Assuming solutionOverviewTextContent from constants *is* HTML.
         content += `<div class="prose solution-overview-details">${solutionOverviewTextContent}</div>`; 
 
         if (selectedCoreModuleId && MODULE_INFOGRAPHICS_HTML[selectedCoreModuleId]) {
             content += `<div class="infographic-section-export">`;
             content += formatSectionTitleHtml(`Module Insights: ${coreModuleName}`, 3);
             let infographicHtml = MODULE_INFOGRAPHICS_HTML[selectedCoreModuleId];
-            // Remove script tags when embedding, as they might not execute correctly or are for standalone viewing.
             infographicHtml = infographicHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "<!-- Chart scripts removed for embedded view. View original HTML for interactive charts. -->");
             content += infographicHtml;
             content += `</div>`;
@@ -401,9 +390,9 @@ export const generateSolutionDocumentContent = (
             content += formatSectionTitleHtml(`Expected Business Outcomes & ROI Highlights for ${coreModuleName}`, 2);
             content += formatRoiResultsHtml(roiData, moduleRoiDataForExport, coreModuleName);
         }
-        content += `<p class="mt-6 text-xs text-gray-500 text-center">Document generated by Process Automation Engagement Platform for ${RESELLER_COMPANY_NAME}.</p>`;
+        content += `<p class="mt-6 text-xs text-grey-500 text-centre">Document generated by Engagement Platform for ${RESELLER_COMPANY_NAME}.</p>`; // Updated "Process Automation"
         content += "</div></body></html>";
-    } else { // MD Format (TXT is not typical for this specific document)
+    } else { 
         content += formatSectionTitleTextMd(`Solution Proposal for ${coreModuleName}`, 1, ExportFormat.MD);
         content += formatFieldTextMd("Prepared for", customerCompany || "Valued Client", ExportFormat.MD);
         content += formatFieldTextMd("Date", dateCompleted, ExportFormat.MD);
@@ -413,12 +402,11 @@ export const generateSolutionDocumentContent = (
         content += formatSectionTitleTextMd("Executive Summary", 2, ExportFormat.MD);
         content += stripHtml(executiveSummaryText) + "\n\n";
          if (roiData) {
-          content += `Key financial projections include: Total Annual Gross Savings of ${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}, Overall ROI of ${roiData.overallRoiPercentage.toFixed(1)}% over ${roiData.solutionLifespanYears} years, and a Payback Period of approximately ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}.\n\n`;
+          content += `Key financial projections include: Total Annual Gross Savings of ${formatCurrencyForExport(roiData.totalAnnualGrossSavings)}, Overall ROI of ${roiData.overallRoiPercentage.toFixed(1)}% over ${roiData.solutionLifespanYears} years, a Payback Period of approximately ${isFinite(roiData.paybackPeriodMonths) ? `${roiData.paybackPeriodMonths.toFixed(1)} months` : 'N/A'}, and a Monthly Cost of Delay of ${formatCurrencyForExport(roiData.monthlyCostOfDelay)}.\n\n`;
         }
 
         content += formatSectionTitleTextMd("Overview of the Proposed Solution", 2, ExportFormat.MD);
         content += stripHtml(solutionOverviewTextContent) + "\n\n";
-        // Infographics are typically not well represented in Markdown. Could add a note.
         if (selectedCoreModuleId && MODULE_INFOGRAPHICS_HTML[selectedCoreModuleId]) {
             content += `(Note: A visual infographic for ${coreModuleName} is available in the HTML export or within the application.)\n\n`;
         }
@@ -445,12 +433,17 @@ export const generateSolutionDocumentContent = (
             content += formatSectionTitleTextMd(`Expected Business Outcomes & ROI Highlights for ${coreModuleName}`, 2, ExportFormat.MD);
             content += formatRoiResultsTextMd(roiData, ExportFormat.MD, moduleRoiDataForExport);
         }
-        content += `\n\n---\n*Document generated by Process Automation Engagement Platform for ${RESELLER_COMPANY_NAME}.*`;
+        content += `\n\n---\n*Document generated by Engagement Platform for ${RESELLER_COMPANY_NAME}.*`; // Updated "Process Automation"
     }
     return content;
 };
 
-
+/**
+ * Triggers a file download in the browser.
+ * @param content - The content of the file.
+ * @param filename - The desired filename for the download.
+ * @param formatOrMimeType - The export format or a specific MIME type string.
+ */
 export const triggerDownload = (content: string, filename: string, formatOrMimeType: ExportFormat | 'html' | 'md' | 'txt' | string): void => {
     let mimeType = 'text/plain';
     if (formatOrMimeType === ExportFormat.HTML || formatOrMimeType === 'html') {
@@ -458,10 +451,9 @@ export const triggerDownload = (content: string, filename: string, formatOrMimeT
     } else if (formatOrMimeType === ExportFormat.MD || formatOrMimeType === 'md') {
         mimeType = 'text/markdown';
     } else if (typeof formatOrMimeType === 'string' && formatOrMimeType.includes('/')) {
-        mimeType = formatOrMimeType; // Assume it's a full MIME type if it contains '/'
+        mimeType = formatOrMimeType; 
     }
-    // TXT, AI_PROMPT and other ExportFormat enums not explicitly handled will default to text/plain
-
+    
     const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -472,10 +464,15 @@ export const triggerDownload = (content: string, filename: string, formatOrMimeT
     URL.revokeObjectURL(link.href);
 };
 
+/**
+ * Generates the main export content for the application.
+ * @param appState - The current application state.
+ * @returns The generated export content as a string.
+ */
 export const generateExportContent = (appState: AppState): string => {
     const {
         customerCompany, customerName, dateCompleted, selectedRole,
-        selectedAutomationType, selectedModuleId, activeTab,
+        selectedServiceType, selectedModuleId, activeTab, // Renamed selectedAutomationType
         opportunityScorecard, qualification, discoveryQuestions,
         roiCalculator, solutionBuilder, painPoints, customerConversations,
         exportFormat
@@ -483,7 +480,7 @@ export const generateExportContent = (appState: AppState): string => {
 
     const currentModule = getModuleById(selectedModuleId);
     const moduleName = currentModule?.name || "N/A";
-    const automationType = selectedAutomationType || "N/A";
+    const serviceType = selectedServiceType || "N/A"; // Renamed automationType
     const isHtml = exportFormat === ExportFormat.HTML;
     
     const currentTextMdFormat: ExportFormat.MD | ExportFormat.TXT | ExportFormat.AI_PROMPT = 
@@ -493,10 +490,10 @@ export const generateExportContent = (appState: AppState): string => {
     let content = isHtml ? `<html><head><title>Export Report - ${escapeHtml(customerCompany || "Client")}</title>${htmlStyles}</head><body><div class="container">\n` : "";
     
     if (isHtml) {
-        content += formatSectionTitleHtml("Process Automation Engagement Report", 1, true);
+        content += formatSectionTitleHtml("Engagement Platform Report", 1, true); // Updated title
         content += formatSectionTitleHtml("Engagement Details", 2, false);
     } else {
-        content += formatSectionTitleTextMd("PROCESS AUTOMATION ENGAGEMENT REPORT", 1, currentTextMdFormat);
+        content += formatSectionTitleTextMd("ENGAGEMENT PLATFORM REPORT", 1, currentTextMdFormat); // Updated title
         content += formatSectionTitleTextMd("Engagement Details", 2, currentTextMdFormat);
     }
     
@@ -505,30 +502,33 @@ export const generateExportContent = (appState: AppState): string => {
         content += formatFieldHtml("Customer Contact Name", customerName, false);
         content += formatFieldHtml("Date Completed", dateCompleted, false);
         content += formatFieldHtml("Role", selectedRole, false);
-        content += formatFieldHtml("Selected Automation Type", automationType, false);
+        content += formatFieldHtml("Selected Service", serviceType, false); // Updated label
         content += formatFieldHtml("Selected Module (Primary Focus)", moduleName, false);
     } else {
         content += formatFieldTextMd("Customer Company", customerCompany, currentTextMdFormat);
         content += formatFieldTextMd("Customer Contact Name", customerName, currentTextMdFormat);
         content += formatFieldTextMd("Date Completed", dateCompleted, currentTextMdFormat);
         content += formatFieldTextMd("Role", selectedRole, currentTextMdFormat);
-        content += formatFieldTextMd("Selected Automation Type", automationType, currentTextMdFormat);
+        content += formatFieldTextMd("Selected Service", serviceType, currentTextMdFormat); // Updated label
         content += formatFieldTextMd("Selected Module (Primary Focus)", moduleName, currentTextMdFormat);
     }
     content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
 
-    // Customer Conversations
-    if (Object.keys(customerConversations.exchanges).length > 0 || customerConversations.generalNotes) {
+    if (customerConversations.exchanges.length > 0 || customerConversations.generalNotes || customerConversations.followUpDetails.contactName) {
         if (isHtml) {
             content += formatSectionTitleHtml("Customer Conversation Log", 2, false);
         } else {
             content += formatSectionTitleTextMd("Customer Conversation Log", 2, currentTextMdFormat);
         }
-        content += generateCustomerConversationExportContent(customerConversations, customerCompany, dateCompleted, exportFormat);
+        const conversationContent = generateCustomerConversationExportContent(customerConversations, customerCompany, dateCompleted, exportFormat);
+        if (isHtml) {
+            content += conversationContent.replace(/<html><head>.*?<\/head><body><div class="container">/s, '').replace(/<\/div><\/body><\/html>/s, '');
+        } else {
+            content += conversationContent;
+        }
         content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
     }
     
-    // Pain Points
     if (painPoints.waterfallConversationLog.length > 0 || (painPoints.activeMode === PainPointMode.REVERSE_WATERFALL && painPoints.selectedProductForCheatSheet)) {
         if (isHtml) {
             content += formatSectionTitleHtml("Pain Point Discovery", 2, false);
@@ -560,7 +560,6 @@ export const generateExportContent = (appState: AppState): string => {
         content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
     }
 
-    // Opportunity Scorecard
     if (Object.keys(opportunityScorecard.answers).length > 0) {
         if (isHtml) {
             content += formatSectionTitleHtml("Opportunity Scorecard", 2, false);
@@ -583,7 +582,6 @@ export const generateExportContent = (appState: AppState): string => {
         content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
     }
 
-    // Qualification
     const { qualitative, quantitative } = qualification;
     const moduleQualQuestions: ModuleQualificationQuestions = selectedModuleId && QUALIFICATION_QUESTIONS_BY_MODULE[selectedModuleId]
         ? QUALIFICATION_QUESTIONS_BY_MODULE[selectedModuleId]
@@ -609,7 +607,7 @@ export const generateExportContent = (appState: AppState): string => {
             }
         });
         if (isHtml) {
-            content += formatFieldHtml("Qualitative Score", `${qualitative.score} (Status: ${qualitative.status})`, false);
+            content += formatFieldHtml("Qualitative Score", `${qualitative.score} (Status: <span class="status status-${qualitative.status.replace(/\s+/g, '_').toUpperCase()}">${qualitative.status}</span>)`, false);
         } else {
             content += formatFieldTextMd("Qualitative Score", `${qualitative.score} (Status: ${qualitative.status})`, currentTextMdFormat);
         }
@@ -631,14 +629,13 @@ export const generateExportContent = (appState: AppState): string => {
             }
         });
         if (isHtml) {
-            content += formatFieldHtml("Quantitative Score", `${quantitative.score} (Status: ${quantitative.status})`, false);
+            content += formatFieldHtml("Quantitative Score", `${quantitative.score} (Status: <span class="status status-${quantitative.status.replace(/\s+/g, '_').toUpperCase()}">${quantitative.status}</span>)`, false);
         } else {
             content += formatFieldTextMd("Quantitative Score", `${quantitative.score} (Status: ${quantitative.status})`, currentTextMdFormat);
         }
         content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
     }
 
-    // Discovery Questions (for selected module)
     if (selectedModuleId && discoveryQuestions[selectedModuleId]) {
         const moduleDiscovery = discoveryQuestions[selectedModuleId];
         const currentModuleName = getModuleById(selectedModuleId)?.name || "Selected Module";
@@ -654,7 +651,6 @@ export const generateExportContent = (appState: AppState): string => {
         content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
     }
     
-    // ROI Calculator (for selected module)
     if (selectedModuleId && roiCalculator[selectedModuleId] && roiCalculator[selectedModuleId].results) {
         const moduleROIs = roiCalculator[selectedModuleId];
         const currentModuleName = getModuleById(selectedModuleId)?.name || "Selected Module";
@@ -668,28 +664,22 @@ export const generateExportContent = (appState: AppState): string => {
         content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
     }
 
-    // Solution Builder
     if (solutionBuilder.selectedCoreModuleId) {
          if (isHtml) {
             content += formatSectionTitleHtml("Solution Proposal Outline", 2, false);
          } else {
             content += formatSectionTitleTextMd("Solution Proposal Outline", 2, currentTextMdFormat);
          }
-         // Use the specific solution document generator for this part if format matches
          if (exportFormat === ExportFormat.HTML || exportFormat === ExportFormat.MD) {
-             // Embed a simplified version or a summary
              const solutionDocContent = generateSolutionDocumentContent(appState, exportFormat);
              if (isHtml) {
-                // For main HTML export, embed the solution doc content directly but simplify it slightly.
-                // Or, just provide a link/note if it's too complex to embed cleanly.
-                // Here, we embed it.
                 content += solutionDocContent.replace(/<html><head>.*?<\/head><body><div class="container">/s, '<div class="solution-proposal-section">')
                                           .replace(/<\/div><\/body><\/html>/s, '</div>');
              } else {
-                 content += solutionDocContent; // MD version should be fine as is
+                 content += solutionDocContent; 
              }
-         } else { // TXT or AI_PROMPT
-             const textSolutionContent = generateSolutionDocumentContent(appState, ExportFormat.MD); // Use MD as base for stripping
+         } else { 
+             const textSolutionContent = generateSolutionDocumentContent(appState, ExportFormat.MD); 
              content += stripHtml(textSolutionContent) + "\n\n";
          }
          content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
@@ -697,9 +687,9 @@ export const generateExportContent = (appState: AppState): string => {
 
 
     if (exportFormat === ExportFormat.AI_PROMPT) {
-        let aiPrompt = "Analyze the following customer engagement data for a process automation opportunity:\n\n";
-        aiPrompt += stripHtml(content); // Use a stripped version if HTML was generated
-        aiPrompt += "\n\nProvide a summary of the key findings, potential solutions, and recommended next steps. Focus on identifying the strongest automation opportunities and tailor the response for a " + selectedRole + ".";
+        let aiPrompt = `Analyse the following customer engagement data for a ${serviceType} opportunity related to the ${moduleName} module:\n\n`; // Updated "process automation"
+        aiPrompt += stripHtml(content); 
+        aiPrompt += "\n\nProvide a summary of the key findings, potential solutions, and recommended next steps. Focus on identifying the strongest opportunities and tailor the response for a " + selectedRole + ".";
         content = aiPrompt;
     }
 
@@ -707,20 +697,24 @@ export const generateExportContent = (appState: AppState): string => {
     return content;
 };
 
-
+/**
+ * Generates the export content specifically for customer conversations.
+ * @param customerConversations - The customer conversation state.
+ * @param customerCompany - The name of the customer's company.
+ * @param dateCompleted - The date the conversation was completed.
+ * @param format - The desired export format (HTML, MD, TXT, AI_PROMPT).
+ * @returns The generated customer conversation content as a string.
+ */
 export const generateCustomerConversationExportContent = (
     customerConversations: CustomerConversationState,
     customerCompany: string,
     dateCompleted: string,
-    format: ExportFormat = ExportFormat.HTML // Default to HTML if not specified by main export
+    format: ExportFormat = ExportFormat.HTML 
 ): string => {
-    const { exchanges, currentAutomationFocus, followUpDetails, generalNotes } = customerConversations;
+    const { exchanges, currentServiceFocus, followUpDetails, generalNotes, explorationInput } = customerConversations; // Renamed currentAutomationFocus
 
     const isHtml = format === ExportFormat.HTML;
-    const currentTextMdFormat: ExportFormat.MD | ExportFormat.TXT | ExportFormat.AI_PROMPT = 
-        format === ExportFormat.AI_PROMPT ? ExportFormat.AI_PROMPT : 
-        (format === ExportFormat.MD ? ExportFormat.MD : ExportFormat.TXT);
-
+    
     let content = "";
 
     const title = `Customer Conversation Log - ${customerCompany || "Client"} - ${dateCompleted}`;
@@ -728,66 +722,77 @@ export const generateCustomerConversationExportContent = (
     if (isHtml) {
         content += `<html><head><title>${escapeHtml(title)}</title>${htmlStyles}</head><body><div class="container">\n`;
         content += `<h1 class="main-title">${escapeHtml(title)}</h1>\n`;
-        content += `<div class="field"><span class="field-label">Overall Automation Focus:</span> <span class="field-value">${escapeHtml(currentAutomationFocus || "Not Determined")}</span></div>\n`;
+        content += `<div class="field"><span class="field-label">Identified Service Focus:</span> <span class="field-value">${escapeHtml(currentServiceFocus || "Not Determined")}</span></div>\n`; // Renamed
+        if (explorationInput) {
+          content += `<div class="field"><span class="field-label">Keywords for Focus:</span> <span class="field-value">${escapeHtml(explorationInput)}</span></div>\n`;
+        }
     } else {
         content += `${title.toUpperCase()}\n${'-'.repeat(title.length)}\n\n`;
-        content += `Overall Automation Focus: ${currentAutomationFocus || "Not Determined"}\n\n`;
+        content += `Identified Service Focus: ${currentServiceFocus || "Not Determined"}\n`; // Renamed
+        if (explorationInput) {
+          content += `Keywords for Focus: ${explorationInput}\n`;
+        }
+        content += `\n`;
     }
+
+    let lastSectionId: ConversationStepId | null = null;
 
     exchanges.forEach(ex => {
         if (isHtml) {
-            content += `<div class="conversation-exchange">`;
-            content += `<p class="step-id"><strong>Step:</strong> ${escapeHtml(ex.stepId)} | <strong>Type:</strong> ${escapeHtml(ex.type)}</p>`;
-            content += `<p><span class="prompt-label">${ex.type === 'note' ? 'Note Topic' : 'Prompt/Script'}:</span> <span class="prompt-text">${nl2br(escapeHtml(ex.prompt))}</span></p>`;
-            
-            if (ex.type === 'question' || (ex.type === 'note' && ex.answer)) {
-                content += `<p><span class="answer-label">Answer/Details:</span> <span class="answer-text">${nl2br(escapeHtml(ex.answer))}</span></p>`;
+            if (ex.sectionId !== lastSectionId) {
+                if (lastSectionId !== null) content += `</div>\n`; 
+                content += `<div class="conversation-exchange">`;
+                content += `<h3 class="section-id">Section: ${escapeHtml(ex.sectionId)}</h3>`;
+                lastSectionId = ex.sectionId;
             }
-            if (ex.automationFocus) {
-                content += `<p class="automation-focus"><em>Automation Focus Inferred: ${escapeHtml(ex.automationFocus)}</em></p>`;
+            content += `<div class="exchange-item">`;
+            if (ex.type === 'script_presented' && ex.promptText) {
+                content += `<p><span class="prompt-label">Script:</span> <span class="prompt-text">${nl2br(escapeHtml(ex.promptText))}</span></p>`;
+            } else if (ex.type === 'question_answered' && ex.promptText) {
+                content += `<p><span class="prompt-label">Q:</span> <span class="prompt-text">${nl2br(escapeHtml(ex.promptText))}</span></p>`;
+                content += `<p><span class="answer-label">A:</span> <span class="answer-text">${nl2br(escapeHtml(ex.answerText || 'No answer recorded'))}</span></p>`;
+            } else if (ex.type === 'module_question_answered' && ex.moduleKey) {
+                const module = ALL_MODULES.find(m => m.id === ex.moduleKey);
+                content += `<p><span class="prompt-label">Module (${module?.name || ex.moduleKey}):</span> <span class="prompt-text">${nl2br(escapeHtml(ex.promptText || ''))}</span></p>`;
+                content += `<p><span class="answer-label">A:</span> <span class="answer-text">${nl2br(escapeHtml(ex.answerText || 'No answer recorded'))}</span></p>`;
+            } else if (ex.type === 'note_taken' && ex.promptText) {
+                 content += `<p><span class="prompt-label">Note (${ex.promptText}):</span> <span class="answer-text">${nl2br(escapeHtml(ex.answerText || 'Empty note'))}</span></p>`;
+            } else if (ex.type === 'focus_determined') {
+                content += `<p class="automation-focus"><em>Service Focus Determined: ${escapeHtml(ex.answerText || 'N/A')}</em></p>`; // Renamed automation-focus
             }
-            if (ex.type === 'module_question_group' && ex.modulePrompts) {
-                content += `<div class="module-prompt-group">`;
-                ex.modulePrompts.forEach(mp => {
-                    content += `<div class="module-prompt-item">
-                        <p><strong>Module:</strong> ${escapeHtml(mp.moduleName)}</p>
-                        <p><strong>Q:</strong> ${nl2br(escapeHtml(mp.promptQuestion))}</p>
-                        <p><strong>A:</strong> ${nl2br(escapeHtml(mp.answer) || '<span class="note">No answer recorded</span>')}</p>
-                    </div>`;
-                });
-                content += `</div>`;
+            content += `</div>`;
+        } else { 
+            if (ex.sectionId !== lastSectionId) {
+                content += `\n## Section: ${ex.sectionId}\n\n`;
+                lastSectionId = ex.sectionId;
             }
-             content += `</div>\n`;
-        } else { // MD or TXT
-            content += `Step: ${ex.stepId} | Type: ${ex.type}\n`;
-            content += `${ex.type === 'note' ? 'Note Topic' : 'Prompt/Script'}: ${ex.prompt}\n`;
-            if (ex.type === 'question' || (ex.type === 'note' && ex.answer)) {
-                content += `Answer/Details: ${ex.answer}\n`;
+            if (ex.type === 'script_presented' && ex.promptText) {
+                content += `Script: ${ex.promptText}\n`;
+            } else if (ex.type === 'question_answered' && ex.promptText) {
+                content += `Q: ${ex.promptText}\nA: ${ex.answerText || 'No answer recorded'}\n`;
+            } else if (ex.type === 'module_question_answered' && ex.moduleKey) {
+                const module = ALL_MODULES.find(m => m.id === ex.moduleKey);
+                content += `Module (${module?.name || ex.moduleKey}) Q: ${ex.promptText || ''}\nA: ${ex.answerText || 'No answer recorded'}\n`;
+            } else if (ex.type === 'note_taken' && ex.promptText) {
+                 content += `Note (${ex.promptText}): ${ex.answerText || 'Empty note'}\n`;
+            } else if (ex.type === 'focus_determined') {
+                content += `Service Focus Determined: ${ex.answerText || 'N/A'}\n`; // Renamed
             }
-            if (ex.automationFocus) {
-                content += `Automation Focus Inferred: ${ex.automationFocus}\n`;
-            }
-             if (ex.type === 'module_question_group' && ex.modulePrompts) {
-                ex.modulePrompts.forEach(mp => {
-                    content += `  Module: ${mp.moduleName}\n`;
-                    content += `    Q: ${mp.promptQuestion}\n`;
-                    content += `    A: ${mp.answer || 'No answer recorded'}\n`;
-                });
-            }
-            content += `\n---\n`;
+            content += `\n`;
         }
     });
+    if (isHtml && lastSectionId !== null) content += `</div>\n`; 
 
     if (followUpDetails.interestConfirmed !== null) {
         const fuText = `Interest Confirmed: ${followUpDetails.interestConfirmed ? 'Yes' : 'No'}\n` +
-                       `Contact: ${followUpDetails.contactName} (${followUpDetails.contactEmail})\n` +
-                       `Meeting: ${followUpDetails.meetingDate} at ${followUpDetails.meetingTime}\n` +
-                       `Specialist: ${followUpDetails.specialistNeeded || 'N/A'}\n` +
-                       `Notes: ${followUpDetails.notes || 'None'}`;
+                       (followUpDetails.contactName ? `Contact: ${followUpDetails.contactName} (${followUpDetails.contactEmail || 'N/A'})\n` : '') +
+                       (followUpDetails.meetingDate ? `Meeting: ${followUpDetails.meetingDate} at ${followUpDetails.meetingTime || 'N/A'}\n` : '') +
+                       (followUpDetails.specialistNeeded ? `Specialist for ${followUpDetails.specialistNeeded}: Needed\n` : '') + // Adjusted for ServiceType
+                       (followUpDetails.notes ? `Follow-up Notes: ${followUpDetails.notes}\n` : '');
         if (isHtml) {
             content += `<h3 class="subsection-title">Follow-Up Details</h3><div class="conversation-exchange"><p>${nl2br(escapeHtml(fuText))}</p></div>\n`;
         } else {
-            content += `Follow-Up Details:\n${fuText}\n\n---\n`;
+            content += `\n## Follow-Up Details:\n${fuText}\n`;
         }
     }
 
@@ -795,7 +800,7 @@ export const generateCustomerConversationExportContent = (
          if (isHtml) {
             content += `<h3 class="subsection-title">General Conversation Notes</h3><div class="conversation-exchange"><p>${nl2br(escapeHtml(generalNotes))}</p></div>\n`;
         } else {
-            content += `General Conversation Notes:\n${generalNotes}\n\n---\n`;
+            content += `\n## General Conversation Notes:\n${generalNotes}\n`;
         }
     }
 

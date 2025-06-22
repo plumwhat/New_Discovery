@@ -21,10 +21,10 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+    primary: "bg-[#01916D] text-white hover:bg-[#017a59] focus:ring-[#01916D]",
     secondary: "bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-gray-400",
     danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
-    ghost: "bg-transparent text-blue-600 hover:bg-blue-100 focus:ring-blue-500",
+    ghost: "bg-transparent text-[#01916D] hover:bg-[#E6F4F1] focus:ring-[#01916D]",
     success: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500",
   };
 

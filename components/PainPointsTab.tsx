@@ -1,21 +1,20 @@
 
-
 import React, { useCallback, useMemo, useEffect } from 'react';
-import { TabProps, PainPointMode, PainPointLevel1Pain, PainPointLevel2Pain, PainPointAnswerOption, PainPointSolutionMapping, WaterfallLogEntry, WaterfallStep, PainPointLevel3Question, AccumulatedSolutionInfo, ReverseWaterfallCheatSheet } from '../types'; // Removed EditableReverseWaterfallCheatSheets as it's no longer edited here
+import { TabProps, PainPointMode, PainPointLevel1Pain, PainPointLevel2Pain, PainPointAnswerOption, PainPointSolutionMapping, WaterfallLogEntry, WaterfallStep, PainPointLevel3Question, AccumulatedSolutionInfo, ReverseWaterfallCheatSheet, TabId } from '../types';
 import { 
-    PAIN_POINT_HIERARCHY, // Direct import
-    REVERSE_WATERFALL_CHEAT_SHEETS, // Direct import
-    ALL_PRODUCT_MODULES_FOR_PAIN_POINTS_TAB, 
-    INITIAL_STATE 
-} from '../constants';
+    PAIN_POINT_HIERARCHY, 
+    REVERSE_WATERFALL_CHEAT_SHEETS, 
+    initialPainPointsState
+} from '../constants/painPointConstants';
+import { ALL_PRODUCT_MODULES_FOR_PAIN_POINTS_TAB } from '../constants/moduleConstants';
 import RadioGroup from './common/RadioGroup';
 import Button from './common/Button';
 import Select from './common/Select';
 import { ArrowDownTrayIcon, CheckCircleIcon, XCircleIcon, QuestionMarkCircleIcon, EyeIcon, ArrowUturnLeftIcon } from './common/Icons';
-// Removed: import { useEditableData } from '../hooks/useEditableData';
 
 export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const { painPoints } = appState;
+  const tabIdValue = TabId.PAIN_POINTS;
   const { 
     activeMode, 
     currentWaterfallStep, 
@@ -32,35 +31,30 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
     showConversationView 
   } = painPoints;
 
-  // Use directly imported constants
   const dynamicPainPointHierarchy: PainPointLevel1Pain[] = PAIN_POINT_HIERARCHY;
   const dynamicReverseWaterfallCheatSheets: Record<string, ReverseWaterfallCheatSheet> = REVERSE_WATERFALL_CHEAT_SHEETS;
 
 
-  // Effect to validate current selections against dynamic hierarchy and reset if stale
   useEffect(() => {
     let needsStateUpdate = false;
-    let newPainPointsStatePartial = { ...painPoints }; // Work with a copy
+    let newPainPointsStatePartial = { ...painPoints }; 
 
-    // If hierarchy is empty, reset to initial state for waterfall
     if (dynamicPainPointHierarchy.length === 0 && painPoints.activeMode === PainPointMode.WATERFALL) {
         console.warn(`PainPointsTab: Dynamic Pain Point Hierarchy is empty. Resetting Waterfall state.`);
         newPainPointsStatePartial = {
-            ...INITIAL_STATE.painPoints,
-            activeMode: painPoints.activeMode, // Keep current mode
-            showConversationView: painPoints.showConversationView, // Keep view state
-            waterfallConversationLog: painPoints.waterfallConversationLog, // Optionally keep log
-            // selectedProductForCheatSheet is part of INITIAL_STATE.painPoints
+            ...initialPainPointsState, 
+            activeMode: painPoints.activeMode, 
+            showConversationView: painPoints.showConversationView, 
+            waterfallConversationLog: painPoints.waterfallConversationLog, 
         };
         needsStateUpdate = true;
     } else {
-        // Validate selectedL1PainId
         if (newPainPointsStatePartial.selectedL1PainId) {
             const l1Exists = dynamicPainPointHierarchy.some(p => p.id === newPainPointsStatePartial.selectedL1PainId);
             if (!l1Exists) {
                 console.warn(`PainPointsTab: Stale L1 Pain ID found (${newPainPointsStatePartial.selectedL1PainId}). Resetting L1 selection.`);
                 newPainPointsStatePartial = {
-                    ...INITIAL_STATE.painPoints,
+                    ...initialPainPointsState, 
                     activeMode: newPainPointsStatePartial.activeMode,
                     showConversationView: newPainPointsStatePartial.showConversationView,
                     waterfallConversationLog: newPainPointsStatePartial.waterfallConversationLog,
@@ -69,14 +63,13 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
             }
         }
 
-        // Validate selectedL2PainId (if L1 is valid and L2 is set)
         if (!needsStateUpdate && newPainPointsStatePartial.selectedL1PainId && newPainPointsStatePartial.selectedL2PainId) {
             const currentL1 = dynamicPainPointHierarchy.find(p => p.id === newPainPointsStatePartial.selectedL1PainId);
             const l2Exists = currentL1?.level2Pains.some(p => p.id === newPainPointsStatePartial.selectedL2PainId);
             if (!l2Exists) {
                 console.warn(`PainPointsTab: Stale L2 Pain ID found (${newPainPointsStatePartial.selectedL2PainId}). Resetting L2 selection.`);
                 newPainPointsStatePartial = {
-                    ...newPainPointsStatePartial, // Keep current L1 and other states
+                    ...newPainPointsStatePartial, 
                     currentWaterfallStep: WaterfallStep.SELECT_L2_PAIN,
                     selectedL2PainId: null,
                     selectedL3QuestionId: null,
@@ -89,7 +82,6 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
             }
         }
         
-        // Validate selectedL3QuestionId (if L1 & L2 are valid and L3 question is selected)
         if (!needsStateUpdate && newPainPointsStatePartial.selectedL1PainId && newPainPointsStatePartial.selectedL2PainId && newPainPointsStatePartial.selectedL3QuestionId) {
             const currentL1 = dynamicPainPointHierarchy.find(p => p.id === newPainPointsStatePartial.selectedL1PainId);
             const currentL2 = currentL1?.level2Pains.find(p => p.id === newPainPointsStatePartial.selectedL2PainId);
@@ -107,7 +99,6 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
             }
         }
 
-        // Prune answeredL3QuestionIds and accumulatedL2Solutions if L2 Pain is selected and valid
         if (!needsStateUpdate && newPainPointsStatePartial.selectedL1PainId && newPainPointsStatePartial.selectedL2PainId) {
             const currentL1 = dynamicPainPointHierarchy.find(p => p.id === newPainPointsStatePartial.selectedL1PainId);
             const currentL2 = currentL1?.level2Pains.find(p => p.id === newPainPointsStatePartial.selectedL2PainId);
@@ -136,7 +127,7 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
     if (needsStateUpdate) {
         setAppState(prev => ({
             ...prev,
-            painPoints: newPainPointsStatePartial // Apply the accumulated changes
+            painPoints: newPainPointsStatePartial 
         }));
     }
 
@@ -147,7 +138,7 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
     setAppState(prev => ({
       ...prev,
       painPoints: {
-        ...INITIAL_STATE.painPoints, 
+        ...initialPainPointsState, 
         activeMode: mode, 
         selectedProductForCheatSheet: mode === PainPointMode.REVERSE_WATERFALL && ALL_PRODUCT_MODULES_FOR_PAIN_POINTS_TAB.length > 0 
                                       ? ALL_PRODUCT_MODULES_FOR_PAIN_POINTS_TAB[0].id 
@@ -425,7 +416,6 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
     return l3QuestionsForCurrentL2.find(q => q.id === selectedL3QuestionId) || null;
   }, [l3QuestionsForCurrentL2, selectedL3QuestionId]);
 
-  // This effect handles auto-advancing if all L3 questions for an L2 pain are answered
   useEffect(() => {
     if (
       currentWaterfallStep === WaterfallStep.SELECT_L3_QUESTION &&
@@ -477,7 +467,7 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
 
         {currentWaterfallStep === WaterfallStep.SELECT_L1_PAIN && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Step 1: What is the primary business challenge the customer is describing?</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">Step 1: What is the primary business challenge your customer is facing?</h3>
             {dynamicPainPointHierarchy.length === 0 ? (
                 <p className="text-gray-500">No pain points configured. Please check admin settings.</p>
             ) : (
@@ -562,7 +552,10 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
         )}
         
         {currentWaterfallStep === WaterfallStep.SHOW_L3_OUTCOME && selectedL3AnswerDetails && selectedL3QuestionId && (
-          <div className={`p-4 rounded-md shadow-sm ${currentL3AlignmentDetails ? 'bg-green-50 border border-green-300' : 'bg-yellow-50 border border-yellow-300'}`}>
+          <div 
+            className={`p-4 rounded-md shadow-sm ${currentL3AlignmentDetails ? 'bg-green-50 border border-green-300' : 'bg-yellow-50 border border-yellow-300'}`}
+            aria-live="polite"
+          >
             <h4 className="text-md font-semibold mb-2">Outcome for the recent question:</h4>
             <p className="mb-1"><strong>Question:</strong> {l3QuestionsForCurrentL2.find(q=>q.id === selectedL3QuestionId)?.text}</p>
             <p className="mb-3"><strong>Your Answer:</strong> {selectedL3AnswerDetails.text}</p>
@@ -591,7 +584,7 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
         )}
 
         {currentWaterfallStep === WaterfallStep.SHOW_L2_SUMMARY_OR_GLOBAL_OUTCOME && (
-            <div>
+            <div aria-live="polite">
                 {showNotAlignedMessage && !accumulatedL2Solutions.length && ( 
                      <div className="p-4 border border-red-300 bg-red-50 rounded-md shadow-sm">
                         <h3 className="text-lg font-semibold text-red-700 flex items-center"><XCircleIcon className="w-5 h-5 mr-2"/>Action: Further Consultation Required</h3>
@@ -663,7 +656,7 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
       <div className="space-y-6">
         <div className="bg-indigo-50 p-3 rounded-md border border-indigo-200">
           <p className="text-sm text-gray-700">
-            You are in <strong>Reverse Waterfall Mode</strong>. Select a product to view a sales cheat sheet with key discovery questions.
+            You are in <strong>Reverse Waterfall Mode</strong>. Select a product to view a sales cheat sheet with key discovery questions and typical benefits.
           </p>
         </div>
         <Select
@@ -675,33 +668,47 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
           placeholder="Select a product..."
         />
         {cheatSheet && selectedProduct && (
-          <div className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
-            <h3 className="text-lg font-semibold text-indigo-700 mb-2">Sales Cheat Sheet for: {selectedProduct.name}</h3>
-            <p className="text-sm text-gray-600 mb-1"><strong>Technology Partner:</strong> {selectedProduct.technologyPartner || 'N/A'}</p>
-            <p className="text-sm text-gray-600 mb-3"><strong>Objective:</strong> {cheatSheet.objective}</p>
-            
-            <div className="mb-4 p-3 bg-white border border-gray-200 rounded">
-                <p className="font-medium text-gray-700">Target High-Level Business Pain:</p>
-                <p className="text-gray-600">{cheatSheet.highLevelPain}</p>
-            </div>
-            <div className="mb-4 p-3 bg-white border border-gray-200 rounded">
-                <p className="font-medium text-gray-700">Target Specific Process Pain:</p>
-                <p className="text-gray-600">{cheatSheet.specificProcessPain}</p>
-            </div>
+          <div className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50 space-y-6" aria-live="polite">
+            <div>
+                <h3 className="text-xl font-semibold text-indigo-700 mb-2">Sales Cheat Sheet for: {selectedProduct.name}</h3>
+                <p className="text-sm text-gray-600 mb-1"><strong>Technology Partner:</strong> {selectedProduct.technologyPartner || 'N/A'}</p>
+                <p className="text-sm text-gray-600 mb-3"><strong>Objective:</strong> {cheatSheet.objective}</p>
+                
+                <div className="mb-4 p-3 bg-white border border-gray-200 rounded">
+                    <p className="font-medium text-gray-700">Target High-Level Business Pain:</p>
+                    <p className="text-gray-600">{cheatSheet.highLevelPain}</p>
+                </div>
+                <div className="mb-4 p-3 bg-white border border-gray-200 rounded">
+                    <p className="font-medium text-gray-700">Target Specific Process Pain:</p>
+                    <p className="text-gray-600">{cheatSheet.specificProcessPain}</p>
+                </div>
 
-            <h4 className="text-md font-semibold text-gray-700 mb-2">Key Discovery Points & Aligning Answers:</h4>
-            <ul className="space-y-3">
-              {cheatSheet.keyDiscoveryPoints.map((point, index) => (
-                <li key={index} className="p-3 border border-gray-200 rounded-md bg-white">
-                  <p className="font-medium text-gray-800">Q: {point.question}</p>
-                  <p className="text-sm text-blue-600 mt-1"><em>Aligning A: {point.aligningAnswer}</em></p>
-                </li>
-              ))}
-            </ul>
+                <h4 className="text-md font-semibold text-gray-700 mb-2 mt-4">Key Discovery Points & Aligning Answers:</h4>
+                <ul className="space-y-3">
+                {cheatSheet.keyDiscoveryPoints.map((point, index) => (
+                    <li key={index} className="p-3 border border-gray-200 rounded-md bg-white">
+                    <p className="font-medium text-gray-800">Q: {point.question}</p>
+                    <p className="text-sm text-blue-600 mt-1"><em>Aligning A: {point.aligningAnswer}</em></p>
+                    </li>
+                ))}
+                </ul>
+            </div>
+            
+            {cheatSheet.keyBenefits && cheatSheet.keyBenefits.length > 0 && (
+                <div className="p-4 border border-teal-300 bg-teal-50 rounded-lg shadow">
+                    <h4 className="text-md font-semibold text-teal-700 mb-2">Key Benefits of {selectedProduct.name}:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-teal-800">
+                        {cheatSheet.keyBenefits.map((benefit, index) => (
+                            <li key={index}>{benefit}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
           </div>
         )}
         {!cheatSheet && selectedProductForCheatSheet && (
-            <p className="text-yellow-600 p-3 bg-yellow-50 border border-yellow-200 rounded">Cheat sheet data not found for the selected product.</p>
+            <p className="text-yellow-600 p-3 bg-yellow-50 border border-yellow-200 rounded" aria-live="polite">Cheat sheet data not found for the selected product.</p>
         )}
       </div>
     );
@@ -709,9 +716,13 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
 
   if (showConversationView) {
     return (
-        <div className="p-6 bg-white shadow rounded-lg">
+        <section 
+            className="p-6 bg-white shadow rounded-lg"
+            role="region"
+            aria-labelledby={`${tabIdValue}-conversation-log-heading`}
+        >
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Conversation Log</h2>
+                <h2 id={`${tabIdValue}-conversation-log-heading`} className="text-xl font-semibold text-gray-800">Conversation Log</h2>
                 <Button onClick={() => setAppState(prev => ({ ...prev, painPoints: { ...prev.painPoints, showConversationView: false }}))} 
                         variant="secondary" icon={<ArrowUturnLeftIcon />} iconPosition="left">
                   Back to Discovery
@@ -752,14 +763,18 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
             <Button onClick={handleExportConversation} variant="primary" icon={<ArrowDownTrayIcon />} iconPosition="left" className="mt-4">
               Export Conversation (HTML)
             </Button>
-        </div>
+        </section>
     );
   }
 
   return (
-    <div className="p-6 bg-white shadow rounded-lg">
+    <section 
+      className="p-6 bg-white shadow rounded-lg"
+      role="region"
+      aria-labelledby={`${tabIdValue}-heading`}
+    >
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <h2 className="text-xl font-semibold text-gray-800">Pain Point Guided Discovery</h2>
+        <h2 id={`${tabIdValue}-heading`} className="text-xl font-semibold text-gray-800">Pain Point Guided Discovery</h2>
         <RadioGroup<PainPointMode>
           name="painPointMode"
           options={[
@@ -772,6 +787,6 @@ export const PainPointsTab: React.FC<TabProps> = ({ appState, setAppState }) => 
         />
       </div>
       {activeMode === PainPointMode.WATERFALL ? renderWaterfallMode() : renderReverseWaterfallMode()}
-    </div>
+    </section>
   );
 };

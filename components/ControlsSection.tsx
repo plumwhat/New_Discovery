@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { AppState, Role, AutomationType, Module } from '../types';
-import { ROLES, AUTOMATION_TYPES, MODULES_BY_AUTOMATION_TYPE } from '../constants';
+import { AppState, Role, ServiceType, Module } from '../types'; // Renamed AutomationType to ServiceType
+import { ROLES, SERVICE_TYPES } from '../constants/appConfigConstants'; // Renamed AUTOMATION_TYPES to SERVICE_TYPES
+import { MODULES_BY_SERVICE_TYPE } from '../constants/moduleConstants'; // Renamed MODULES_BY_AUTOMATION_TYPE
 import Select from './common/Select';
-import Input from './common/Input'; // Import Input component
+import Input from './common/Input'; 
 
 interface ControlsSectionProps {
   appState: AppState;
@@ -11,7 +12,7 @@ interface ControlsSectionProps {
   onCustomerNameChange: (name: string) => void;
   onDateCompletedChange: (date: string) => void;
   onRoleChange: (role: Role) => void;
-  onAutomationTypeChange: (type: AutomationType) => void;
+  onServiceTypeChange: (type: ServiceType) => void; // Renamed from onAutomationTypeChange
   onModuleChange: (moduleId: string) => void;
 }
 
@@ -21,10 +22,10 @@ const ControlsSection: React.FC<ControlsSectionProps> = ({
   onCustomerNameChange,
   onDateCompletedChange,
   onRoleChange,
-  onAutomationTypeChange,
+  onServiceTypeChange, // Renamed prop
   onModuleChange,
 }) => {
-  const availableModules = MODULES_BY_AUTOMATION_TYPE[appState.selectedAutomationType] || [];
+  const availableModules = MODULES_BY_SERVICE_TYPE[appState.selectedServiceType] || []; // Renamed selectedAutomationType and MODULES_BY_AUTOMATION_TYPE
 
   return (
     <div className="p-6 bg-white shadow rounded-lg mb-6 space-y-4">
@@ -62,11 +63,11 @@ const ControlsSection: React.FC<ControlsSectionProps> = ({
           options={ROLES.map(role => ({ value: role, label: role }))}
         />
         <Select
-          label="Automation Type"
-          id="automationTypeSelect"
-          value={appState.selectedAutomationType}
-          onChange={(e) => onAutomationTypeChange(e.target.value as AutomationType)}
-          options={AUTOMATION_TYPES.map(type => ({ value: type, label: type }))}
+          label="Service" // Changed UI label
+          id="serviceTypeSelect" // Changed id for clarity
+          value={appState.selectedServiceType} // Renamed selectedAutomationType
+          onChange={(e) => onServiceTypeChange(e.target.value as ServiceType)} // Renamed prop and type
+          options={SERVICE_TYPES.map(type => ({ value: type, label: type }))} // Renamed AUTOMATION_TYPES to SERVICE_TYPES
         />
         <Select
           label="Select Module"
