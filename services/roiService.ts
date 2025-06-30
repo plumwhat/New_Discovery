@@ -1,4 +1,5 @@
 
+
 import { RoiModuleState, RoiResults } from '../types';
 import { getRoiCalculationConstants } from './configService'; // Changed import
 import { AppState } from '../types'; // For def_roi_avgTimeToCorrectErrorHrs fallback
@@ -57,7 +58,7 @@ export const performRoiCalculation = (
             const laborSavingsProcessing = annualTimeSavingHours * hourlyRate;
             totalAnnualGrossSavings += laborSavingsProcessing;
             savingsCalculationWorkings.push({
-                category: "Labor Savings (Invoice Processing Time Reduction)",
+                category: "Labour Savings (Invoice Processing Time Reduction)",
                 formula: `(${numInvoicesPerMonth} invoices/mo * ${avgManualProcessingTimePerInvoiceMins} mins/invoice * ${automationTimeSavingPercentage*100}% saved / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
                 result: laborSavingsProcessing,
                 inputsUsed: { numInvoicesPerMonth, avgManualProcessingTimePerInvoiceMins, hourlyRate, automationTimeSavingPercentage }
@@ -150,13 +151,13 @@ export const performRoiCalculation = (
             });
         }
 
-        // 2. Security Tool Consolidation / Optimization
+        // 2. Security Tool Consolidation / Optimisation
         if (currentAnnualSecuritySpend > 0) {
             const toolConsolidationSavings = currentAnnualSecuritySpend * 0.15; // Assume 15% savings from optimized/consolidated tools
             totalAnnualGrossSavings += toolConsolidationSavings;
             savingsCalculationWorkings.push({
-                category: "Security Tool Consolidation/Optimization",
-                formula: `$${currentAnnualSecuritySpend.toFixed(0)} current spend * 15% optimization`,
+                category: "Security Tool Consolidation/Optimisation",
+                formula: `$${currentAnnualSecuritySpend.toFixed(0)} current spend * 15% optimisation`,
                 result: toolConsolidationSavings,
                 inputsUsed: { currentAnnualSecuritySpend }
             });
@@ -185,7 +186,7 @@ export const performRoiCalculation = (
             const laborSavingsOrderEntry = annualTimeSavingHours * hourlyRate;
             totalAnnualGrossSavings += laborSavingsOrderEntry;
             savingsCalculationWorkings.push({
-                category: "Labor Savings (Order Entry Time Reduction)",
+                category: "Labour Savings (Order Entry Time Reduction)",
                 formula: `(${numSalesOrdersPerMonth} orders/mo * ${avgManualOrderEntryTimeMins} mins/order * ${automationTimeSavingPercentage*100}% saved / 60 mins/hr * 12 mo) * $${hourlyRate.toFixed(2)}/hr`,
                 result: laborSavingsOrderEntry,
                 inputsUsed: { numSalesOrdersPerMonth, avgManualOrderEntryTimeMins, hourlyRate, automationTimeSavingPercentage }
@@ -214,7 +215,7 @@ export const performRoiCalculation = (
             const annualTimeSavingHours = (numInquiriesPerMonth * timeSavedPerInquiryMins / 60) * 12;
             const laborSavingsHandling = annualTimeSavingHours * hourlyRate;
             totalAnnualGrossSavings += laborSavingsHandling;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Inquiry Handling Time)", result: laborSavingsHandling, formula: `(${numInquiriesPerMonth} inquires/mo * ${avgHandleTimePerInquiryMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numInquiriesPerMonth, avgHandleTimePerInquiryMins, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Inquiry Handling Time)", result: laborSavingsHandling, formula: `(${numInquiriesPerMonth} inquires/mo * ${avgHandleTimePerInquiryMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numInquiriesPerMonth, avgHandleTimePerInquiryMins, automationTimeSavingPercentage, hourlyRate}});
         }
         if (numInquiriesPerMonth > 0 && repeatInquiryRatePercentage > 0 && costToResolveRepeatInquiry > 0) {
             const numRepeatInquiriesPerMonth = numInquiriesPerMonth * repeatInquiryRatePercentage;
@@ -234,7 +235,7 @@ export const performRoiCalculation = (
             const timeSavedOnUnmatchedMins = numUnmatchedRemittancesPerMonth * timePerUnmatchedRemittanceMins * automationTimeSavingPercentage; 
             const annualLaborSavings = (timeSavedOnUnmatchedMins / 60) * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Resolving Unmatched Remittances)", result: annualLaborSavings, formula: `(${numRemittancesPerMonth} rem/mo * (1-${avgManualMatchRatePercentage*100}%) * ${timePerUnmatchedRemittanceMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numRemittancesPerMonth, avgManualMatchRatePercentage, timePerUnmatchedRemittanceMins, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Resolving Unmatched Remittances)", result: annualLaborSavings, formula: `(${numRemittancesPerMonth} rem/mo * (1-${avgManualMatchRatePercentage*100}%) * ${timePerUnmatchedRemittanceMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numRemittancesPerMonth, avgManualMatchRatePercentage, timePerUnmatchedRemittanceMins, automationTimeSavingPercentage, hourlyRate}});
         }
         if (annualBankFeesForManualProcessing > 0) { 
              const feeSavings = annualBankFeesForManualProcessing * 0.5; 
@@ -251,7 +252,7 @@ export const performRoiCalculation = (
             const timeSavedPerInvoiceMins = avgCollectorTimePerInvoiceMins * automationTimeSavingPercentage;
             const annualLaborSavings = (numOverdueInvoicesManagedMonthly * timeSavedPerInvoiceMins / 60) * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Collector Efficiency)", result: annualLaborSavings, formula: `(${numOverdueInvoicesManagedMonthly} invoices/mo * ${avgCollectorTimePerInvoiceMins} mins * ${automationTimeSavingPercentage*100}% / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numOverdueInvoicesManagedMonthly, avgCollectorTimePerInvoiceMins, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Collector Efficiency)", result: annualLaborSavings, formula: `(${numOverdueInvoicesManagedMonthly} invoices/mo * ${avgCollectorTimePerInvoiceMins} mins * ${automationTimeSavingPercentage*100}% / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numOverdueInvoicesManagedMonthly, avgCollectorTimePerInvoiceMins, automationTimeSavingPercentage, hourlyRate}});
         }
         if (totalAnnualRevenue > 0 && badDebtPercentageOfRevenue > 0) {
             const currentBadDebtAmount = totalAnnualRevenue * badDebtPercentageOfRevenue;
@@ -269,7 +270,7 @@ export const performRoiCalculation = (
             const timeSavedPerAppHrs = avgTimeToProcessCreditAppManualHrs * automationTimeSavingPercentage;
             const annualLaborSavings = numCreditAppsPerMonth * timeSavedPerAppHrs * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Credit App Processing)", result: annualLaborSavings, formula: `(${numCreditAppsPerMonth} apps/mo * ${avgTimeToProcessCreditAppManualHrs} hrs * ${automationTimeSavingPercentage*100}%) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numCreditAppsPerMonth, avgTimeToProcessCreditAppManualHrs, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Credit App Processing)", result: annualLaborSavings, formula: `(${numCreditAppsPerMonth} apps/mo * ${avgTimeToProcessCreditAppManualHrs} hrs * ${automationTimeSavingPercentage*100}%) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numCreditAppsPerMonth, avgTimeToProcessCreditAppManualHrs, automationTimeSavingPercentage, hourlyRate}});
         }
          if (numCreditAppsPerMonth > 0 && costPerManualCreditReview > 0) {
             const savedReviewCosts = numCreditAppsPerMonth * costPerManualCreditReview * automationTimeSavingPercentage * 12; 
@@ -291,7 +292,7 @@ export const performRoiCalculation = (
             const timeSavedPerClaimMins = avgTimePerClaimManualMins * automationTimeSavingPercentage;
             const annualLaborSavings = (numClaimsDeductionsMonthly * timeSavedPerClaimMins / 60) * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Claim/Deduction Processing)", result: annualLaborSavings, formula: `(${numClaimsDeductionsMonthly} claims/mo * ${avgTimePerClaimManualMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numClaimsDeductionsMonthly, avgTimePerClaimManualMins, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Claim/Deduction Processing)", result: annualLaborSavings, formula: `(${numClaimsDeductionsMonthly} claims/mo * ${avgTimePerClaimManualMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numClaimsDeductionsMonthly, avgTimePerClaimManualMins, automationTimeSavingPercentage, hourlyRate}});
         }
         if (numClaimsDeductionsMonthly > 0 && percentageInvalidDeductionsUnrecovered > 0 && avgValueInvalidDeduction > 0) {
              const annualValueRecovered = numClaimsDeductionsMonthly * avgValueInvalidDeduction * percentageInvalidDeductionsUnrecovered * automationErrorReductionPercentage * 12; 
@@ -308,7 +309,7 @@ export const performRoiCalculation = (
             const timeSavedPerReportMins = avgTimeProcessReportManualMins * automationTimeSavingPercentage;
             const annualLaborSavings = (numExpenseReportsMonthly * timeSavedPerReportMins / 60) * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Expense Report Processing)", result: annualLaborSavings, formula: `(${numExpenseReportsMonthly} reports/mo * ${avgTimeProcessReportManualMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numExpenseReportsMonthly, avgTimeProcessReportManualMins, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Expense Report Processing)", result: annualLaborSavings, formula: `(${numExpenseReportsMonthly} reports/mo * ${avgTimeProcessReportManualMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numExpenseReportsMonthly, avgTimeProcessReportManualMins, automationTimeSavingPercentage, hourlyRate}});
         }
         if (totalAnnualTAndESpend > 0 && outOfPolicySpendPercentage > 0) {
             const currentOutOfPolicyAmount = totalAnnualTAndESpend * outOfPolicySpendPercentage;
@@ -326,7 +327,7 @@ export const performRoiCalculation = (
             const timeSavedPerPOMins = avgManualPOTimeMins * automationTimeSavingPercentage;
             const annualLaborSavings = (numPurchaseOrdersMonthly * timeSavedPerPOMins / 60) * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (PO Processing)", result: annualLaborSavings, formula: `(${numPurchaseOrdersMonthly} POs/mo * ${avgManualPOTimeMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numPurchaseOrdersMonthly, avgManualPOTimeMins, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (PO Processing)", result: annualLaborSavings, formula: `(${numPurchaseOrdersMonthly} POs/mo * ${avgManualPOTimeMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numPurchaseOrdersMonthly, avgManualPOTimeMins, automationTimeSavingPercentage, hourlyRate}});
         }
         if (totalAnnualIndirectSpend > 0 && maverickSpendPercentage > 0) {
             const currentMaverickSpendAmount = totalAnnualIndirectSpend * maverickSpendPercentage;
@@ -352,7 +353,7 @@ export const performRoiCalculation = (
             const numElectronicTransition = numInvoicesSentMonthly * percentagePaperInvoices * 0.9; 
             const annualLaborSavings = (numElectronicTransition * timeSavedPerInvoiceElectronicMins / 60) * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Admin for Electronic Delivery)", result: annualLaborSavings, formula: `(${numInvoicesSentMonthly} inv/mo * ${percentagePaperInvoices*100}% paper * 0.9 electronic conv. * ${timeSavedPerInvoiceElectronicMins} mins saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numInvoicesSentMonthly, percentagePaperInvoices, timeSavedPerInvoiceElectronicMins, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Admin for Electronic Delivery)", result: annualLaborSavings, formula: `(${numInvoicesSentMonthly} inv/mo * ${percentagePaperInvoices*100}% paper * 0.9 electronic conv. * ${timeSavedPerInvoiceElectronicMins} mins saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numInvoicesSentMonthly, percentagePaperInvoices, timeSavedPerInvoiceElectronicMins, hourlyRate}});
         }
     } else if (selectedModuleId === 'supplierManagement') {
         const numSuppliersOnboardedAnnually = getInputValue(inputs, 'sm_roi_numSuppliersOnboardedAnnually');
@@ -364,7 +365,7 @@ export const performRoiCalculation = (
             const timeSavedPerSupplierHrs = avgTimeOnboardSupplierManualHrs * automationTimeSavingPercentage;
             const annualLaborSavings = numSuppliersOnboardedAnnually * timeSavedPerSupplierHrs * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Supplier Onboarding)", result: annualLaborSavings, formula: `${numSuppliersOnboardedAnnually} suppliers/yr * ${avgTimeOnboardSupplierManualHrs} hrs * ${automationTimeSavingPercentage*100}% saved * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numSuppliersOnboardedAnnually, avgTimeOnboardSupplierManualHrs, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Supplier Onboarding)", result: annualLaborSavings, formula: `${numSuppliersOnboardedAnnually} suppliers/yr * ${avgTimeOnboardSupplierManualHrs} hrs * ${automationTimeSavingPercentage*100}% saved * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numSuppliersOnboardedAnnually, avgTimeOnboardSupplierManualHrs, automationTimeSavingPercentage, hourlyRate}});
         }
         if (costOfSupplierDataErrorsAnnual > 0) {
             const errorCostReduction = costOfSupplierDataErrorsAnnual * automationErrorReductionPercentage;
@@ -386,7 +387,7 @@ export const performRoiCalculation = (
             const timeSavedPerUserHrsWeek = avgTimeSearchingDocsPerUserHrsWeek * automationTimeSavingPercentage;
             const annualLaborSavings = numEmployeesUsingSystem * timeSavedPerUserHrsWeek * 52 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Document Search Time)", result: annualLaborSavings, formula: `${numEmployeesUsingSystem} users * ${avgTimeSearchingDocsPerUserHrsWeek} hrs/wk saved searching * ${automationTimeSavingPercentage*100}% * 52 wks * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numEmployeesUsingSystem, avgTimeSearchingDocsPerUserHrsWeek, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Document Search Time)", result: annualLaborSavings, formula: `${numEmployeesUsingSystem} users * ${avgTimeSearchingDocsPerUserHrsWeek} hrs/wk saved searching * ${automationTimeSavingPercentage*100}% * 52 wks * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numEmployeesUsingSystem, avgTimeSearchingDocsPerUserHrsWeek, automationTimeSavingPercentage, hourlyRate}});
         }
         if (annualPhysicalStorageCost > 0) { 
              const storageCostSavings = annualPhysicalStorageCost * 0.9; 
@@ -408,7 +409,7 @@ export const performRoiCalculation = (
         if (numKeyWorkflowsTargeted > 0 && avgInstancesPerWorkflowMonthly > 0 && avgManualTimeSavedPerInstanceHrs > 0 && hourlyRate > 0) {
             const annualLaborSavings = numKeyWorkflowsTargeted * avgInstancesPerWorkflowMonthly * avgManualTimeSavedPerInstanceHrs * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labor Savings (Workflow Automation)", result: annualLaborSavings, formula: `${numKeyWorkflowsTargeted} workflows * ${avgInstancesPerWorkflowMonthly} inst/mo * ${avgManualTimeSavedPerInstanceHrs} hrs saved/inst * 12 mo * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numKeyWorkflowsTargeted, avgInstancesPerWorkflowMonthly, avgManualTimeSavedPerInstanceHrs, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Workflow Automation)", result: annualLaborSavings, formula: `${numKeyWorkflowsTargeted} workflows * ${avgInstancesPerWorkflowMonthly} inst/mo * ${avgManualTimeSavedPerInstanceHrs} hrs saved/inst * 12 mo * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numKeyWorkflowsTargeted, avgInstancesPerWorkflowMonthly, avgManualTimeSavedPerInstanceHrs, hourlyRate}});
         }
         if (numKeyWorkflowsTargeted > 0 && avgInstancesPerWorkflowMonthly > 0 && currentErrorRateInManualWorkflowsPercentage > 0 && avgTimeToCorrectErrorHrs > 0 && hourlyRate > 0) {
             const totalInstancesMonthly = numKeyWorkflowsTargeted * avgInstancesPerWorkflowMonthly;
@@ -452,7 +453,7 @@ export const performRoiCalculation = (
             const genericAnnualLaborSavings = timeSavedPerWeek * 52 * hourlyRate;
             totalAnnualGrossSavings += genericAnnualLaborSavings;
             savingsCalculationWorkings.push({
-                category: "Generic Labor Time Savings",
+                category: "Generic Labour Time Savings",
                 formula: `(${manualTaskTimeHrsWeekPTE.toFixed(1)} hrs/wk/FTE * ${numEmployeesPerformingTask} FTEs * ${automationTimeSavingPercentage*100}% saved * 52 wks) * $${hourlyRate.toFixed(2)}/hr`,
                 result: genericAnnualLaborSavings,
                 inputsUsed: { manualTaskTimeHrsWeekPTE, numEmployeesPerformingTask, hourlyRate, automationTimeSavingPercentage }

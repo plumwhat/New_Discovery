@@ -17,6 +17,7 @@ export enum TabId {
   CUSTOMER_CONVERSATIONS = "Customer Conversations", 
   PAIN_POINTS = "Pain Points", 
   OPPORTUNITY_SCORECARD = "Opportunity Scorecard",
+  ENGAGEMENT_WORKFLOW = "Engagement Workflow", // New Tab
   QUALIFICATION = "Qualification",
   DISCOVERY_QUESTIONS = "Discovery Questions",
   ROI_CALCULATOR = "ROI Calculator",
@@ -319,6 +320,35 @@ export interface CustomerConversationState {
   generalNotes: string; 
 }
 
+export enum EngagementStepType {
+  INITIAL_ENGAGEMENT = 'Initial Engagement',
+  HEALTH_CHECK = 'Health Check',
+  CUSTOMER_MEETING = 'Customer Meeting',
+  QUALIFICATION = 'Qualification',
+  DISCOVERY_MEETING = 'Discovery Meeting',
+  PROCESS_MAPS = 'Process Maps',
+  DEMONSTRATION = 'Demonstration',
+  ROI_SOLUTION_PRESENTATION = 'ROI & Solution Presentation',
+}
+
+export enum EngagementStepStatus {
+    PENDING = 'pending',
+    IN_PROGRESS = 'in-progress',
+    COMPLETED = 'completed',
+    SKIPPED = 'skipped',
+}
+
+export interface EngagementWorkflowStep {
+  id: string;
+  stepType: EngagementStepType;
+  objectives: string[];
+  salesActions: string[];
+  status: EngagementStepStatus;
+}
+
+export interface EngagementWorkflowState {
+  steps: EngagementWorkflowStep[];
+}
 
 export interface AppState {
   customerCompany: string;
@@ -335,6 +365,7 @@ export interface AppState {
   solutionBuilder: SolutionBuilderState; 
   painPoints: PainPointsAppState; 
   customerConversations: CustomerConversationState; 
+  engagementWorkflow: EngagementWorkflowState; // New state slice
   exportFormat: ExportFormat;
   isAdminPanelVisible?: boolean; // Added for Admin Panel Phase 2
 }

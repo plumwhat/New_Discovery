@@ -1,4 +1,3 @@
-
 import { RoiInput } from '../types';
 
 export const ROI_INPUT_TEMPLATES: Record<string, RoiInput[]> = {

@@ -1,4 +1,3 @@
-
 import { EditableDiscoveryQuestionsTemplates } from '../types';
 
 export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates = {
@@ -213,147 +212,145 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates 
       { id: "em_qual_7", text: "What level of visibility does finance have into employee spend and T&E budget adherence?" },
       { id: "em_qual_8", text: "How long does it typically take for an employee to be reimbursed after submitting an expense report?" },
       { id: "em_qual_9", text: "What systems or tools are currently used for expense management?" },
-      { id: "em_qual_10", text: "Are there particular types of expenses or departments that present more challenges?" }
+      { id: "em_qual_10", text: "What are the goals for improving your expense management process?" }
     ],
     quantitative: [
-      { id: "em_quant_1", text: "How many expense reports are processed per month on average?", placeholderHint: "Enter number" },
-      { id: "em_quant_2", text: "What is the average cost to process a single expense report (including labour for submission, approval, and finance processing)?", placeholderHint: "Enter currency amount" },
-      { id: "em_quant_3", text: "What percentage of expense reports are typically returned for correction or more information?", placeholderHint: "Enter percentage" },
-      { id: "em_quant_4", text: "How many FTEs (in total across employees, approvers, finance) are involved in the expense management process?", placeholderHint: "Enter number of FTEs" },
-      { id: "em_quant_5", text: "What is the estimated percentage of out-of-policy or non-compliant spend identified?", placeholderHint: "Enter percentage" },
-      { id: "em_quant_6", text: "What is the average reimbursement cycle time from submission to payment?", placeholderHint: "Enter time (e.g., days)" }
+      { id: "em_quant_1", text: "How many expense reports are processed per month?", placeholderHint: "Enter number" },
+      { id: "em_quant_2", text: "What is the average time it takes for an employee to create an expense report?", placeholderHint: "Enter time (e.g., minutes)" },
+      { id: "em_quant_3", text: "What is the average time it takes for the finance team to process one expense report?", placeholderHint: "Enter time (e.g., minutes)" },
+      { id: "em_quant_4", text: "What is your company's total annual Travel & Expense (T&E) spend?", placeholderHint: "Enter currency amount" },
+      { id: "em_quant_5", text: "What percentage of expense reports are submitted with errors or are out-of-policy?", placeholderHint: "Enter percentage" },
     ]
   },
   procurement: {
     qualitative: [
-      { id: "proc_qual_1", text: "Describe your current process for employees to request goods or services (requisition process)." },
-      { id: "proc_qual_2", text: "What is the approval workflow for purchase requisitions? Who is involved, and how are approvals tracked?" },
-      { id: "proc_qual_3", text: "How are purchase orders (POs) created and sent to suppliers?" },
-      { id: "proc_qual_4", text: "How do you ensure that purchases are made from preferred suppliers and under negotiated terms/contracts?" },
-      { id: "proc_qual_5", text: "What are the main challenges in managing spend and ensuring compliance with procurement policies?" },
-      { id: "proc_qual_6", text: "What level of visibility do you have into committed spend (from approved requisitions/POs) versus actual spend?" },
-      { id: "proc_qual_7", text: "How is budget availability checked and managed during the procurement process?" },
-      { id: "proc_qual_8", text: "What systems or tools are currently used for procurement (e.g., e-procurement system, ERP module, manual processes)?" },
-      { id: "proc_qual_9", text: "How do you handle invoice matching against POs (2-way, 3-way matching)?" },
-      { id: "proc_qual_10", text: "What are your key objectives for improving the procure-to-pay (P2P) cycle?" }
+      { id: "proc_qual_1", text: "Can you describe your procure-to-pay (P2P) process, from requisition to supplier payment?" },
+      { id: "proc_qual_2", text: "How do employees currently request goods or services?" },
+      { id: "proc_qual_3", text: "What is the approval process for purchase requisitions and purchase orders?" },
+      { id: "proc_qual_4", text: "How do you manage supplier catalogs and ensure employees are purchasing from preferred vendors at negotiated prices?" },
+      { id: "proc_qual_5", text: "What are the biggest challenges in controlling 'maverick' or off-contract spending?" },
+      { id: "proc_qual_6", text: "How do you track committed spend against budgets in real-time?" },
+      { id: "proc_qual_7", text: "What is your process for receiving goods and services and matching them to purchase orders?" },
+      { id: "proc_qual_8", text: "How are new suppliers onboarded and how is their information managed?" },
+      { id: "proc_qual_9", text: "What level of visibility do you have into overall procurement spend and savings?" },
+      { id: "proc_qual_10", text: "What are your primary goals for your procurement function (e.g., cost savings, risk mitigation, process efficiency)?" }
     ],
     quantitative: [
-      { id: "proc_quant_1", text: "How many purchase requisitions or POs are processed per month?", placeholderHint: "Enter number" },
-      { id: "proc_quant_2", text: "What is the average cycle time from requisition creation to PO dispatch?", placeholderHint: "Enter time (e.g., days)" },
-      { id: "proc_quant_3", text: "What percentage of your indirect spend is currently managed through approved POs (spend under management)?", placeholderHint: "Enter percentage" },
-      { id: "proc_quant_4", text: "What is the estimated percentage of 'maverick spend' (purchases made outside of approved channels/policies)?", placeholderHint: "Enter percentage" },
-      { id: "proc_quant_5", text: "How many FTEs are involved in the operational procurement process (requisitioning, PO creation, approvals)?", placeholderHint: "Enter number of FTEs" },
-      { id: "proc_quant_6", text: "What is the average cost to process a purchase order?", placeholderHint: "Enter currency amount" }
+      { id: "proc_quant_1", text: "How many purchase orders (POs) do you generate per month?", placeholderHint: "Enter number" },
+      { id: "proc_quant_2", text: "What is your total annual indirect spend?", placeholderHint: "Enter currency amount" },
+      { id: "proc_quant_3", text: "What percentage of your spend is considered 'maverick' or off-contract?", placeholderHint: "Enter percentage" },
+      { id: "proc_quant_4", text: "What is the average requisition-to-PO cycle time?", placeholderHint: "Enter time (e.g., days)" },
+      { id: "proc_quant_5", text: "How many FTEs are involved in the procurement and purchasing process?", placeholderHint: "Enter number of FTEs" },
     ]
   },
   invoiceDelivery: {
     qualitative: [
-      { id: "id_qual_1", text: "Describe your current process for generating and sending customer invoices." },
-      { id: "id_qual_2", text: "What channels do you use to deliver invoices to customers (e.g., email, postal mail, EDI, customer portal)?" },
-      { id: "id_qual_3", text: "What are the main challenges or delays in getting invoices to customers promptly after goods/services are delivered?" },
-      { id: "id_qual_4", text: "How do you handle customer preferences for invoice delivery formats or channels?" },
-      { id: "id_qual_5", text: "What is the process for tracking invoice delivery and confirming receipt by the customer?" },
-      { id: "id_qual_6", text: "How often do customers report not receiving invoices, or receiving them late, as a reason for delayed payment?" },
-      { id: "id_qual_7", text: "What is the impact of invoice delivery issues on your Days Sales Outstanding (DSO) and customer relationships?" },
-      { id: "id_qual_8", text: "Are there any compliance requirements related to invoice content or delivery that are challenging to meet?" },
-      { id: "id_qual_9", text: "What systems are used for invoice generation and delivery? How well are they integrated?" },
-      { id: "id_qual_10", text: "Do you offer customers a self-service portal to view and download their invoices?" }
+      { id: "id_qual_1", text: "How are customer invoices created and delivered today?" },
+      { id: "id_qual_2", text: "What formats do you use for sending invoices (e.g., paper, email PDF, EDI, portal upload)?" },
+      { id: "id_qual_3", text: "What are the challenges associated with your current invoice delivery methods (e.g., cost of postage, delivery failures, customer preference)?" },
+      { id: "id_qual_4", text: "How do you handle customer requests for invoice copies or questions about their invoices?" },
+      { id: "id_qual_5", text: "Do you have visibility to confirm that a customer has received and viewed their invoice?" },
+      { id: "id_qual_6", text: "How much manual effort is involved in printing, folding, stuffing, and mailing paper invoices?" },
+      { id: "id_qual_7", text: "Are you able to comply with customer-specific delivery requirements (e.g., submitting to a specific portal)?" },
+      { id: "id_qual_8", text: "How does your invoice delivery process impact your Days Sales Outstanding (DSO)?" },
+      { id: "id_qual_9", text: "What systems are involved in generating invoice data and delivering the final invoice?" },
+      { id: "id_qual_10", text: "What improvements would you like to see in your invoice delivery process?" }
     ],
     quantitative: [
-      { id: "id_quant_1", text: "How many customer invoices do you send out per month on average?", placeholderHint: "Enter number" },
-      { id: "id_quant_2", text: "What percentage of your invoices are delivered electronically versus by postal mail?", placeholderHint: "Enter percentage electronic" },
-      { id: "id_quant_3", text: "What is the average cost to send a paper invoice (including printing, postage, labour)?", placeholderHint: "Enter currency amount" },
-      { id: "id_quant_4", text: "How many FTEs are involved in the invoice generation and distribution process?", placeholderHint: "Enter number of FTEs" },
-      { id: "id_quant_5", text: "What is the average time lag between goods/service delivery and invoice dispatch?", placeholderHint: "Enter time (e.g., days)" },
-      { id: "id_quant_6", text: "What percentage of customer payment delays are attributed to invoice delivery issues or disputes about invoice content?", placeholderHint: "Enter percentage" }
+      { id: "id_quant_1", text: "How many customer invoices do you send per month?", placeholderHint: "Enter number" },
+      { id: "id_quant_2", text: "What percentage of your invoices are sent via paper mail?", placeholderHint: "Enter percentage" },
+      { id: "id_quant_3", text: "What is the estimated cost (postage, paper, labour) to send one paper invoice?", placeholderHint: "Enter currency amount" },
+      { id: "id_quant_4", text: "How many invoice-related inquiries does your AR/collections team handle per month?", placeholderHint: "Enter number" },
+      { id: "id_quant_5", text: "What is the average number of days between invoice creation and invoice delivery to the customer?", placeholderHint: "Enter number of days" },
     ]
   },
   supplierManagement: {
     qualitative: [
-      { id: "sm_qual_1", text: "Describe your current process for onboarding new suppliers." },
-      { id: "sm_qual_2", text: "What information and documentation do you collect from new suppliers (e.g., banking details, tax forms, compliance certificates)?" },
-      { id: "sm_qual_3", text: "How is supplier information (master data) maintained and kept up-to-date in your systems?" },
-      { id: "sm_qual_4", text: "What are the main challenges in managing supplier relationships and communication?" },
-      { id: "sm_qual_5", text: "Do you have a centralised portal for suppliers to self-manage their information, view POs, or submit invoices?" },
-      { id: "sm_qual_6", text: "How do you assess supplier risk (e.g., financial stability, compliance, performance)?" },
-      { id: "sm_qual_7", text: "What is your process for managing supplier performance and conducting reviews?" },
-      { id: "sm_qual_8", text: "How are changes in supplier details (e.g., bank accounts) validated to prevent fraud?" },
-      { id: "sm_qual_9", text: "What systems or tools are currently used for supplier relationship management (SRM) or supplier master data management?" },
-      { id: "sm_qual_10", text: "How does effective supplier management (or lack thereof) impact your procurement and AP processes?" }
+      { id: "sm_qual_1", text: "Describe your current process for onboarding a new supplier." },
+      { id: "sm_qual_2", text: "How do you collect and verify supplier information (e.g., banking details, compliance certificates, contact info)?" },
+      { id: "sm_qual_3", text: "Where is supplier information stored, and how is it kept up-to-date?" },
+      { id: "sm_qual_4", text: "What are the biggest challenges in managing your supplier master data?" },
+      { id: "sm_qual_5", text: "How do you manage supplier risk and compliance (e.g., checking for sanctions, ensuring certifications are current)?" },
+      { id: "sm_qual_6", text: "Do you have a self-service portal for suppliers to update their own information or check on invoice status?" },
+      { id: "sm_qual_7", text: "How much time does your team spend responding to supplier inquiries?" },
+      { id: "sm_qual_8", text: "What is the process for deactivating or archiving former suppliers?" },
+      { id: "sm_qual_9", text: "How does your supplier management process integrate with your procurement and AP processes?" },
+      { id: "sm_qual_10", text: "What are your key goals for improving supplier relationship management?" }
     ],
     quantitative: [
-      { id: "sm_quant_1", text: "How many active suppliers do you currently work with?", placeholderHint: "Enter number" },
-      { id: "sm_quant_2", text: "How many new suppliers do you typically onboard per year?", placeholderHint: "Enter number" },
-      { id: "sm_quant_3", text: "What is the average time it takes to onboard a new supplier from initial contact to approved status?", placeholderHint: "Enter time (e.g., days)" },
-      { id: "sm_quant_4", text: "How many FTEs are involved in supplier onboarding and master data management?", placeholderHint: "Enter number of FTEs" },
-      { id: "sm_quant_5", text: "What percentage of supplier information is estimated to be outdated or inaccurate in your systems?", placeholderHint: "Enter percentage" },
-      { id: "sm_quant_6", text: "How many supplier inquiries regarding invoice status or payments does your AP team handle per month?", placeholderHint: "Enter number" }
+      { id: "sm_quant_1", text: "How many active suppliers do you have in your master file?", placeholderHint: "Enter number" },
+      { id: "sm_quant_2", text: "How many new suppliers do you onboard on average per year?", placeholderHint: "Enter number" },
+      { id: "sm_quant_3", text: "What is the average time it takes to fully onboard a new supplier?", placeholderHint: "Enter time (e.g., days)" },
+      { id: "sm_quant_4", text: "What percentage of supplier data is estimated to be out-of-date or inaccurate?", placeholderHint: "Enter percentage" },
+      { id: "sm_quant_5", text: "How many FTEs are involved in supplier master data management?", placeholderHint: "Enter number of FTEs" },
     ]
   },
   documentManagement: {
     qualitative: [
-      { id: "dm_qual_1", text: "Where are your most critical business documents currently stored (e.g., shared drives, local PCs, email, physical cabinets)?" },
-      { id: "dm_qual_2", text: "What are the biggest challenges your team faces when trying to find or retrieve specific documents or information?" },
-      { id: "dm_qual_3", text: "How do you currently manage document versions? Have there been issues with people using outdated versions?" },
-      { id: "dm_qual_4", text: "How do you control access to sensitive or confidential documents? Who can view, edit, or share them?" },
-      { id: "dm_qual_5", text: "Describe your process for collaborating on documents that require input or approval from multiple people." },
-      { id: "dm_qual_6", text: "What are your requirements or concerns regarding document retention policies and compliant disposal?" },
-      { id: "dm_qual_7", text: "How prepared are you to respond to audit requests or legal discovery for specific documents?" },
-      { id: "dm_qual_8", text: "What is the impact of inefficient document management on productivity, decision-making, or compliance risk?" },
-      { id: "dm_qual_9", text: "Are there specific types of documents (e.g., contracts, HR records, project files) that are particularly challenging to manage?" },
-      { id: "dm_qual_10", text: "How do remote or mobile workers access and work with company documents?" }
+      { id: "dm_qual_1", text: "What are the most critical types of documents your business relies on daily (e.g., contracts, project files, HR records, quality documents)?" },
+      { id: "dm_qual_2", text: "Can you describe the lifecycle of a typical important document, from creation to archiving?" },
+      { id: "dm_qual_3", text: "What are the biggest frustrations your team has when it comes to finding or sharing documents?" },
+      { id: "dm_qual_4", text: "How do you manage version control and ensure people are not working on outdated information?" },
+      { id: "dm_qual_5", text: "What are your requirements for document security, access control, and compliance (e.g., GDPR, ISO standards)?" },
+      { id: "dm_qual_6", text: "How do your remote or mobile workers access and collaborate on documents?" },
+      { id: "dm_qual_7", text: "How are document-related processes, like review and approval workflows, currently managed?" },
+      { id: "dm_qual_8", text: "What different systems or locations are currently used to store documents (e.g., network drives, SharePoint, email, physical cabinets)?" },
+      { id: "dm_qual_9", text: "How much time is lost to recreating documents that can't be found?" },
+      { id: "dm_qual_10", text: "What is your strategy for records management and document retention/disposal?" }
     ],
     quantitative: [
-      { id: "dm_quant_1", text: "Estimate the total volume of documents (or gigabytes/terabytes of data) your organisation manages.", placeholderHint: "Enter number or size" },
-      { id: "dm_quant_2", text: "On average, how much time does an employee spend per week searching for documents or information?", placeholderHint: "Enter time (e.g., hours)" },
-      { id: "dm_quant_3", text: "What percentage of documents are estimated to be misfiled, duplicated, or lost?", placeholderHint: "Enter percentage" },
-      { id: "dm_quant_4", text: "What are your annual costs associated with physical document storage (if applicable)?", placeholderHint: "Enter currency amount" },
-      { id: "dm_quant_5", text: "How many users require regular access to these documents?", placeholderHint: "Enter number of users" },
-      { id: "dm_quant_6", text: "What is the estimated cost of a compliance breach related to document mismanagement?", placeholderHint: "Enter currency amount (if known)" }
+      { id: "dm_quant_1", text: "How many employees regularly create or need access to critical business documents?", placeholderHint: "Enter number" },
+      { id: "dm_quant_2", text: "On average, how much time does an employee spend per week searching for documents or information?", placeholderHint: "Enter hours" },
+      { id: "dm_quant_3", text: "What is the approximate total volume of your digital documents (in GB or TB)?", placeholderHint: "Enter storage amount" },
+      { id: "dm_quant_4", text: "What is the estimated cost of physical document storage and retrieval per year?", placeholderHint: "Enter currency amount" },
+      { id: "dm_quant_5", text: "How frequently do compliance or audit requests require significant effort to locate relevant documents?", placeholderHint: "e.g., times per year" },
     ]
   },
   workflowManagement: {
     qualitative: [
-      { id: "wm_qual_1", text: "Can you identify 2-3 key business processes that are currently highly manual, inefficient, or prone to bottlenecks?" },
-      { id: "wm_qual_2", text: "Describe a typical approval process in your organisation (e.g., for documents, requests, expenses). What are the steps and handoffs involved?" },
-      { id: "wm_qual_3", text: "How are tasks that require input from multiple people or departments currently managed and tracked?" },
-      { id: "wm_qual_4", text: "What are the consequences of delays or errors in these manual workflows (e.g., missed deadlines, compliance issues, poor customer experience)?" },
-      { id: "wm_qual_5", text: "How much visibility do managers have into the status of ongoing tasks and processes?" },
-      { id: "wm_qual_6", text: "Are there processes that require integration between different systems or applications that are currently done manually?" },
-      { id: "wm_qual_7", text: "How are exceptions or deviations from standard processes handled?" },
-      { id: "wm_qual_8", text: "What is the appetite within the organisation for automating more business processes?" },
-      { id: "wm_qual_9", text: "What tools, if any, are currently used for workflow automation or task management (e.g., email, spreadsheets, basic ERP workflows)?" },
-      { id: "wm_qual_10", text: "If you could automate one specific workflow today, which one would provide the most immediate benefit and why?" }
+      { id: "wm_qual_1", text: "Which business processes are currently the most manual, time-consuming, or error-prone?" },
+      { id: "wm_qual_2", text: "Can you walk me through a typical approval process (e.g., for a purchase, a document, a leave request)?" },
+      { id: "wm_qual_3", text: "What are the consequences of delays or errors in these processes?" },
+      { id: "wm_qual_4", text: "How are tasks handed off between different people or departments in a process?" },
+      { id: "wm_qual_5", text: "What visibility do you have into the status of a process once it has started? Can you identify bottlenecks?" },
+      { id: "wm_qual_6", text: "How are employees notified of tasks requiring their action?" },
+      { id: "wm_qual_7", text: "How easy is it to adapt or change a process when business needs change?" },
+      { id: "wm_qual_8", text: "What systems need to be involved or updated as part of these processes?" },
+      { id: "wm_qual_9", text: "How are you ensuring compliance and creating audit trails for your key processes?" },
+      { id: "wm_qual_10", text: "What is the business appetite for empowering departments to build their own simple workflows versus relying on IT?" }
     ],
     quantitative: [
-      { id: "wm_quant_1", text: "For a key manual process, what is the average time it takes to complete one instance from start to finish?", placeholderHint: "Enter time (e.g., hours or days)" },
-      { id: "wm_quant_2", text: "How many FTEs are primarily involved in executing this key manual process?", placeholderHint: "Enter number of FTEs" },
-      { id: "wm_quant_3", text: "What is the estimated volume of instances for this key process per month/year?", placeholderHint: "Enter number" },
-      { id: "wm_quant_4", text: "What percentage of these manual process instances result in errors or require rework?", placeholderHint: "Enter percentage" },
-      { id: "wm_quant_5", text: "How many different systems/applications do users typically interact with to complete this process manually?", placeholderHint: "Enter number" },
-      { id: "wm_quant_6", text: "Estimate the cost of delays or errors in this process annually.", placeholderHint: "Enter currency amount" }
+      { id: "wm_quant_1", text: "How many instances of a key manual process do you run per month?", placeholderHint: "Enter number" },
+      { id: "wm_quant_2", text: "What is the average end-to-end cycle time for this process?", placeholderHint: "Enter time (e.g., days, hours)" },
+      { id: "wm_quant_3", text: "How many people or departments are typically involved in one cycle of the process?", placeholderHint: "Enter number" },
+      { id: "wm_quant_4", text: "What percentage of process instances require rework or correction due to errors?", placeholderHint: "Enter percentage" },
+      { id: "wm_quant_5", text: "How much time is spent by managers chasing approvals or status updates each week?", placeholderHint: "Enter hours" },
     ]
   },
   processMapping: {
     qualitative: [
-      { id: "pm_qual_1", text: "How are your current business processes documented (e.g., Visio diagrams, Word documents, wikis, tribal knowledge)?" },
-      { id: "pm_qual_2", text: "How accessible and up-to-date is your current process documentation?" },
-      { id: "pm_qual_3", text: "What are the biggest challenges in understanding, standardising, or improving your current processes?" },
-      { id: "pm_qual_4", text: "Who is typically involved in defining and documenting processes? How collaborative is this effort?" },
-      { id: "pm_qual_5", text: "How are process changes communicated and adopted across the relevant teams?" },
-      { id: "pm_qual_6", text: "Do you have a clear understanding of process ownership and responsibilities?" },
-      { id: "pm_qual_7", text: "Are you able to identify process bottlenecks, redundancies, or areas of non-compliance easily?" },
-      { id: "pm_qual_8", text: "How does the lack of clear process maps impact employee training and onboarding?" },
-      { id: "pm_qual_9", text: "Are your process mapping efforts linked to any strategic initiatives like digital transformation, compliance, or automation?" },
-      { id: "pm_qual_10", text: "What features would be most valuable to you in a process mapping or management tool?" }
+      { id: "pm_qual_1", text: "Who is responsible for documenting business processes currently, and what tools do they use?" },
+      { id: "pm_qual_2", text: "How are process maps stored, shared, and kept up-to-date?" },
+      { id: "pm_qual_3", text: "What is the biggest challenge in achieving a shared understanding of how processes work across the organisation?" },
+      { id: "pm_qual_4", text: "How often are processes reviewed or updated?" },
+      { id: "pm_qual_5", text: "To what extent are current process maps used for training, compliance, or identifying automation opportunities?" }
     ],
     quantitative: [
-      { id: "pm_quant_1", text: "How many key business processes are currently undocumented or poorly documented?", placeholderHint: "Enter number" },
-      { id: "pm_quant_2", text: "On average, how much time does it take to create or significantly update a process map using current methods?", placeholderHint: "Enter time (e.g., hours)" },
-      { id: "pm_quant_3", text: "What percentage of your operational staff feel they have a clear understanding of the processes they are involved in?", placeholderHint: "Enter percentage" },
-      { id: "pm_quant_4", text: "How frequently do key business processes change or require updates per year?", placeholderHint: "Enter number" },
-      { id: "pm_quant_5", text: "Estimate the time spent annually on training new staff or retraining existing staff due to poorly understood processes.", placeholderHint: "Enter time (e.g., hours)" },
-      { id: "pm_quant_6", text: "How many different departments or teams are typically involved in your most complex end-to-end processes?", placeholderHint: "Enter number" }
+      { id: "pm_quant_1", text: "How many critical business processes are currently undocumented or poorly documented?", placeholderHint: "Enter number" },
+      { id: "pm_quant_2", text: "What is the estimated time (in hours) it takes for a new employee to get up to speed on a key process?", placeholderHint: "Enter hours" },
+      { id: "pm_quant_3", text: "How much time is spent annually on audit preparations related to process documentation?", placeholderHint: "Enter hours or cost" },
+      { id: "pm_quant_4", text: "What percentage of process-related projects are delayed due to unclear process definitions?", placeholderHint: "Enter percentage" }
     ]
-  }
+  },
+  default: {
+    qualitative: [
+      { id: "def_qual_1", text: "What are the primary qualitative challenges or goals for this module?" }
+    ],
+    quantitative: [
+      { id: "def_quant_1", text: "What is the approximate volume of transactions/items handled by this process per month?", placeholderHint: "e.g., 500 reports, 1000 requests" },
+      { id: "def_quant_2", text: "How many Full-Time Equivalent (FTE) employees are involved in this process?", placeholderHint: "Enter number" },
+      { id: "def_quant_3", text: "What is the average time (in minutes or hours) to complete one cycle of this process manually?", placeholderHint: "e.g., 15 minutes" },
+      { id: "def_quant_4", text: "What is the estimated error rate (%) in this manual process?", placeholderHint: "Enter percentage" }
+    ]
+  },
 };

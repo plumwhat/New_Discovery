@@ -1,7 +1,8 @@
 
+
 import { Role, ServiceType } from '../types'; // Renamed AutomationType to ServiceType
 
-export const APP_TITLE = "Process Automation";
+export const APP_TITLE = "Process Automation & ITS";
 export const APP_SUBTITLE = "Engagement Platform";
 export const RESELLER_COMPANY_NAME = "Your Reseller Company Name";
 export const FOOTER_COPYRIGHT_OWNER = "Brad Whatman";

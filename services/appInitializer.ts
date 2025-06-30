@@ -116,6 +116,16 @@ export const loadInitialState = (): AppState => {
 
   finalState.painPoints = { ...JSON.parse(JSON.stringify(initialPainPointsState)), ...(finalState.painPoints || {}) };
   finalState.customerConversations = { ...JSON.parse(JSON.stringify(initialCustomerConversationState)), ...(finalState.customerConversations || {}) };
+  
+  // Safely merge the engagementWorkflow state
+  finalState.engagementWorkflow = {
+    ...JSON.parse(JSON.stringify(BASE_INITIAL_STATE.engagementWorkflow)),
+    ...(finalState.engagementWorkflow || {})
+  };
+  if (!Array.isArray(finalState.engagementWorkflow.steps)) {
+      finalState.engagementWorkflow.steps = [];
+  }
+
   // Ensure currentServiceFocus in customerConversations is valid or null
   if (finalState.customerConversations.currentServiceFocus && !Object.values(ServiceType).includes(finalState.customerConversations.currentServiceFocus as ServiceType)) {
     finalState.customerConversations.currentServiceFocus = null;

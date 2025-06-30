@@ -1,4 +1,5 @@
 
+
 import { Module, ServiceType } from '../types'; // Renamed AutomationType to ServiceType
 
 export const FINANCE_MODULES: Module[] = [

@@ -35,17 +35,17 @@ const SCRIPT_SECTIONS_CONFIG: ConversationSectionConfig[] = [
       } else if (lowerInput.includes('it support') || lowerInput.includes('cybersecurity') || lowerInput.includes('cloud') || lowerInput.includes('network') || lowerInput.includes('managed services') || lowerInput.includes('it services') || lowerInput.includes('its')) {
           focus = ServiceType.ITS;
       }
-      return { currentServiceFocus: focus, explorationInput: state.explorationInput }; // Renamed currentAutomationFocus
+      return { currentServiceFocus: focus, explorationInput: state.explorationInput }; 
     }
   },
   {
     id: ConversationStepId.EXPLORATION_CHALLENGES,
     title: "2. Exploration & Challenges",
     scriptItems: [
-      { id: "s2_focus_intro", type: "script", text: "Thanks, that helps narrow things down. Let's explore the [SERVICE_FOCUS_TEXT] area a bit more." }, // Placeholder updated
-      { id: "s2_module_questions_finance", type: "module_question_group", text: "Finance Process Challenges", moduleServiceFocus: ServiceType.FINANCE }, // Renamed moduleAutomationFocus
-      { id: "s2_module_questions_business", type: "module_question_group", text: "Business Process Challenges", moduleServiceFocus: ServiceType.BUSINESS }, // Renamed
-      { id: "s2_module_questions_its", type: "module_question_group", text: "IT Service Challenges", moduleServiceFocus: ServiceType.ITS }, // Added for ITS
+      { id: "s2_focus_intro", type: "script", text: "Thanks, that helps narrow things down. Let's explore the [SERVICE_FOCUS_TEXT] area a bit more." }, 
+      { id: "s2_module_questions_finance", type: "module_question_group", text: "Finance Process Challenges", moduleServiceFocus: ServiceType.FINANCE }, 
+      { id: "s2_module_questions_business", type: "module_question_group", text: "Business Process Challenges", moduleServiceFocus: ServiceType.BUSINESS }, 
+      { id: "s2_module_questions_its", type: "module_question_group", text: "IT Service Challenges", moduleServiceFocus: ServiceType.ITS }, 
       { id: "s2_general_challenges", type: "question_textarea", text: "Are there any other significant challenges or inefficiencies in this area that we haven't touched upon?", placeholder: "Other related pain points or issues..." }
     ],
     nextSectionId: ConversationStepId.INTRODUCE_SOLUTION,
@@ -54,24 +54,24 @@ const SCRIPT_SECTIONS_CONFIG: ConversationSectionConfig[] = [
     id: ConversationStepId.INTRODUCE_SOLUTION,
     title: "3. Introduce Solution (High-Level)",
     scriptItems: [
-      { id: "s3_solution_intro_script", type: "script", text: "From what you've described, it seems there are potential areas where we could assist. For instance, many clients achieve significant improvements by streamlining their [SERVICE_FOCUS_TEXT] processes/services. To ensure we align perfectly with your needs, I'd like to involve a specialist who can delve deeper into your specific goals and challenges." }, // Placeholder updated
+      { id: "s3_solution_intro_script", type: "script", text: "From what you've described, it seems there are potential areas where we could assist. For instance, many clients achieve significant improvements by streamlining their [SERVICE_FOCUS_TEXT] processes/services. To ensure we align perfectly with your needs, I'd like to involve a specialist who can delve deeper into your specific goals and challenges." }, 
       { id: "s3_customer_reaction", type: "question_textarea", text: "What are your initial thoughts on that? Does this sound like something that could be beneficial?", placeholder: "Customer's reaction, level of interest..." },
       { id: "s3_interest_confirmed_buttons", type: "interest_buttons", text: "Based on their reaction, is there interest in exploring further with a specialist?" }
     ],
     nextSectionId: ConversationStepId.QUALIFY_ARRANGE_FOLLOW_UP,
-    postLogic: (state) => ({ followUpDetails: {...state.followUpDetails, specialistNeeded: state.followUpDetails.interestConfirmed ? state.currentServiceFocus : null }}) // Renamed state.currentAutomationFocus
+    postLogic: (state) => ({ followUpDetails: {...state.followUpDetails, specialistNeeded: state.followUpDetails.interestConfirmed ? state.currentServiceFocus : null }}) 
   },
   {
     id: ConversationStepId.QUALIFY_ARRANGE_FOLLOW_UP,
     title: "4. Qualify & Arrange Follow-Up",
     scriptItems: [
       { id: "s4_confirm_interest_script", type: "script", text: "Great. So, to confirm, exploring this further sounds beneficial?" },
-      { id: "s4_arrange_call_script", type: "script", text: "If so, I can arrange a brief 30-minute call with an expert in [SERVICE_FOCUS_TEXT] to discuss this in more detail. Would you be open to that?" }, // Placeholder updated
+      { id: "s4_arrange_call_script", type: "script", text: "If so, I can arrange a brief 30-minute call with an expert in [SERVICE_FOCUS_TEXT] to discuss this in more detail. Would you be open to that?" }, 
       { id: "s4_contact_name", type: "input_prompt", text: "Who would be the best person for that follow-up call?", placeholder: "Contact Name", targetStateProperty: "contactName" },
       { id: "s4_contact_email", type: "input_prompt", text: "And their email address?", placeholder: "Contact Email", targetStateProperty: "contactEmail" },
       { id: "s4_meeting_date", type: "input_prompt", text: "Any preferred dates for the call next week?", placeholder: "e.g., Tuesday or Wednesday afternoon", targetStateProperty: "meetingDate" },
       { id: "s4_meeting_time", type: "input_prompt", text: "Any preferred times?", placeholder: "e.g., 2 PM EST", targetStateProperty: "meetingTime" },
-      { id: "s4_specialist_needed_info", type: "script", text: "We'll ensure a [SERVICE_FOCUS_TEXT] specialist is on the call." }, // Placeholder updated
+      { id: "s4_specialist_needed_info", type: "script", text: "We'll ensure a [SERVICE_FOCUS_TEXT] specialist is on the call." }, 
       { id: "s4_additional_notes_fu", type: "question_textarea", text: "Any additional notes for scheduling or for the specialist?", placeholder: "Specific topics, other attendees...", targetStateProperty: "notes" },
     ],
     nextSectionId: ConversationStepId.WRAP_UP,
@@ -89,7 +89,7 @@ const SCRIPT_SECTIONS_CONFIG: ConversationSectionConfig[] = [
 
 const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   const { customerConversations, customerCompany, dateCompleted } = appState;
-  const { activeSectionId, completedSectionIds, exchangeAnswers, moduleExchangeAnswers, currentServiceFocus, explorationInput, followUpDetails, generalNotes, exchanges } = customerConversations; // Renamed currentAutomationFocus
+  const { activeSectionId, completedSectionIds, exchangeAnswers, moduleExchangeAnswers, currentServiceFocus, explorationInput, followUpDetails, generalNotes, exchanges } = customerConversations; 
   const tabIdValue = TabId.CUSTOMER_CONVERSATIONS;
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -150,7 +150,7 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
     const currentSectionConfig = SCRIPT_SECTIONS_CONFIG.find(s => s.id === activeSectionId);
     if (!currentSectionConfig) return;
 
-    let updatedStateFromPostLogic: Partial<Pick<CustomerConversationState, 'currentServiceFocus' | 'followUpDetails' | 'explorationInput'>> = {}; // Renamed currentAutomationFocus
+    let updatedStateFromPostLogic: Partial<Pick<CustomerConversationState, 'currentServiceFocus' | 'followUpDetails' | 'explorationInput'>> = {}; 
     if (currentSectionConfig.postLogic) {
       updatedStateFromPostLogic = currentSectionConfig.postLogic(appState.customerConversations, exchangeAnswers);
     }
@@ -204,9 +204,9 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
           });
       }
     });
-    if (updatedStateFromPostLogic.currentServiceFocus !== undefined && updatedStateFromPostLogic.currentServiceFocus !== currentServiceFocus) { // Renamed currentAutomationFocus
+    if (updatedStateFromPostLogic.currentServiceFocus !== undefined && updatedStateFromPostLogic.currentServiceFocus !== currentServiceFocus) { 
         newExchanges.push({
-            id: crypto.randomUUID(), sectionId: activeSectionId, type: 'focus_determined', answerText: updatedStateFromPostLogic.currentServiceFocus || "Not Determined" // Renamed
+            id: crypto.randomUUID(), sectionId: activeSectionId, type: 'focus_determined', answerText: updatedStateFromPostLogic.currentServiceFocus || "Not Determined" 
         });
     }
 
@@ -229,7 +229,7 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
       }, 100);
     }
 
-  }, [activeSectionId, appState.customerConversations, exchangeAnswers, moduleExchangeAnswers, explorationInput, followUpDetails, generalNotes, setAppState, currentServiceFocus]); // Renamed currentAutomationFocus
+  }, [activeSectionId, appState.customerConversations, exchangeAnswers, moduleExchangeAnswers, explorationInput, followUpDetails, generalNotes, setAppState, currentServiceFocus]); 
 
   const handleExportConversation = () => {
     const filename = `CustomerConversation_${customerCompany.replace(/\s/g, '_') || 'Export'}_${dateCompleted}.html`;
@@ -242,8 +242,8 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
   };
 
   const renderScriptItem = (item: ScriptItem, sectionId: ConversationStepId) => {
-    const focusText = currentServiceFocus || "relevant services"; // Renamed currentAutomationFocus
-    const itemText = item.text.replace(/\[SERVICE_FOCUS_TEXT\]/g, focusText); // Updated placeholder text for service focus
+    const focusText = currentServiceFocus || "relevant services"; 
+    const itemText = item.text.replace(/\[SERVICE_FOCUS_TEXT\]/g, focusText); 
 
     switch (item.type) {
       case 'script':
@@ -294,16 +294,16 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
           </div>
         );
       case 'module_question_group':
-        if (item.moduleServiceFocus && item.moduleServiceFocus !== currentServiceFocus) return null;  // Renamed moduleAutomationFocus & currentAutomationFocus
+        if (item.moduleServiceFocus && item.moduleServiceFocus !== currentServiceFocus) return null;  
         let modulesToDisplay: Module[] = [];
         if (currentServiceFocus === ServiceType.FINANCE) modulesToDisplay = FINANCE_MODULES;
         else if (currentServiceFocus === ServiceType.BUSINESS) modulesToDisplay = BUSINESS_MODULES;
-        else if (currentServiceFocus === ServiceType.ITS) modulesToDisplay = ITS_MODULES; // Added ITS modules display
+        else if (currentServiceFocus === ServiceType.ITS) modulesToDisplay = ITS_MODULES; 
 
         return (
           <div key={item.id} className="my-4 p-3 border border-indigo-200 rounded-md bg-indigo-50 shadow-sm">
             <h4 className="text-md font-semibold text-indigo-700 mb-2">{itemText.replace(/\[SERVICE_FOCUS_TEXT\]/g, focusText)}</h4>
-            {modulesToDisplay.length > 0 ? modulesToDisplay.slice(0, 3).map(module => ( // Consider showing more or all for ITS, or make configurable
+            {modulesToDisplay.length > 0 ? modulesToDisplay.slice(0, 3).map(module => ( 
               <div key={module.id} className="my-3 p-2 border-t border-indigo-100">
                 <p className="text-sm font-medium text-gray-800 mb-1">Regarding {module.name}: What are their current processes and any related challenges in this area?</p>
                 <Button
@@ -386,7 +386,7 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
 
             <div className="space-y-3 text-sm">
                 <p><strong>Customer Company:</strong> {customerCompany || "N/A"}</p>
-                <p><strong>Service Focus Determined:</strong> {currentServiceFocus || "Not yet determined"}</p> {/* Renamed */}
+                <p><strong>Service Focus Determined:</strong> {currentServiceFocus || "Not yet determined"}</p> 
                 {currentServiceFocus && <p><strong>Keywords for Focus:</strong> {explorationInput || "N/A"}</p>}
                 
                 <hr className="my-3" />
@@ -398,7 +398,7 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
                     const sectionAnswers: JSX.Element[] = [];
                     section.scriptItems.forEach(item => {
                         let answer: string | boolean | null | undefined = undefined;
-                        let questionText = item.text.replace(/\[SERVICE_FOCUS_TEXT\]/g, currentServiceFocus || "relevant services"); // Renamed
+                        let questionText = item.text.replace(/\[SERVICE_FOCUS_TEXT\]/g, currentServiceFocus || "relevant services"); 
 
                         if (item.type === 'question_textarea' && exchangeAnswers[item.id]) {
                             answer = exchangeAnswers[item.id];

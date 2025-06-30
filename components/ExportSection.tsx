@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { ExportFormat } from '../types';
 import RadioGroup from './common/RadioGroup';
@@ -9,7 +10,7 @@ interface ExportSectionProps {
   exportFormat: ExportFormat;
   onFormatChange: (format: ExportFormat) => void;
   onExport: () => void;
-  onClearForm: () => void;
+  onResetAllData: () => void; // Changed prop name
   onClearCurrentTab: () => void;
 }
 
@@ -17,7 +18,7 @@ const ExportSection: React.FC<ExportSectionProps> = ({
   exportFormat, 
   onFormatChange, 
   onExport, 
-  onClearForm,
+  onResetAllData, // Changed prop name
   onClearCurrentTab
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -72,13 +73,13 @@ const ExportSection: React.FC<ExportSectionProps> = ({
               Clear Current Tab Data
             </Button>
             <Button 
-              onClick={onClearForm} 
+              onClick={onResetAllData} // Changed prop name
               variant="danger" 
               icon={<TrashIcon />}
               iconPosition="left"
               className="w-full sm:w-auto flex-grow sm:flex-grow-0"
             >
-              Clear All Form Data
+              Reset All App Data {/* Changed button text */}
             </Button>
           </div>
         </div>

@@ -265,11 +265,11 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         </div>
         
         <div className="prose max-w-none p-4 md:p-6 border border-gray-300 rounded-md bg-gray-50 print:border-none print:shadow-none print:bg-white">
-          <h1 className="text-center text-2xl md:text-3xl font-bold text-[#017a59] mb-6">Solution Proposal for {coreModuleNameStr}</h1>
-          <p className="text-center text-sm text-gray-600 mb-2">
+          <h1 className="text-center text-2xl md:text-3xl font-bold text-[#017a59] mb-6" style={{textAlign: 'center'}}>Solution Proposal for {coreModuleNameStr}</h1>
+          <p className="text-center text-sm text-gray-600 mb-2" style={{textAlign: 'center'}}>
             Prepared for: <strong>{customerCompany || "Valued Client"}</strong>
           </p>
-          <p className="text-center text-sm text-gray-600 mb-6">
+          <p className="text-center text-sm text-gray-600 mb-6" style={{textAlign: 'center'}}>
             Date: <strong>{dateCompleted}</strong>
           </p>
           
@@ -432,7 +432,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
           </div>
           
           <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 min-h-[200px] flex flex-col items-center">
-            <div className="bg-[#01916D] text-white p-4 rounded-md shadow-lg text-center mb-6 min-w-[200px] max-w-xs">
+            <div className="bg-[#01916D] text-white p-4 rounded-md shadow-lg text-center mb-6 min-w-[200px] max-w-xs" style={{textAlign: 'center'}}>
               <h4 className="font-bold text-lg">{getSelectedCoreModule()?.name || "N/A"}</h4>
               <p className="text-xs opacity-80">(Core Module)</p>
             </div>

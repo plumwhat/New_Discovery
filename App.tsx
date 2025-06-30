@@ -21,6 +21,7 @@ import { generateExportContent, triggerDownload } from './services/exportService
 import HomeTab from './components/HomeTab';
 import CustomerConversationsTab from './components/CustomerConversationsTab';
 import OpportunityScorecardTab from './components/OpportunityScorecardTab';
+import EngagementWorkflowTab from './components/EngagementWorkflowTab';
 import QualificationTab from './components/QualificationTab';
 import DiscoveryQuestionsTab from './components/DiscoveryQuestionsTab';
 import RoiCalculatorTab from './components/RoiCalculatorTab';
@@ -33,6 +34,7 @@ const TAB_COMPONENTS: Record<TabId, React.FC<any>> = {
   [TabId.CUSTOMER_CONVERSATIONS]: CustomerConversationsTab,
   [TabId.PAIN_POINTS]: PainPointsTab,
   [TabId.OPPORTUNITY_SCORECARD]: OpportunityScorecardTab,
+  [TabId.ENGAGEMENT_WORKFLOW]: EngagementWorkflowTab,
   [TabId.QUALIFICATION]: QualificationTab,
   [TabId.DISCOVERY_QUESTIONS]: DiscoveryQuestionsTab,
   [TabId.ROI_CALCULATOR]: RoiCalculatorTab,
@@ -126,8 +128,8 @@ const App: React.FC = () => {
     triggerDownload(content, filename, appState.exportFormat);
   }, [appState]);
 
-  const handleClearForm = useCallback(() => {
-    if(window.confirm("Are you sure you want to clear ALL data from every tab? This action cannot be undone.")) {
+  const handleResetAllData = useCallback(() => {
+    if(window.confirm("Are you sure you want to reset all application data? This action cannot be undone.")) {
       // Preserve admin panel visibility
       setAppState(prev => ({...loadInitialState(), isAdminPanelVisible: prev.isAdminPanelVisible})); 
     }
@@ -145,6 +147,9 @@ const App: React.FC = () => {
       switch (activeTab) {
         case TabId.OPPORTUNITY_SCORECARD:
           newState.opportunityScorecard = baseInitialStateCopy.opportunityScorecard;
+          break;
+        case TabId.ENGAGEMENT_WORKFLOW:
+          newState.engagementWorkflow = baseInitialStateCopy.engagementWorkflow;
           break;
         case TabId.QUALIFICATION:
           newState.qualification = baseInitialStateCopy.qualification;
@@ -191,7 +196,10 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 font-['Inter'] text-gray-900">
-      <Header toggleAdminPanel={toggleAdminPanel} />
+      <Header 
+        toggleAdminPanel={toggleAdminPanel} 
+        onResetAllData={handleResetAllData} 
+      />
       {isAdminPanelVisible && (
         <AdminPanel 
           onClose={toggleAdminPanel}
@@ -220,7 +228,7 @@ const App: React.FC = () => {
           exportFormat={exportFormat}
           onFormatChange={handleExportFormatChange}
           onExport={handleExportData}
-          onClearForm={handleClearForm}
+          onResetAllData={handleResetAllData} // Changed prop name
           onClearCurrentTab={handleClearCurrentTabData}
         />
       </main>

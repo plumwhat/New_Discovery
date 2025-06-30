@@ -1,5 +1,6 @@
 
-import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat, RequirementBlock, TabMetadata, PainPointLevel1Pain, EditableReverseWaterfallCheatSheets, QualificationQuestion, EditableDiscoveryQuestionsTemplates, EditableModuleSolutionContentMap, DiscoveryQuestion, ConversationExchange, ConversationStepId, ServiceType, CustomerConversationState, PainPointMode, QualificationQuestionOption, ModuleQualificationQuestions } from '../types'; // Renamed AutomationType to ServiceType
+
+import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat, RequirementBlock, TabMetadata, PainPointLevel1Pain, EditableReverseWaterfallCheatSheets, QualificationQuestion, EditableDiscoveryQuestionsTemplates, EditableModuleSolutionContentMap, DiscoveryQuestion, ConversationExchange, ConversationStepId, ServiceType, CustomerConversationState, PainPointMode, QualificationQuestionOption, ModuleQualificationQuestions, EngagementWorkflowStep, EngagementWorkflowState } from '../types'; // Renamed AutomationType to ServiceType
 import { SCORECARD_QUESTIONS } from '../constants/scorecardConstants';
 import { QUALIFICATION_QUESTIONS_BY_MODULE, DEFAULT_QUALIFICATION_THRESHOLDS } from '../constants/qualificationConstants';
 import { DISCOVERY_QUESTIONS_TEMPLATES } from '../constants/discoveryConstants';
@@ -11,7 +12,7 @@ import { PAIN_POINT_HIERARCHY, REVERSE_WATERFALL_CHEAT_SHEETS, initialPainPoints
 import { initialCustomerConversationState } from '../constants/initialStateConstants';
 import { MODULE_INFOGRAPHICS_HTML } from '../constants/infographicConstants';
 import { ROI_INPUT_TEMPLATES } from '../constants/roiConstants';
-import { formatCurrency } from '../utils/formattingUtils'; 
+import { formatCurrency, getPaybackPeriodDisplay } from '../utils/formattingUtils'; 
 import { escapeHtml, nl2br, stripHtml } from '../utils/textUtils'; 
 
 /**
@@ -155,60 +156,62 @@ const formatRoiResultsTextMd = (results: RoiResults | null, format: ExportFormat
 
 const htmlStyles = `
 <style>
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-colour: #f8f9fa; colour: #333; }
-  .container { max-width: 900px; margin: 0 auto; padding: 25px; background-colour: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.07); }
-  h1, h2, h3, h4 { colour: #017a59; margin-top: 1.5em; margin-bottom: 0.6em; } 
-  h1.main-title { font-size: 2.2em; border-bottom: 3px solid #017a59; padding-bottom: 0.3em; text-align: centre; } 
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f8f9fa; color: #333; }
+  .container { max-width: 900px; margin: 0 auto; padding: 25px; background-color: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.07); }
+  h1, h2, h3, h4 { color: #017a59; margin-top: 1.5em; margin-bottom: 0.6em; } 
+  h1.main-title { font-size: 2.2em; border-bottom: 3px solid #017a59; padding-bottom: 0.3em; text-align: center; } 
   h2.section-title { font-size: 1.8em; border-bottom: 2px solid #01916D; padding-bottom: 0.2em; margin-top: 2em; } 
-  h3.subsection-title { font-size: 1.4em; colour: #01916D; } 
+  h3.subsection-title { font-size: 1.4em; color: #01916D; } 
   p, .field { margin-bottom: 0.8em; }
   .field { display: flex; flex-wrap: wrap; margin-bottom: 0.5em; }
-  .field-label { font-weight: bold; colour: #495057; min-width: 180px; padding-right:10px; }
-  .field-value { colour: #212529; }
-  ul, dl { margin-bottom: 1em; padding-left: 20px; }
+  .field-label { font-weight: bold; color: #495057; min-width: 180px; padding-right:10px; }
+  .field-value { color: #212529; }
+  ul, dl, ol { margin-bottom: 1em; padding-left: 20px; }
   li, dt, dd { margin-bottom: 0.4em; }
   dt { font-weight: bold; }
   dd { margin-left: 0; } 
   table { width: 100%; border-collapse: collapse; margin-bottom: 1.5em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   th, td { border: 1px solid #ced4da; padding: 10px 12px; text-align: left; vertical-align: top; }
-  th { background-colour: #e9ecef; font-weight: 600; colour: #017a59; } 
-  tr:nth-child(even) td { background-colour: #f8f9fa; }
+  th { background-color: #e9ecef; font-weight: 600; color: #017a59; } 
+  tr:nth-child(even) td { background-color: #f8f9fa; }
   .section-divider { border-top: 2px dashed #01916D; margin: 2.5em 0; } 
   .currency { font-weight: bold; }
-  .status { padding: 0.2em 0.5em; border-radius: 4px; font-weight: bold; }
-  .status-QUALIFIED { background-colour: #d4edda; colour: #155724; }
-  .status-CLARIFICATION_REQUIRED { background-colour: #fff3cd; colour: #856404; }
-  .status-NOT_SUITABLE { background-colour: #f8d7da; colour: #721c24; }
-  .status-NOT_STARTED { background-colour: #e2e3e5; colour: #383d41; }
-  .note { font-size: 0.9em; colour: #6c757d; font-style: italic; }
-  .discovery-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #eee; border-radius: 4px; background-colour: #fdfdfd;}
+  .status { padding: 0.2em 0.5em; border-radius: 4px; font-weight: bold; text-transform: capitalize; }
+  .status-QUALIFIED, .status-COMPLETED { background-color: #d4edda; color: #155724; }
+  .status-CLARIFICATION_REQUIRED { background-color: #fff3cd; color: #856404; }
+  .status-NOT_SUITABLE, .status-SKIPPED { background-color: #f8d7da; color: #721c24; }
+  .status-NOT_STARTED, .status-PENDING { background-color: #e2e3e5; color: #383d41; }
+  .status-IN-PROGRESS { background-color: #cce5ff; color: #004085; }
+  .note { font-size: 0.9em; color: #6c757d; font-style: italic; }
+  .note ul { margin-top: 4px; margin-bottom: 4px; padding-left: 18px; }
+  .discovery-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #eee; border-radius: 4px; background-color: #fdfdfd;}
   .discovery-item dt { margin-bottom: 0.3em; }
-  .custom-note-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #e0e0e0; border-left: 4px solid #757575; border-radius: 4px; background-colour: #f9f9f9;}
-  .custom-note-item .note-label { font-weight: bold; colour: #555; display: block; margin-bottom: 0.3em; }
-  .custom-note-item .note-content { colour: #333; }
+  .custom-note-item { margin-bottom: 1em; padding: 0.8em; border: 1px solid #e0e0e0; border-left: 4px solid #757575; border-radius: 4px; background-color: #f9f9f9;}
+  .custom-note-item .note-label { font-weight: bold; color: #555; display: block; margin-bottom: 0.3em; }
+  .custom-note-item .note-content { color: #333; }
   .solution-proposal-section { margin-bottom: 2em; }
   .solution-proposal-section h2, .solution-proposal-section h3 { margin-top: 0.5em;}
   .print-hidden { display: initial; } 
   .core-module-elements { margin-top: 0.5em; margin-bottom: 1em; padding-left: 20px; }
   .core-module-elements li { margin-bottom: 0.3em; }
-  .requirement-block-export { margin-bottom: 1em; padding: 0.8em 1em; border: 1px solid #B3DDD4; border-radius: 6px; background-colour: #E6F4F1; } 
-  .requirement-block-export h4 { font-size: 1.1em; colour: #017a59; margin-top: 0; margin-bottom: 0.5em; } 
+  .requirement-block-export { margin-bottom: 1em; padding: 0.8em 1em; border: 1px solid #B3DDD4; border-radius: 6px; background-color: #E6F4F1; } 
+  .requirement-block-export h4 { font-size: 1.1em; color: #017a59; margin-top: 0; margin-bottom: 0.5em; } 
   .requirement-block-export p { font-size: 0.95em; margin-bottom: 0.3em; margin-left: 10px; }
-  .requirement-block-export p strong { colour: #333; }
-  .conversation-exchange { border: 1px solid #e0e0e0; padding: 10px 15px; margin-bottom: 15px; background-colour: #f9f9f9; border-radius: 6px;}
-  .conversation-exchange .section-id { font-size: 1.1em; font-weight:bold; colour: #017a59; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; } 
+  .requirement-block-export p strong { color: #333; }
+  .conversation-exchange { border: 1px solid #e0e0e0; padding: 10px 15px; margin-bottom: 15px; background-color: #f9f9f9; border-radius: 6px;}
+  .conversation-exchange .section-id { font-size: 1.1em; font-weight:bold; color: #017a59; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; } 
   .conversation-exchange .exchange-item { margin-bottom: 8px; padding-left: 10px; }
-  .conversation-exchange .prompt-label { font-weight: bold; colour: #333; }
-  .conversation-exchange .prompt-text, .conversation-exchange .answer-text { margin-top: 3px; colour: #333; white-space: pre-wrap; display: block; padding-left: 15px; }
-  .conversation-exchange .answer-label { font-weight: bold; colour: #28a745; margin-top: 5px;}
+  .conversation-exchange .prompt-label { font-weight: bold; color: #333; }
+  .conversation-exchange .prompt-text, .conversation-exchange .answer-text { margin-top: 3px; color: #333; white-space: pre-wrap; display: block; padding-left: 15px; }
+  .conversation-exchange .answer-label { font-weight: bold; color: #28a745; margin-top: 5px;}
   .conversation-exchange .module-prompt-group { margin-top:10px; padding-left:15px; border-left: 3px solid #80C7B8; } 
-  .conversation-exchange .module-prompt-item { margin-bottom: 10px; padding: 8px; background-colour: #E6F4F1; border-radius: 4px; } 
-  .conversation-exchange .automation-focus { font-size: 0.9em; font-style: italic; colour: #555; margin-top: 5px; }
-  .infographic-section-export { margin-top: 2em; margin-bottom: 2em; padding: 1em; border: 1px dashed #01916D; border-radius: 8px; background-colour: #E6F4F1; } 
-  .infographic-section-export .infographic-body { background-colour: transparent !important; }
+  .conversation-exchange .module-prompt-item { margin-bottom: 10px; padding: 8px; background-color: #E6F4F1; border-radius: 4px; } 
+  .conversation-exchange .automation-focus { font-size: 0.9em; font-style: italic; color: #555; margin-top: 5px; }
+  .infographic-section-export { margin-top: 2em; margin-bottom: 2em; padding: 1em; border: 1px dashed #01916D; border-radius: 8px; background-color: #E6F4F1; } 
+  .infographic-section-export .infographic-body { background-color: transparent !important; }
 
   @media print {
-    body { margin: 0; padding: 0; background-colour: #fff; font-size: 10pt; }
+    body { margin: 0; padding: 0; background-color: #fff; font-size: 10pt; }
     .container { max-width: 100%; margin: 0; padding: 15px; border: none; box-shadow: none; }
     .print-hidden { display: none !important; }
     h1.main-title { font-size: 1.8em; }
@@ -216,9 +219,9 @@ const htmlStyles = `
     h3.subsection-title { font-size: 1.2em; }
     table { font-size: 9pt; }
     th, td { padding: 6px 8px; }
-    .requirement-block-export { border-colour: #ccc; background-colour: #f9f9f9; }
-    .conversation-exchange { background-colour: #f8f8f8; }
-    .infographic-section-export { border: none; padding: 0; margin-top: 1em; margin-bottom: 1em; background-colour: #fff; }
+    .requirement-block-export { border-color: #ccc; background-color: #f9f9f9; }
+    .conversation-exchange { background-color: #f8f8f8; }
+    .infographic-section-export { border: none; padding: 0; margin-top: 1em; margin-bottom: 1em; background-color: #fff; }
   }
 </style>
 `;
@@ -299,8 +302,8 @@ const formatRoiResultsHtml = (results: RoiResults | null, moduleRoiData?: any, m
             <td><span class="currency">${formatCurrencyForExport(item.grossSavings)}</span></td>
             <td><span class="currency">${formatCurrencyForExport(item.softwareCost)}</span></td>
             <td><span class="currency">${formatCurrencyForExport(item.investment)}</span></td>
-            <td><span class="currency" style="colour:${item.netCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.netCashFlow)}</span></td>
-            <td><span class="currency" style="colour:${item.cumulativeNetCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.cumulativeNetCashFlow)}</span></td>
+            <td><span class="currency" style="color:${item.netCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.netCashFlow)}</span></td>
+            <td><span class="currency" style="color:${item.cumulativeNetCashFlow >= 0 ? 'green' : 'red'};">${formatCurrencyForExport(item.cumulativeNetCashFlow)}</span></td>
         </tr>\n`;
     });
     content += "</tbody></table>\n";
@@ -390,7 +393,7 @@ export const generateSolutionDocumentContent = (
             content += formatSectionTitleHtml(`Expected Business Outcomes & ROI Highlights for ${coreModuleName}`, 2);
             content += formatRoiResultsHtml(roiData, moduleRoiDataForExport, coreModuleName);
         }
-        content += `<p class="mt-6 text-xs text-grey-500 text-centre">Document generated by Engagement Platform for ${RESELLER_COMPANY_NAME}.</p>`; // Updated "Process Automation"
+        content += `<p class="mt-6 text-xs text-grey-500 text-center">Document generated by Engagement Platform for ${RESELLER_COMPANY_NAME}.</p>`; 
         content += "</div></body></html>";
     } else { 
         content += formatSectionTitleTextMd(`Solution Proposal for ${coreModuleName}`, 1, ExportFormat.MD);
@@ -433,7 +436,7 @@ export const generateSolutionDocumentContent = (
             content += formatSectionTitleTextMd(`Expected Business Outcomes & ROI Highlights for ${coreModuleName}`, 2, ExportFormat.MD);
             content += formatRoiResultsTextMd(roiData, ExportFormat.MD, moduleRoiDataForExport);
         }
-        content += `\n\n---\n*Document generated by Engagement Platform for ${RESELLER_COMPANY_NAME}.*`; // Updated "Process Automation"
+        content += `\n\n---\n*Document generated by Engagement Platform for ${RESELLER_COMPANY_NAME}.*`;
     }
     return content;
 };
@@ -464,6 +467,73 @@ export const triggerDownload = (content: string, filename: string, formatOrMimeT
     URL.revokeObjectURL(link.href);
 };
 
+const formatEngagementWorkflow = (steps: EngagementWorkflowStep[], isHtml: boolean): string => {
+    if (!steps || steps.length === 0) return "";
+    let content = "";
+    if (isHtml) {
+        content += formatSectionTitleHtml("Proposed Engagement Workflow", 2);
+        content += "<ol>";
+        steps.forEach(step => {
+            content += `<li style="margin-bottom: 1em;"><strong>${escapeHtml(step.stepType)}</strong> (Status: ${escapeHtml(step.status)})`;
+            if (step.objectives && step.objectives.length > 0) {
+                content += `<div class="note" style="margin-left: 15px;"><strong>Objectives:</strong><ul>${step.objectives.map(o => `<li>${escapeHtml(o)}</li>`).join('')}</ul></div>`;
+            }
+            if (step.salesActions && step.salesActions.length > 0) {
+                content += `<div class="note" style="color: #005A9C; margin-left: 15px;"><strong>Sales Actions:</strong><ul>${step.salesActions.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul></div>`;
+            }
+            content += `</li>`;
+        });
+        content += "</ol>";
+    } else {
+        content += formatSectionTitleTextMd("Proposed Engagement Workflow", 2, ExportFormat.MD);
+        steps.forEach((step, index) => {
+            content += `${index + 1}. **${step.stepType}** (Status: ${step.status})\n`;
+            if (step.objectives && step.objectives.length > 0) {
+                content += `   - **Objectives:**\n${step.objectives.map(o => `     - ${o}`).join('\n')}\n`;
+            }
+            if (step.salesActions && step.salesActions.length > 0) {
+                content += `   - **Sales Actions:**\n${step.salesActions.map(a => `     - ${a}`).join('\n')}\n`;
+            }
+        });
+    }
+    return content;
+}
+
+export const generateEngagementWorkflowHtml = (workflow: EngagementWorkflowState, customerCompany: string): string => {
+    let content = `<html><head><title>Engagement Workflow for ${escapeHtml(customerCompany)}</title>${htmlStyles}</head><body><div class="container">`;
+    content += formatSectionTitleHtml(`Proposed Engagement Workflow for ${escapeHtml(customerCompany)}`, 1, true);
+
+    if (!workflow.steps || workflow.steps.length === 0) {
+        content += "<p>No workflow steps have been defined.</p>";
+    } else {
+        workflow.steps.forEach((step, index) => {
+            const statusClass = `status-${step.status.replace('-', '_').toUpperCase()}`;
+            content += `<div class="requirement-block-export" style="margin-bottom: 1.5em; padding: 1em 1.5em;">`;
+            content += `<h3 class="subsection-title" style="margin-top:0; margin-bottom: 0.7em; text-transform: capitalize;">Step ${index + 1}: ${escapeHtml(step.stepType)} <span class="status ${statusClass}" style="font-size: 0.8em; vertical-align: middle; margin-left: 10px;">${escapeHtml(step.status.replace('-', ' '))}</span></h3>`;
+
+            if (step.objectives && step.objectives.length > 0) {
+                content += '<h4>Objectives:</h4><ul>';
+                step.objectives.forEach(o => { content += `<li>${escapeHtml(o)}</li>`; });
+                content += '</ul>';
+            }
+
+            if (step.salesActions && step.salesActions.length > 0) {
+                content += '<h4>Sales Actions:</h4><ul>';
+                step.salesActions.forEach(a => { content += `<li>${escapeHtml(a)}</li>`; });
+                content += '</ul>';
+            }
+             if (step.objectives.length === 0 && step.salesActions.length === 0) {
+                 content += '<p class="note">No specific objectives or actions defined for this step.</p>';
+             }
+            content += `</div>`;
+        });
+    }
+
+    content += "</div></body></html>";
+    return content;
+};
+
+
 /**
  * Generates the main export content for the application.
  * @param appState - The current application state.
@@ -475,6 +545,7 @@ export const generateExportContent = (appState: AppState): string => {
         selectedServiceType, selectedModuleId, activeTab, // Renamed selectedAutomationType
         opportunityScorecard, qualification, discoveryQuestions,
         roiCalculator, solutionBuilder, painPoints, customerConversations,
+        engagementWorkflow, // Added new state
         exportFormat
     } = appState;
 
@@ -490,10 +561,10 @@ export const generateExportContent = (appState: AppState): string => {
     let content = isHtml ? `<html><head><title>Export Report - ${escapeHtml(customerCompany || "Client")}</title>${htmlStyles}</head><body><div class="container">\n` : "";
     
     if (isHtml) {
-        content += formatSectionTitleHtml("Engagement Platform Report", 1, true); // Updated title
+        content += formatSectionTitleHtml("Engagement Platform Report", 1, true);
         content += formatSectionTitleHtml("Engagement Details", 2, false);
     } else {
-        content += formatSectionTitleTextMd("ENGAGEMENT PLATFORM REPORT", 1, currentTextMdFormat); // Updated title
+        content += formatSectionTitleTextMd("ENGAGEMENT PLATFORM REPORT", 1, currentTextMdFormat);
         content += formatSectionTitleTextMd("Engagement Details", 2, currentTextMdFormat);
     }
     
@@ -502,14 +573,14 @@ export const generateExportContent = (appState: AppState): string => {
         content += formatFieldHtml("Customer Contact Name", customerName, false);
         content += formatFieldHtml("Date Completed", dateCompleted, false);
         content += formatFieldHtml("Role", selectedRole, false);
-        content += formatFieldHtml("Selected Service", serviceType, false); // Updated label
+        content += formatFieldHtml("Selected Service", serviceType, false); 
         content += formatFieldHtml("Selected Module (Primary Focus)", moduleName, false);
     } else {
         content += formatFieldTextMd("Customer Company", customerCompany, currentTextMdFormat);
         content += formatFieldTextMd("Customer Contact Name", customerName, currentTextMdFormat);
         content += formatFieldTextMd("Date Completed", dateCompleted, currentTextMdFormat);
         content += formatFieldTextMd("Role", selectedRole, currentTextMdFormat);
-        content += formatFieldTextMd("Selected Service", serviceType, currentTextMdFormat); // Updated label
+        content += formatFieldTextMd("Selected Service", serviceType, currentTextMdFormat); 
         content += formatFieldTextMd("Selected Module (Primary Focus)", moduleName, currentTextMdFormat);
     }
     content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
@@ -579,6 +650,12 @@ export const generateExportContent = (appState: AppState): string => {
         } else {
             content += formatFieldTextMd("Total Score", `${opportunityScorecard.totalScore} / 100`, currentTextMdFormat);
         }
+        content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
+    }
+
+    // New Engagement Workflow Export
+    if (engagementWorkflow && engagementWorkflow.steps.length > 0) {
+        content += formatEngagementWorkflow(engagementWorkflow.steps, isHtml);
         content += isHtml ? "<hr class=\"section-divider\" />\n" : "\n---\n\n";
     }
 
@@ -687,7 +764,7 @@ export const generateExportContent = (appState: AppState): string => {
 
 
     if (exportFormat === ExportFormat.AI_PROMPT) {
-        let aiPrompt = `Analyse the following customer engagement data for a ${serviceType} opportunity related to the ${moduleName} module:\n\n`; // Updated "process automation"
+        let aiPrompt = `Analyse the following customer engagement data for a ${serviceType} opportunity related to the ${moduleName} module:\n\n`; 
         aiPrompt += stripHtml(content); 
         aiPrompt += "\n\nProvide a summary of the key findings, potential solutions, and recommended next steps. Focus on identifying the strongest opportunities and tailor the response for a " + selectedRole + ".";
         content = aiPrompt;
@@ -722,13 +799,13 @@ export const generateCustomerConversationExportContent = (
     if (isHtml) {
         content += `<html><head><title>${escapeHtml(title)}</title>${htmlStyles}</head><body><div class="container">\n`;
         content += `<h1 class="main-title">${escapeHtml(title)}</h1>\n`;
-        content += `<div class="field"><span class="field-label">Identified Service Focus:</span> <span class="field-value">${escapeHtml(currentServiceFocus || "Not Determined")}</span></div>\n`; // Renamed
+        content += `<div class="field"><span class="field-label">Identified Service Focus:</span> <span class="field-value">${escapeHtml(currentServiceFocus || "Not Determined")}</span></div>\n`; 
         if (explorationInput) {
           content += `<div class="field"><span class="field-label">Keywords for Focus:</span> <span class="field-value">${escapeHtml(explorationInput)}</span></div>\n`;
         }
     } else {
         content += `${title.toUpperCase()}\n${'-'.repeat(title.length)}\n\n`;
-        content += `Identified Service Focus: ${currentServiceFocus || "Not Determined"}\n`; // Renamed
+        content += `Identified Service Focus: ${currentServiceFocus || "Not Determined"}\n`; 
         if (explorationInput) {
           content += `Keywords for Focus: ${explorationInput}\n`;
         }
@@ -758,7 +835,7 @@ export const generateCustomerConversationExportContent = (
             } else if (ex.type === 'note_taken' && ex.promptText) {
                  content += `<p><span class="prompt-label">Note (${ex.promptText}):</span> <span class="answer-text">${nl2br(escapeHtml(ex.answerText || 'Empty note'))}</span></p>`;
             } else if (ex.type === 'focus_determined') {
-                content += `<p class="automation-focus"><em>Service Focus Determined: ${escapeHtml(ex.answerText || 'N/A')}</em></p>`; // Renamed automation-focus
+                content += `<p class="automation-focus"><em>Service Focus Determined: ${escapeHtml(ex.answerText || 'N/A')}</em></p>`; 
             }
             content += `</div>`;
         } else { 
@@ -776,7 +853,7 @@ export const generateCustomerConversationExportContent = (
             } else if (ex.type === 'note_taken' && ex.promptText) {
                  content += `Note (${ex.promptText}): ${ex.answerText || 'Empty note'}\n`;
             } else if (ex.type === 'focus_determined') {
-                content += `Service Focus Determined: ${ex.answerText || 'N/A'}\n`; // Renamed
+                content += `Service Focus Determined: ${ex.answerText || 'N/A'}\n`; 
             }
             content += `\n`;
         }
@@ -787,7 +864,7 @@ export const generateCustomerConversationExportContent = (
         const fuText = `Interest Confirmed: ${followUpDetails.interestConfirmed ? 'Yes' : 'No'}\n` +
                        (followUpDetails.contactName ? `Contact: ${followUpDetails.contactName} (${followUpDetails.contactEmail || 'N/A'})\n` : '') +
                        (followUpDetails.meetingDate ? `Meeting: ${followUpDetails.meetingDate} at ${followUpDetails.meetingTime || 'N/A'}\n` : '') +
-                       (followUpDetails.specialistNeeded ? `Specialist for ${followUpDetails.specialistNeeded}: Needed\n` : '') + // Adjusted for ServiceType
+                       (followUpDetails.specialistNeeded ? `Specialist for ${followUpDetails.specialistNeeded}: Needed\n` : '') + 
                        (followUpDetails.notes ? `Follow-up Notes: ${followUpDetails.notes}\n` : '');
         if (isHtml) {
             content += `<h3 class="subsection-title">Follow-Up Details</h3><div class="conversation-exchange"><p>${nl2br(escapeHtml(fuText))}</p></div>\n`;
