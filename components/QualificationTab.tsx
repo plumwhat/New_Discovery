@@ -1,5 +1,4 @@
 
-
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { QualificationQuestion, QualificationStatus, QualificationSectionState, ModuleQualificationQuestions, TabProps, TabId } from '../types';
 import {
@@ -11,6 +10,7 @@ import { ALL_MODULES } from '../constants/moduleConstants';
 import RadioGroup from './common/RadioGroup'; // Changed from Select
 import Button from './common/Button';
 import { evaluateQualificationSection } from '../services/qualificationService';
+import { EnvelopeIcon } from './common/Icons';
 
 const QualificationSection: React.FC<{
   title: string;
@@ -132,6 +132,68 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     });
   }, [setAppState, dynamicQualQualQuestions, dynamicQualQuantQuestions]);
 
+  const handleEmailSummary = useCallback(() => {
+    const { customerCompany, dateCompleted } = appState;
+    const { qualitative, quantitative } = appState.qualification;
+
+    const formatSection = (title: string, sectionState: QualificationSectionState, questions: QualificationQuestion[]): string => {
+        let questionsContent = "";
+        
+        questions.forEach(q => {
+            const answerValue = sectionState.answers[q.id];
+            if (answerValue !== undefined && answerValue !== "") {
+                const questionText = currentModuleName && q.text.includes("[Module Name]")
+                                   ? q.text.replace(/\[Module Name\]/g, currentModuleName)
+                                   : q.text;
+                const selectedOption = q.options.find(opt => opt.value === answerValue);
+                if (selectedOption) {
+                    const answerLabel = selectedOption.label.replace(/\s\(\d+\)$/, ''); // Remove score part like "(10)"
+                    questionsContent += `Q: ${questionText}\nA: ${answerLabel}\n\n`;
+                }
+            }
+        });
+        
+        if (questionsContent) {
+            return `${title}\n------------------------------------------\n${questionsContent}`;
+        }
+        
+        return "";
+    };
+
+    const subject = `Health Check for ${customerCompany || 'Client'} - ${currentModuleName}`;
+
+    let body = `Health Check Summary for: ${customerCompany || 'Client'}\n`;
+    body += `Module: ${currentModuleName}\n`;
+    body += `Date: ${dateCompleted}\n\n`;
+
+    const qualitativeContent = formatSection('Qualitative Assessment', qualitative, dynamicQualQualQuestions);
+    const quantitativeContent = formatSection('Quantitative Assessment', quantitative, dynamicQualQuantQuestions);
+    
+    let hasContent = false;
+    if (qualitativeContent) {
+        body += qualitativeContent;
+        hasContent = true;
+    }
+    
+    if (quantitativeContent) {
+        if(qualitativeContent) body += '\n';
+        body += quantitativeContent;
+        hasContent = true;
+    }
+    
+    if(hasContent){
+        body += '------------------------------------------\n';
+    }
+    
+    body += 'Based on your answers we would invite you to complete a Health Check to enable us to better understand your environment.\n';
+    body += 'Link to Health Check: https://forms.office.com/r/gxfsEwtPzn\n\n\n';
+
+
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
+
+  }, [appState, currentModuleName, dynamicQualQualQuestions, dynamicQualQuantQuestions]);
+
 
   if (!selectedModuleId) {
     return (
@@ -145,6 +207,8 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         </section>
     );
   }
+
+  const isEmailDisabled = qualitative.status === QualificationStatus.NOT_STARTED || quantitative.status === QualificationStatus.NOT_STARTED;
 
   return (
     <section 
@@ -174,6 +238,22 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         moduleName={currentModuleName}
         sectionId={`${tabId}-quantitative`}
       />
+
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <Button
+          onClick={handleEmailSummary}
+          variant="primary"
+          icon={<EnvelopeIcon />}
+          iconPosition="left"
+          disabled={isEmailDisabled}
+          title={isEmailDisabled ? "Please check the status for both assessments to enable" : "Email a summary for the Health Check"}
+        >
+          Email Health Check
+        </Button>
+        <p className="text-xs text-gray-500 mt-2">
+          Opens your default email client with a pre-filled summary.
+        </p>
+      </div>
     </section>
   );
 };

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AppState, Role, ServiceType, TabId, ExportFormat, TabDefinition } from './types'; // Renamed AutomationType to ServiceType
 import { loadInitialState } from './services/appInitializer'; 
@@ -28,6 +29,7 @@ import RoiCalculatorTab from './components/RoiCalculatorTab';
 import SolutionBuilderTab from './components/SolutionBuilderTab';
 import { PainPointsTab } from './components/PainPointsTab';
 import HelpTab from './components/HelpTab';
+import CustomerRetentionPlaybookTab from './components/CustomerRetentionPlaybookTab';
 
 const TAB_COMPONENTS: Record<TabId, React.FC<any>> = {
   [TabId.HOME]: HomeTab,
@@ -39,6 +41,7 @@ const TAB_COMPONENTS: Record<TabId, React.FC<any>> = {
   [TabId.DISCOVERY_QUESTIONS]: DiscoveryQuestionsTab,
   [TabId.ROI_CALCULATOR]: RoiCalculatorTab,
   [TabId.SOLUTION_BUILDER]: SolutionBuilderTab,
+  [TabId.CUSTOMER_RETENTION_PLAYBOOK]: CustomerRetentionPlaybookTab,
   [TabId.HELP]: HelpTab,
 };
 
@@ -174,6 +177,9 @@ const App: React.FC = () => {
           break;
         case TabId.CUSTOMER_CONVERSATIONS:
           newState.customerConversations = JSON.parse(JSON.stringify(initialCustomerConversationState));
+          break;
+        case TabId.CUSTOMER_RETENTION_PLAYBOOK:
+          newState.customerRetention = baseInitialStateCopy.customerRetention;
           break;
       }
       return newState;

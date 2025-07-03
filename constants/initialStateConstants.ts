@@ -1,5 +1,6 @@
 
-import { AppState, Role, ServiceType, TabId, ExportFormat, SolutionBuilderState, CustomerConversationState, QualificationStatus, ConversationStepId, Module, EngagementWorkflowState } from '../types'; // Renamed AutomationType to ServiceType
+
+import { AppState, Role, ServiceType, TabId, ExportFormat, SolutionBuilderState, CustomerConversationState, QualificationStatus, ConversationStepId, Module, EngagementWorkflowState, CustomerRetentionState } from '../types'; // Renamed AutomationType to ServiceType
 import { FINANCE_MODULES, ALL_MODULES, MODULES_BY_SERVICE_TYPE, ITS_MODULES, BUSINESS_MODULES } from './moduleConstants'; // Added MODULES_BY_SERVICE_TYPE, ITS_MODULES, BUSINESS_MODULES
 import { DEFAULT_QUALIFICATION_THRESHOLDS, initialQualificationSectionState } from './qualificationConstants';
 import { DISCOVERY_QUESTIONS_TEMPLATES } from './discoveryConstants';
@@ -38,6 +39,10 @@ const initialEngagementWorkflowState: EngagementWorkflowState = {
     steps: [],
 };
 
+const initialCustomerRetentionState: CustomerRetentionState = {
+  completedActions: {},
+};
+
 const defaultServiceType = APP_SERVICE_TYPES[0];
 let defaultModulesForService: Module[] = [];
 if (defaultServiceType === ServiceType.FINANCE) {
@@ -71,6 +76,7 @@ export const INITIAL_STATE: AppState = {
   painPoints: JSON.parse(JSON.stringify(initialPainPointsState)),
   customerConversations: JSON.parse(JSON.stringify(initialCustomerConversationState)),
   engagementWorkflow: initialEngagementWorkflowState,
+  customerRetention: initialCustomerRetentionState,
   exportFormat: ExportFormat.TXT,
 };
 

@@ -1,4 +1,5 @@
 
+
 export enum Role {
   SALES = "Sales",
   PRESALES = "Presales",
@@ -17,11 +18,12 @@ export enum TabId {
   CUSTOMER_CONVERSATIONS = "Customer Conversations", 
   PAIN_POINTS = "Pain Points", 
   OPPORTUNITY_SCORECARD = "Opportunity Scorecard",
-  ENGAGEMENT_WORKFLOW = "Engagement Workflow", // New Tab
+  ENGAGEMENT_WORKFLOW = "Engagement Workflow", 
   QUALIFICATION = "Qualification",
   DISCOVERY_QUESTIONS = "Discovery Questions",
   ROI_CALCULATOR = "ROI Calculator",
   SOLUTION_BUILDER = "Solution Builder",
+  CUSTOMER_RETENTION_PLAYBOOK = "Customer Retention Playbook",
   HELP = "Help", // New TabId
 }
 
@@ -350,6 +352,10 @@ export interface EngagementWorkflowState {
   steps: EngagementWorkflowStep[];
 }
 
+export interface CustomerRetentionState {
+  completedActions: Record<string, boolean>;
+}
+
 export interface AppState {
   customerCompany: string;
   customerName: string;
@@ -366,6 +372,7 @@ export interface AppState {
   painPoints: PainPointsAppState; 
   customerConversations: CustomerConversationState; 
   engagementWorkflow: EngagementWorkflowState; // New state slice
+  customerRetention: CustomerRetentionState;
   exportFormat: ExportFormat;
   isAdminPanelVisible?: boolean; // Added for Admin Panel Phase 2
 }

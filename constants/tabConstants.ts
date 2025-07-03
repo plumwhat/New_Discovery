@@ -1,6 +1,5 @@
-
 import { Role, TabId, TabMetadata } from '../types';
-import { HomeIcon, PresentationChartBarIcon, ShieldCheckIcon, MagnifyingGlassIcon, CalculatorIcon, PuzzlePieceIcon, InformationCircleIcon, ChatBubbleLeftRightIcon, ChatBubbleBottomCenterTextIcon, CircleStackIcon } from '../components/common/Icons';
+import { HomeIcon, PresentationChartBarIcon, ShieldCheckIcon, MagnifyingGlassIcon, CalculatorIcon, PuzzlePieceIcon, InformationCircleIcon, ChatBubbleLeftRightIcon, ChatBubbleBottomCenterTextIcon, CircleStackIcon, ClipboardDocumentCheckIcon } from '../components/common/Icons';
 
 export const TAB_PURPOSES: Record<TabId, string> = {
   [TabId.HOME]: "Provides a high-level overview of the tool, its tabs, and their purposes, assisting users in navigating the platform effectively.",
@@ -12,6 +11,7 @@ export const TAB_PURPOSES: Record<TabId, string> = {
   [TabId.DISCOVERY_QUESTIONS]: "Offers a comprehensive list of module-specific questions (both qualitative and quantitative) designed to guide Presales, CSM, and SAD roles in conducting detailed discovery conversations. Facilitates capturing customer responses and custom notes to build a thorough understanding of requirements.",
   [TabId.ROI_CALCULATOR]: "Assists Sales and Presales roles in estimating the potential Return on Investment for a specific solution. Users input key metrics for a selected process module (e.g., invoice volumes, processing times, error rates) along with general costs (e.g., average salary, software cost). The tool calculates projected annual gross savings, total net benefit over a defined lifespan, payback period, and provides an annual financial breakdown.",
   [TabId.SOLUTION_BUILDER]: "Primarily for Presales roles to construct a tailored solution proposal. Users select a core module and then detail specific customer requirements and how the proposed software capabilities address them. Features an option to view and export a formatted solution document, which can include a module-specific infographic and ROI highlights.",
+  [TabId.CUSTOMER_RETENTION_PLAYBOOK]: "Provides a timeline-based, interactive guide for CSMs and Sales to manage customer renewals. It outlines key objectives, strategies, and actions at 12, 6, and 3-month milestones, with content tailored to the customer's service type (Automation vs. IT Services).",
   [TabId.HELP]: "Offers comprehensive guidance on using the Engagement Platform. Covers getting started, understanding each tab's functionality, role-based access, data export options, and tips for effective utilisation in process automation and IT service engagements."
 };
 
@@ -25,5 +25,6 @@ export const TAB_METADATA: TabMetadata[] = [
   { id: TabId.DISCOVERY_QUESTIONS, label: "Discovery Questions", roles: [Role.PRESALES, Role.CSM, Role.SAD], icon: MagnifyingGlassIcon, purpose: TAB_PURPOSES[TabId.DISCOVERY_QUESTIONS] },
   { id: TabId.ROI_CALCULATOR, label: "ROI Calculator", roles: [Role.SALES, Role.PRESALES], icon: CalculatorIcon, purpose: TAB_PURPOSES[TabId.ROI_CALCULATOR] },
   { id: TabId.SOLUTION_BUILDER, label: "Solution Builder", roles: [Role.PRESALES], icon: PuzzlePieceIcon, purpose: TAB_PURPOSES[TabId.SOLUTION_BUILDER] },
+  { id: TabId.CUSTOMER_RETENTION_PLAYBOOK, label: "Retention Playbook", roles: [Role.CSM, Role.SALES, Role.SAD], icon: ClipboardDocumentCheckIcon, purpose: TAB_PURPOSES[TabId.CUSTOMER_RETENTION_PLAYBOOK] },
   { id: TabId.HELP, label: "Help", roles: [Role.SALES, Role.PRESALES, Role.CSM, Role.SAD], icon: InformationCircleIcon, purpose: TAB_PURPOSES[TabId.HELP] },
 ];
