@@ -1,12 +1,11 @@
 
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AppState, Role, ServiceType, TabId, ExportFormat, TabDefinition } from './types'; // Renamed AutomationType to ServiceType
 import { loadInitialState } from './services/appInitializer'; 
 import { INITIAL_STATE } from './constants/initialStateConstants'; 
 import { TAB_METADATA } from './constants/tabConstants';
 import { MODULES_BY_SERVICE_TYPE, ALL_MODULES } from './constants/moduleConstants'; // Renamed from MODULES_BY_AUTOMATION_TYPE
-import { getFooterCopyrightOwner } from './services/configService'; // Import new getter
+import { getFooterCopyrightOwner, clearAdminConfig } from './services/configService'; // Import new getter and clearAdminConfig
 import { initialPainPointsState } from './constants/painPointConstants';
 import { initialCustomerConversationState } from './constants/initialStateConstants';
 
@@ -22,7 +21,7 @@ import { generateExportContent, triggerDownload } from './services/exportService
 import HomeTab from './components/HomeTab';
 import CustomerConversationsTab from './components/CustomerConversationsTab';
 import OpportunityScorecardTab from './components/OpportunityScorecardTab';
-import EngagementWorkflowTab from './components/EngagementWorkflowTab';
+import { EngagementWorkflowTab } from './components/EngagementWorkflowTab';
 import QualificationTab from './components/QualificationTab';
 import DiscoveryQuestionsTab from './components/DiscoveryQuestionsTab';
 import RoiCalculatorTab from './components/RoiCalculatorTab';
@@ -132,9 +131,12 @@ const App: React.FC = () => {
   }, [appState]);
 
   const handleResetAllData = useCallback(() => {
-    if(window.confirm("Are you sure you want to reset all application data? This action cannot be undone.")) {
+    if (window.confirm("Are you sure you want to reset all application data and customised settings? This action cannot be undone.")) {
+      localStorage.removeItem('appState');
+      clearAdminConfig();
       // Preserve admin panel visibility
-      setAppState(prev => ({...loadInitialState(), isAdminPanelVisible: prev.isAdminPanelVisible})); 
+      setAppState(prev => ({...loadInitialState(), isAdminPanelVisible: prev.isAdminPanelVisible}));
+      alert("All application data and settings have been reset to their defaults.");
     }
   }, [setAppState]);
 

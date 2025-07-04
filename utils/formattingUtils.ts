@@ -24,22 +24,14 @@ export const formatCurrency = (value: number | undefined | null, defaultValue: s
  *
  * @param paybackPeriodMonths - The calculated payback period in months. Can be Infinity or NaN.
  * @param solutionLifespanYears - The lifespan of the solution in years.
- * @param totalNetBenefitOverLifespan - The total net benefit over the solution's lifespan.
- * @param totalInvestmentOverLifespan - The total investment over the solution's lifespan.
- * @param totalAnnualGrossSavings - The total annual gross savings.
  * @returns A user-friendly string representing the payback period.
  */
-export const getPaybackPeriodDisplay = (paybackPeriodMonths: number, solutionLifespanYears: number, totalNetBenefitOverLifespan: number, totalInvestmentOverLifespan: number, totalAnnualGrossSavings: number): string => {
-    if (isFinite(paybackPeriodMonths)) {
-        if (paybackPeriodMonths < 0) return 'Instant'; // Or handle negative payback as per business logic, usually implies error or instant.
-        return `${paybackPeriodMonths.toFixed(1)} Months`;
-    } else if (totalNetBenefitOverLifespan <= 0 && totalInvestmentOverLifespan > 0) {
-        return 'N/A (No Payback)';
-    } else if (totalInvestmentOverLifespan === 0 && totalAnnualGrossSavings > 0) {
+export const getPaybackPeriodDisplay = (paybackPeriodMonths: number, solutionLifespanYears: number): string => {
+    if (paybackPeriodMonths === 0) {
         return 'Instant';
-    } else if (totalInvestmentOverLifespan === 0 && totalAnnualGrossSavings === 0) {
-        return 'N/A';
-    } else { // This implies paybackPeriodMonths is Infinity and not covered by above specific N/A or Instant cases
-        return `> ${solutionLifespanYears * 12} Months`;
     }
+    if (!isFinite(paybackPeriodMonths) || paybackPeriodMonths > solutionLifespanYears * 12 || paybackPeriodMonths < 0) {
+        return 'N/A (No Payback)';
+    }
+    return `${paybackPeriodMonths.toFixed(1)} Months`;
 };

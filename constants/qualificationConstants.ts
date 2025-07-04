@@ -1,11 +1,45 @@
-
-
 import { QualificationQuestion, AllModuleQualificationQuestions, ModuleQualificationQuestions, QualificationStatus } from '../types';
 
 export const initialQualificationSectionState = {
   answers: {},
   score: 0,
   status: QualificationStatus.NOT_STARTED,
+};
+
+// Base template for emails that will have a health check link
+const BASE_EMAIL_TEMPLATE_BODY_WITH_LINK = `Health Check Summary for: {customerCompany}
+Module: {moduleName}
+Date: {dateCompleted}
+
+{qualitativeContent}
+{quantitativeContent}
+------------------------------------------
+Based on your answers we would invite you to complete a Health Check to enable us to better understand your environment.
+Link to Health Check:`;
+
+// Base template for emails that should NOT have a health check link
+const BASE_EMAIL_TEMPLATE_BODY_NO_LINK = `Health Check Summary for: {customerCompany}
+Module: {moduleName}
+Date: {dateCompleted}
+
+{qualitativeContent}
+{quantitativeContent}
+------------------------------------------
+`;
+
+export const QUALIFICATION_EMAIL_TEMPLATES_BY_MODULE: Record<string, string> = {
+  // A specific property for the no-link version for clarity in the service.
+  default: BASE_EMAIL_TEMPLATE_BODY_NO_LINK,
+  
+  // Specific modules with their URLs
+  cashApplication: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/0i1XpJ6z0v`,
+  orderManagement: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/HQiRQwN1uE`,
+  procurement: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/3xnUFeA8cz`, // Assuming Procedure Management maps to Procurement
+  expenseManagement: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/XFQuWxC73u`,
+  creditManagement: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/xGuZnxpDrS`,
+  collectionManagement: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/tJqqBJsbd5`,
+  claimsDeductions: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/bU6VndfDt6`,
+  accountsPayable: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/gxfsRwtPzn450`,
 };
 
 const DEFAULT_QUALIFICATION_QUESTIONS: ModuleQualificationQuestions = {
@@ -26,54 +60,56 @@ const DEFAULT_QUALIFICATION_QUESTIONS: ModuleQualificationQuestions = {
 const DEFAULT_ITS_QUALIFICATION_QUESTIONS: ModuleQualificationQuestions = {
   qualitative: [
     { id: "its_qual_1", text: "Strategic Importance: How critical is the reliability, security, and performance of your IT systems to your core business operations and overall strategy?", options: [{id: "itsq1o1", label: "Support Function (0)", value: 0}, {id: "itsq1o2", label: "Important Enabler (5)", value: 5}, {id: "itsq1o3", label: "Business Critical (10)", value: 10}, {id: "itsq1o4", label: "Foundation of Business (15)", value: 15}] },
-    { id: "its_qual_2", text: "Current Satisfaction: What is your organization's current satisfaction level with its IT support, cybersecurity posture, and overall IT service delivery?", options: [{id: "itsq2o1", label: "Very Dissatisfied (15)", value: 15}, {id: "itsq2o2", label: "Somewhat Dissatisfied (10)", value: 10}, {id: "itsq2o3", label: "Neutral (5)", value: 5}, {id: "itsq2o4", label: "Satisfied (0)", value: 0}] },
+    { id: "its_qual_2", text: "Current Satisfaction: What is your organisation's current satisfaction level with its IT support, cybersecurity posture, and overall IT service delivery?", options: [{id: "itsq2o1", label: "Very Dissatisfied (15)", value: 15}, {id: "itsq2o2", label: "Somewhat Dissatisfied (10)", value: 10}, {id: "itsq2o3", label: "Neutral (5)", value: 5}, {id: "itsq2o4", label: "Satisfied (0)", value: 0}] },
     { id: "its_qual_3", text: "Executive Urgency: What is the level of executive sponsorship and perceived urgency for improving IT services or security posture?", options: [{id: "itsq3o1", label: "Low/None (0)", value: 0}, {id: "itsq3o2", label: "Moderate Interest (5)", value: 5}, {id: "itsq3o3", label: "High Priority (10)", value: 10}, {id: "itsq3o4", label: "Top Executive Mandate (15)", value: 15}] },
-    { id: "its_qual_4", text: "Change Preparedness: How prepared is the organization for potential changes in IT service delivery models, security practices, or user interaction with IT?", options: [{id: "itsq4o1", label: "Resistant/Low (0)", value: 0}, {id: "itsq4o2", label: "Cautious/Medium (5)", value: 5}, {id: "itsq4o3", label: "Open/High (10)", value: 10}, {id: "itsq4o4", label: "Eager/Very High (15)", value: 15}] },
+    { id: "its_qual_4", text: "Change Preparedness: How prepared is the organisation for potential changes in IT service delivery models, security practices, or user interaction with IT?", options: [{id: "itsq4o1", label: "Resistant/Low (0)", value: 0}, {id: "itsq4o2", label: "Cautious/Medium (5)", value: 5}, {id: "itsq4o3", label: "Open/High (10)", value: 10}, {id: "itsq4o4", label: "Eager/Very High (15)", value: 15}] },
   ],
   quantitative: [
     { id: "its_quant_1", text: "User Base: Approximately how many employees/users are reliant on IT systems for their daily work?", options: [{id: "itsqt1o1", label: "<50 (0)", value: 0}, {id: "itsqt1o2", label: "50-200 (5)", value: 5}, {id: "itsqt1o3", label: "201-500 (10)", value: 10}, {id: "itsqt1o4", label: ">500 (15)", value: 15}] },
     { id: "its_quant_2", text: "IT Operational Budget: What is your current annual IT operational budget (excluding major capital projects) or specific spend on areas of IT pain?", options: [{id: "itsqt2o1", label: "Limited/Unclear (0)", value: 0}, {id: "itsqt2o2", label: "Defined, but constrained (5)", value: 5}, {id: "itsqt2o3", label: "Adequate for current needs (10)", value: 10}, {id: "itsqt2o4", label: "Significant/Open to investment for value (15)", value: 15}] },
-    { id: "its_quant_3", text: "Impact of Issues: Can you estimate the frequency or financial/operational impact of IT downtime or security incidents in the last 12 months?", options: [{id: "itsqt3o1", label: "Minimal/Rare (0)", value: 0}, {id: "itsqt3o2", label: "Occasional, minor impact (5)", value: 5}, {id: "itsqt3o3", label: "Frequent, moderate impact (10)", value: 10}, {id: "itsqt3o4", label: "Constant, significant impact (15)", value: 15}] },
-    { id: "its_quant_4", text: "Internal IT Staff Allocation: What proportion of your internal IT staff time is spent on reactive support/security vs. strategic IT initiatives?", options: [{id: "itsqt4o1", label: "Mostly Strategic (0)", value: 0}, {id: "itsqt4o2", label: "Balanced (5)", value: 5}, {id: "itsqt4o3", label: "Mostly Reactive (10)", value: 10}, {id: "itsqt4o4", label: "Entirely Reactive (15)", value: 15}] },
+    { id: "its_quant_3", text: "Impact of Issues: Can you estimate the frequency or financial/operational impact of IT-related disruptions (e.g., downtime, slow performance)?", options: [{id: "itsqt3o1", label: "Low/Infrequent (0)", value: 0}, {id: "itsqt3o2", label: "Occasional/Minor (5)", value: 5}, {id: "itsqt3o3", label: "Frequent/Moderate (10)", value: 10}, {id: "itsqt3o4", label: "Constant/Significant (15)", value: 15}] },
+    { id: "its_quant_4", text: "Internal IT Resources: How many internal IT staff are dedicated to managing and supporting this service area?", options: [{id: "itsqt4o1", label: "None / Shared Responsibility (15)", value: 15}, {id: "itsqt4o2", label: "1-2 FTEs (Strained) (10)", value: 10}, {id: "itsqt4o3", label: "Adequate Team (5)", value: 5}, {id: "itsqt4o4", label: "Large / Specialized Team (0)", value: 0}] },
   ],
 };
 
+export const DEFAULT_QUALIFICATION_THRESHOLDS = {
+  qualified: 35,
+  clarification: 20,
+};
 
 export const QUALIFICATION_QUESTIONS_BY_MODULE: AllModuleQualificationQuestions = {
-  default: DEFAULT_QUALIFICATION_QUESTIONS,
-  defaultITS: DEFAULT_ITS_QUALIFICATION_QUESTIONS,
+  // Finance Modules
   accountsPayable: {
     qualitative: [
-      { id: "ap_qual_strat_align", text: "How strategically critical is optimizing the Accounts Payable process to your company's current financial objectives?", options: [{id: "apo1", label: "Low Priority (0)", value: 0}, {id: "apo2", label: "Moderately Important (5)", value: 5}, {id: "apo3", label: "Highly Important (10)", value: 10}, {id: "apo4", label: "Mission Critical (15)", value: 15}] },
-      { id: "ap_qual_team_capacity", text: "How would you describe your AP team's current workload and capacity to handle invoice volumes efficiently?", options: [{id: "apo5", label: "Underutilized (0)", value: 0}, {id: "apo6", label: "Manageable (5)", value: 5}, {id: "apo7", label: "Stretched Thin (10)", value: 10}, {id: "apo8", label: "Overwhelmed (15)", value: 15}] },
-      { id: "ap_qual_supplier_rel", text: "What is the current impact of your AP process (e.g., payment timeliness, dispute resolution) on supplier relationships?", options: [{id: "apo9", label: "Positive (0)", value: 0}, {id: "apo10", label: "Neutral (5)", value: 5}, {id: "apo11", label: "Slightly Negative (10)", value: 10}, {id: "apo12", label: "Significantly Strained (15)", value: 15}] },
-      { id: "ap_qual_it_readiness", text: "How prepared is your current IT infrastructure (ERP, financial systems) for integration with a modern AP automation solution?", options: [{id: "apo13", label: "Fully Prepared/APIs (15)", value: 15}, {id: "apo14", label: "Requires Some Effort (10)", value: 10}, {id: "apo15", label: "Significant Legacy Challenges (5)", value: 5}, {id: "apo16", label: "Unsure/Not Ready (0)", value: 0}] },
+      { id: "ap_qual_1", text: "How strategically important is improving AP efficiency to your finance leadership?", options: [{id: "ap_qual_1_o1", label: "Low priority", value: 0}, {id: "ap_qual_1_o2", label: "Nice to have", value: 5}, {id: "ap_qual_1_o3", label: "High priority", value: 10}, {id: "ap_qual_1_o4", label: "Critical initiative", value: 15}] },
+      { id: "ap_qual_2", text: "How open is the AP team to adopting new technologies to replace manual tasks?", options: [{id: "ap_qual_2_o1", label: "Resistant", value: 0}, {id: "ap_qual_2_o2", label: "Cautious", value: 5}, {id: "ap_qual_2_o3", label: "Open", value: 10}, {id: "ap_qual_2_o4", label: "Eager for change", value: 15}] },
+      { id: "ap_qual_3", text: "What level of executive sponsorship exists for an AP automation project?", options: [{id: "ap_qual_3_o1", label: "None", value: 0}, {id: "ap_qual_3_o2", label: "Department manager level", value: 5}, {id: "ap_qual_3_o3", label: "VP/Director level", value: 10}, {id: "ap_qual_3_o4", label: "C-level sponsor", value: 15}] },
+      { id: "ap_qual_4", text: "How significant is the pain caused by supplier inquiries about invoice/payment status?", options: [{id: "ap_qual_4_o1", label: "Insignificant", value: 0}, {id: "ap_qual_4_o2", label: "Minor annoyance", value: 5}, {id: "ap_qual_4_o3", label: "Significant distraction", value: 10}, {id: "ap_qual_4_o4", label: "Major operational issue", value: 15}] },
     ],
     quantitative: [
-      { id: "ap_quant_invoice_vol", text: "What is your approximate monthly volume of supplier invoices?", options: [{id: "apqo1", label: "<500 (0)", value: 0}, {id: "apqo2", label: "500 - 2,000 (5)", value: 5}, {id: "apqo3", label: "2,001 - 10,000 (10)", value: 10}, {id: "apqo4", label: ">10,000 (15)", value: 15}] },
-      { id: "ap_quant_cost_per_inv", text: "What is your estimated current average cost to process a single supplier invoice manually?", options: [{id: "apqo5", label: "<$5 (0)", value: 0}, {id: "apqo6", label: "$5 - $9.99 (5)", value: 5}, {id: "apqo7", label: "$10 - $20 (10)", value: 10}, {id: "apqo8", label: ">$20 (15)", value: 15}] },
-      { id: "ap_quant_exception_rate", text: "Approximately what percentage of your invoices typically require manual exception handling (e.g., discrepancies, missing POs)?", options: [{id: "apqo9", label: "<5% (0)", value: 0}, {id: "apqo10", label: "5% - 14.99% (5)", value: 5}, {id: "apqo11", label: "15% - 25% (10)", value: 10}, {id: "apqo12", label: ">25% (15)", value: 15}] },
-      { id: "ap_quant_discount_capture", text: "What percentage of available early payment discounts are you currently capturing?", options: [{id: "apqo13", label: ">60% (0)", value: 0}, {id: "apqo14", label: "31% - 60% (5)", value: 5}, {id: "apqo15", label: "10% - 30% (10)", value: 10}, {id: "apqo16", label: "<10% (15)", value: 15}] },
-    ],
+      { id: "ap_quant_1", text: "What is your monthly invoice volume?", options: [{id: "ap_quant_1_o1", label: "< 500", value: 0}, {id: "ap_quant_1_o2", label: "500 - 2,000", value: 5}, {id: "ap_quant_1_o3", label: "2,000 - 10,000", value: 10}, {id: "ap_quant_1_o4", label: "> 10,000", value: 15}] },
+      { id: "ap_quant_2", text: "How many FTEs are dedicated to the Accounts Payable process?", options: [{id: "ap_quant_2_o1", label: "< 1", value: 0}, {id: "ap_quant_2_o2", label: "1 - 3", value: 5}, {id: "ap_quant_2_o3", label: "4 - 7", value: 10}, {id: "ap_quant_2_o4", label: "> 7", value: 15}] },
+      { id: "ap_quant_3", text: "What is your estimated cost per invoice processed?", options: [{id: "ap_quant_3_o1", label: "< $5", value: 0}, {id: "ap_quant_3_o2", label: "$5 - $10", value: 5}, {id: "ap_quant_3_o3", label: "$10 - $20", value: 10}, {id: "ap_quant_3_o4", label: "> $20", value: 15}] },
+      { id: "ap_quant_4", text: "What percentage of early payment discounts are you currently unable to capture?", options: [{id: "ap_quant_4_o1", label: "< 10%", value: 0}, {id: "ap_quant_4_o2", label: "10% - 30%", value: 5}, {id: "ap_quant_4_o3", label: "30% - 60%", value: 10}, {id: "ap_quant_4_o4", label: "> 60%", value: 15}] },
+    ]
   },
   documentManagement: {
     qualitative: [
-      { id: "dm_qual_info_access", text: "How significant are the challenges related to finding and accessing correct document versions for your team's daily operations?", options: [{id: "dmo1", label: "Minor Inconvenience (0)", value: 0}, {id: "dmo2", label: "Moderate Impact (5)", value: 5}, {id: "dmo3", label: "Significant Bottleneck (10)", value: 10}, {id: "dmo4", label: "Critical Issue (15)", value: 15}]},
-      { id: "dm_qual_compliance_risk", text: "What is the perceived level of risk associated with your current document management practices regarding compliance and audit readiness?", options: [{id: "dmo5", label: "Low Risk (0)", value: 0}, {id: "dmo6", label: "Some Concerns (5)", value: 5}, {id: "dmo7", label: "Moderate Risk (10)", value: 10}, {id: "dmo8", label: "High Risk/Non-Compliant (15)", value: 15}]},
-      { id: "dm_qual_collaboration", text: "How effectively do current tools support collaboration and version control for documents shared across teams or projects?", options: [{id: "dmo9", label: "Very Effectively (0)", value: 0}, {id: "dmo10", label: "Adequately (5)", value: 5}, {id: "dmo11", label: "Inefficiently (10)", value: 10}, {id: "dmo12", label: "Very Poorly (15)", value: 15}]},
-      { id: "dm_qual_change_mgmt", text: "How receptive are employees to adopting new systems for managing documents, and what's the anticipated change management effort?", options: [{id: "dmo13", label: "Highly Receptive/Low Effort (15)", value: 15}, {id: "dmo14", label: "Moderately Receptive/Manageable Effort (10)", value: 10}, {id: "dmo15", label: "Resistant/Significant Effort (5)", value: 5}, {id: "dmo16", label: "Very Resistant/High Effort (0)", value: 0}]}
+      { id: "dm_qual_1", text: "How important is improving document accessibility and collaboration for remote/hybrid workers?", options: [{id: "dm_qual_1_o1", label: "Not important", value: 0}, {id: "dm_qual_1_o2", label: "Slightly important", value: 5}, {id: "dm_qual_1_o3", label: "Very important", value: 10}, {id: "dm_qual_1_o4", label: "Business critical", value: 15}] },
+      { id: "dm_qual_2", text: "What is the level of concern regarding compliance and security risks with the current document storage methods?", options: [{id: "dm_qual_2_o1", label: "Low concern", value: 0}, {id: "dm_qual_2_o2", label: "Some concern", value: 5}, {id: "dm_qual_2_o3", label: "High concern", value: 10}, {id: "dm_qual_2_o4", label: "Major risk identified", value: 15}] },
+      { id: "dm_qual_3", text: "How much executive buy-in is there for a project to modernise document management?", options: [{id: "dm_qual_3_o1", label: "None", value: 0}, {id: "dm_qual_3_o2", label: "Departmental interest", value: 5}, {id: "dm_qual_3_o3", label: "IT leadership support", value: 10}, {id: "dm_qual_3_o4", label: "C-level sponsorship", value: 15}] },
+      { id: "dm_qual_4", text: "How painful is the process of finding the 'single source of truth' for a critical document or project?", options: [{id: "dm_qual_4_o1", label: "Not painful", value: 0}, {id: "dm_qual_4_o2", label: "Occasionally frustrating", value: 5}, {id: "dm_qual_4_o3", label: "Frequently painful", value: 10}, {id: "dm_qual_4_o4", label: "A constant struggle", value: 15}] },
     ],
     quantitative: [
-      { id: "dm_quant_time_searching", text: "On average, how many hours per week does an employee spend searching for documents or information?", options: [{id: "dmqo1", label: "<1 hour (0)", value: 0}, {id: "dmqo2", label: "1-3 hours (5)", value: 5}, {id: "dmqo3", label: "3-5 hours (10)", value: 10}, {id: "dmqo4", label: ">5 hours (15)", value: 15}]},
-      { id: "dm_quant_repo_count", text: "How many primary repositories (e.g., shared drives, SharePoint sites, local storage) are currently used for critical business documents?", options: [{id: "dmqo5", label: "1-2 (0)", value: 0}, {id: "dmqo6", label: "3-5 (5)", value: 5}, {id: "dmqo7", label: "6-10 (10)", value: 10}, {id: "dmqo8", label: ">10 (15)", value: 15}]},
-      { id: "dm_quant_version_errors", text: "How frequently do issues arise from using incorrect document versions?", options: [{id: "dmqo9", label: "Rarely/Never (0)", value: 0}, {id: "dmqo10", label: "Occasionally (Monthly) (5)", value: 5}, {id: "dmqo11", label: "Frequently (Weekly) (10)", value: 10}, {id: "dmqo12", label: "Constantly (Daily) (15)", value: 15}]},
-      { id: "dm_quant_storage_volume", text: "What is the approximate volume of digital documents (e.g., in GB/TB or estimated number of files) that need better management?", options: [{id: "dmqo13", label: "Small (<100GB) (0)", value: 0}, {id: "dmqo14", label: "Medium (100GB-1TB) (5)", value: 5}, {id: "dmqo15", label: "Large (1TB-5TB) (10)", value: 10}, {id: "dmqo16", label: "Very Large (>5TB) (15)", value: 15}]}
+      { id: "dm_quant_1", text: "How many different systems/locations are used to store critical documents (e.g., network drives, email, SharePoint, local PCs)?", options: [{id: "dm_quant_1_o1", label: "1-2", value: 0}, {id: "dm_quant_1_o2", label: "3-4", value: 5}, {id: "dm_quant_1_o3", label: "5-7", value: 10}, {id: "dm_quant_1_o4", label: "> 7", value: 15}] },
+      { id: "dm_quant_2", text: "How many employees regularly need to access or collaborate on these documents?", options: [{id: "dm_quant_2_o1", label: "< 25", value: 0}, {id: "dm_quant_2_o2", label: "25-100", value: 5}, {id: "dm_quant_2_o3", label: "101-500", value: 10}, {id: "dm_quant_2_o4", label: "> 500", value: 15}] },
+      { id: "dm_quant_3", text: "What is the estimated time an employee spends per week searching for information?", options: [{id: "dm_quant_3_o1", label: "< 1 hour", value: 0}, {id: "dm_quant_3_o2", label: "1-3 hours", value: 5}, {id: "dm_quant_3_o3", label: "3-5 hours", value: 10}, {id: "dm_quant_3_o4", label: "> 5 hours", value: 15}] },
+      { id: "dm_quant_4", text: "How frequently are audit or compliance requests difficult to fulfill due to documentation issues?", options: [{id: "dm_quant_4_o1", label: "Never", value: 0}, {id: "dm_quant_4_o2", label: "Rarely", value: 5}, {id: "dm_quant_4_o3", label: "Sometimes", value: 10}, {id: "dm_quant_4_o4", label: "Frequently", value: 15}] },
     ]
-  }
-  // Add other module-specific questions here as researched
-};
-
-export const DEFAULT_QUALIFICATION_THRESHOLDS = {
-  qualified: 40, // Example: Sum of 4 questions, if avg > 10
-  clarification: 20, // Example: Sum of 4 questions, if avg > 5
+  },
+  // Add other specific modules here if needed, otherwise they use default.
+  // ...
+  // Fallbacks
+  default: DEFAULT_QUALIFICATION_QUESTIONS,
+  defaultITS: DEFAULT_ITS_QUALIFICATION_QUESTIONS,
 };

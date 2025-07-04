@@ -1,5 +1,11 @@
 
 
+export interface EngagementAction {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export enum Role {
   SALES = "Sales",
   PRESALES = "Presales",
@@ -122,6 +128,7 @@ export interface RoiInput {
   value: string | number; // Value is instance data, not part of template structure for editing.
   unit?: string;
   isCurrency?: boolean;
+  placeholder?: string;
 }
 
 export interface RoiResults {
@@ -323,14 +330,13 @@ export interface CustomerConversationState {
 }
 
 export enum EngagementStepType {
-  INITIAL_ENGAGEMENT = 'Initial Engagement',
-  HEALTH_CHECK = 'Health Check',
-  CUSTOMER_MEETING = 'Customer Meeting',
-  QUALIFICATION = 'Qualification',
-  DISCOVERY_MEETING = 'Discovery Meeting',
-  PROCESS_MAPS = 'Process Maps',
-  DEMONSTRATION = 'Demonstration',
-  ROI_SOLUTION_PRESENTATION = 'ROI & Solution Presentation',
+  PLAN_AND_PREPARE = 'Plan & Prepare',
+  OPEN_AND_CONNECT = 'Open & Connect',
+  DISCOVER_AND_DIAGNOSE = 'Discover & Diagnose',
+  CRAFT_AND_VALIDATE_SOLUTION = 'Craft & Validate Solution',
+  PROPOSE_AND_PROVE_VALUE = 'Propose & Prove Value',
+  GAIN_COMMITMENT_AND_CLOSE = 'Gain Commitment & Close',
+  IMPLEMENT_AND_EXPAND = 'Implement & Expand',
 }
 
 export enum EngagementStepStatus {
@@ -343,8 +349,8 @@ export enum EngagementStepStatus {
 export interface EngagementWorkflowStep {
   id: string;
   stepType: EngagementStepType;
-  objectives: string[];
-  salesActions: string[];
+  objectives: EngagementAction[];
+  salesActions: EngagementAction[];
   status: EngagementStepStatus;
 }
 
@@ -498,4 +504,5 @@ export interface AdminConfigStructure {
   
   // Future
   tabMetadata?: TabMetadata[];
+  qualificationEmailTemplate?: string;
 }

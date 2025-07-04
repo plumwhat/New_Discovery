@@ -1,12 +1,16 @@
 
 
-import { AppState, Role, ServiceType, TabId, ExportFormat, SolutionBuilderState, CustomerConversationState, QualificationStatus, ConversationStepId, Module, EngagementWorkflowState, CustomerRetentionState } from '../types'; // Renamed AutomationType to ServiceType
-import { FINANCE_MODULES, ALL_MODULES, MODULES_BY_SERVICE_TYPE, ITS_MODULES, BUSINESS_MODULES } from './moduleConstants'; // Added MODULES_BY_SERVICE_TYPE, ITS_MODULES, BUSINESS_MODULES
+
+
+import { AppState, Role, ServiceType, TabId, ExportFormat, SolutionBuilderState, CustomerConversationState, QualificationStatus, ConversationStepId, Module, EngagementWorkflowState, CustomerRetentionState, EngagementStepType, EngagementStepStatus, EngagementWorkflowStep, EngagementAction } from '../types';
+import { FINANCE_MODULES, ALL_MODULES, MODULES_BY_SERVICE_TYPE, ITS_MODULES, BUSINESS_MODULES } from './moduleConstants';
 import { DEFAULT_QUALIFICATION_THRESHOLDS, initialQualificationSectionState } from './qualificationConstants';
 import { DISCOVERY_QUESTIONS_TEMPLATES } from './discoveryConstants';
 import { ROI_INPUT_TEMPLATES } from './roiConstants';
 import { initialPainPointsState } from './painPointConstants';
-import { ROLES as APP_ROLES, SERVICE_TYPES as APP_SERVICE_TYPES } from './appConfigConstants'; // Renamed AUTOMATION_TYPES to SERVICE_TYPES
+import { ROLES as APP_ROLES, SERVICE_TYPES as APP_SERVICE_TYPES } from './appConfigConstants';
+import { ENGAGEMENT_OBJECTIVES, ENGAGEMENT_SALES_ACTIONS } from './engagementWorkflowConstants';
+import { generateUUID } from '../utils/textUtils';
 
 const initialSolutionBuilderState: SolutionBuilderState = {
   selectedCoreModuleId: null,
@@ -21,7 +25,7 @@ export const initialCustomerConversationState: CustomerConversationState = {
   exchangeAnswers: {}, 
   moduleExchangeAnswers: {}, 
   exchanges: [], 
-  currentServiceFocus: null, // Renamed from currentAutomationFocus
+  currentServiceFocus: null, 
   explorationInput: '',
   followUpDetails: {
     interestConfirmed: null,
@@ -36,7 +40,21 @@ export const initialCustomerConversationState: CustomerConversationState = {
 };
 
 const initialEngagementWorkflowState: EngagementWorkflowState = {
-    steps: [],
+    steps: Object.values(EngagementStepType).map(stepType => ({
+        id: generateUUID(),
+        stepType: stepType,
+        status: EngagementStepStatus.PENDING,
+        objectives: (ENGAGEMENT_OBJECTIVES[stepType] || []).map((text): EngagementAction => ({
+            id: generateUUID(),
+            text,
+            completed: false,
+        })),
+        salesActions: (ENGAGEMENT_SALES_ACTIONS[stepType] || []).map((text): EngagementAction => ({
+            id: generateUUID(),
+            text,
+            completed: false,
+        })),
+    })),
 };
 
 const initialCustomerRetentionState: CustomerRetentionState = {
@@ -59,8 +77,8 @@ export const INITIAL_STATE: AppState = {
   customerName: "",
   dateCompleted: new Date().toISOString().slice(0, 10),
   selectedRole: APP_ROLES[0], 
-  selectedServiceType: defaultServiceType, // Renamed from selectedAutomationType
-  selectedModuleId: defaultModulesForService.length > 0 ? defaultModulesForService[0].id : null, // Corrected initialization
+  selectedServiceType: defaultServiceType, 
+  selectedModuleId: defaultModulesForService.length > 0 ? defaultModulesForService[0].id : null, 
   activeTab: TabId.HOME,
   opportunityScorecard: {
     answers: {},

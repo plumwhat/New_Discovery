@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
     AdminConfigStructure, 
@@ -35,6 +36,7 @@ import {
     getPainPointHierarchy as getDefaultPainPointHierarchy,
     getReverseWaterfallCheatSheets as getDefaultReverseWaterfallCheatSheets,
     getModuleSolutionContentMap as getDefaultModuleSolutionContentMap,
+    getQualificationEmailTemplate,
 } from '../../services/configService';
 import { ALL_MODULES, MODULES_BY_SERVICE_TYPE, FINANCE_MODULES, BUSINESS_MODULES, ITS_MODULES } from '../../constants/moduleConstants';
 import { ROI_INPUT_TEMPLATES as DEFAULT_ROI_INPUT_TEMPLATES_CONST } from '../../constants/roiConstants';
@@ -44,6 +46,7 @@ import Input from '../common/Input';
 import Textarea from '../common/Textarea';
 import Select from '../common/Select';
 import { XCircleIcon, PlusCircleIcon, TrashIcon, ArrowUturnLeftIcon, ChevronDownIcon, ChevronRightIcon, CheckCircleIcon } from '../common/Icons';
+import { generateUUID } from '../../utils/textUtils';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -72,6 +75,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
         painPointHierarchy: getDefaultPainPointHierarchy(),
         reverseWaterfallCheatSheets: getDefaultReverseWaterfallCheatSheets(),
         moduleSolutionContent: getDefaultModuleSolutionContentMap(),
+        qualificationEmailTemplate: getQualificationEmailTemplate(),
     };
     
     const newConfig: AdminConfigStructure = {
@@ -91,6 +95,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
       painPointHierarchy: loadedConfig?.painPointHierarchy ?? defaults.painPointHierarchy,
       reverseWaterfallCheatSheets: loadedConfig?.reverseWaterfallCheatSheets ? {...defaults.reverseWaterfallCheatSheets, ...loadedConfig.reverseWaterfallCheatSheets} : defaults.reverseWaterfallCheatSheets,
       moduleSolutionContent: loadedConfig?.moduleSolutionContent ? {...defaults.moduleSolutionContent, ...loadedConfig.moduleSolutionContent } : defaults.moduleSolutionContent,
+      qualificationEmailTemplate: loadedConfig?.qualificationEmailTemplate ?? defaults.qualificationEmailTemplate,
     };
     setConfig(newConfig);
     setPainPointJson(JSON.stringify(newConfig.painPointHierarchy || [], null, 2));
@@ -107,7 +112,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
   };
 
   const addScorecardQuestion = () => {
-    const newQuestion: ScorecardQuestion = { id: `custom-sq-${crypto.randomUUID()}`, text: "" };
+    const newQuestion: ScorecardQuestion = { id: `custom-sq-${generateUUID()}`, text: "" };
     setConfig(prev => ({
       ...prev,
       scorecardQuestions: [...(prev.scorecardQuestions || []), newQuestion]
@@ -135,7 +140,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
 
   const addRoiInput = (moduleKey: string) => {
     const newInput: RoiInput = { 
-        id: `custom-roi-${crypto.randomUUID()}`, 
+        id: `custom-roi-${generateUUID()}`, 
         label: "", 
         type: "number", 
         value: "", 
@@ -236,7 +241,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
   };
   
   const addQualQuestion = (moduleKey: string, type: 'qualitative' | 'quantitative') => {
-      const newQ: QualificationQuestion = { id: crypto.randomUUID(), text: "", options: [{id: crypto.randomUUID(), label: "", value: 0}]};
+      const newQ: QualificationQuestion = { id: generateUUID(), text: "", options: [{id: generateUUID(), label: "", value: 0}]};
       setConfig(prev => {
           const qualQuestions = JSON.parse(JSON.stringify(prev.qualificationQuestions || {}));
           if (!qualQuestions[moduleKey]) qualQuestions[moduleKey] = { qualitative: [], quantitative: [] };
@@ -256,7 +261,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
   };
 
   const addQualOption = (moduleKey: string, type: 'qualitative' | 'quantitative', qIndex: number) => {
-      const newOpt: QualificationQuestionOption = {id: crypto.randomUUID(), label: "", value: 0};
+      const newOpt: QualificationQuestionOption = {id: generateUUID(), label: "", value: 0};
       setConfig(prev => {
           const qualQuestions = JSON.parse(JSON.stringify(prev.qualificationQuestions || {}));
           if (!qualQuestions[moduleKey]?.[type]?.[qIndex]) return prev;
@@ -296,7 +301,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
       });
   };
   const addDiscoveryQuestion = (moduleKey: string, type: 'qualitative' | 'quantitative') => {
-      const newQ: DiscoveryQuestion = { id: crypto.randomUUID(), text: "", placeholderHint: ""};
+      const newQ: DiscoveryQuestion = { id: generateUUID(), text: "", placeholderHint: ""};
        setConfig(prev => {
           const discTemplates = JSON.parse(JSON.stringify(prev.discoveryQuestionsTemplates || {}));
           if (!discTemplates[moduleKey]) discTemplates[moduleKey] = { qualitative: [], quantitative: [] };
@@ -347,7 +352,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
       });
   };
   const addRwcsKeyPoint = (moduleKey: string) => {
-      const newKp: ReverseWaterfallCheatSheetKeyPoint = { id: crypto.randomUUID(), question: "", aligningAnswer: ""};
+      const newKp: ReverseWaterfallCheatSheetKeyPoint = { id: generateUUID(), question: "", aligningAnswer: ""};
        setConfig(prev => {
           const rwcs = JSON.parse(JSON.stringify(prev.reverseWaterfallCheatSheets || {}));
           if (!rwcs[moduleKey]) rwcs[moduleKey] = { objective: '', highLevelPain: '', specificProcessPain: '', keyDiscoveryPoints: [], keyBenefits: [] };
@@ -615,6 +620,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onConfigSaved }) => {
                 <Input label="Qualified Score Threshold" type="number" value={config.qualificationThresholds?.qualified || ""} onChange={e => handleQualThresholdChange('qualified', e.target.value)} />
                 <Input label="Clarification Score Threshold" type="number" value={config.qualificationThresholds?.clarification || ""} onChange={e => handleQualThresholdChange('clarification', e.target.value)} />
             </div>
+        </Section>
+
+        <Section title="Qualification Email Template" sectionKey="qualEmailTemplate">
+            <p className="text-xs text-gray-600 mb-2">
+                Edit the email body for the Health Check email. Available placeholders:
+                <code className="text-xs bg-gray-200 p-1 rounded mx-1">{'{customerCompany}'}</code>,
+                <code className="text-xs bg-gray-200 p-1 rounded mx-1">{'{moduleName}'}</code>,
+                <code className="text-xs bg-gray-200 p-1 rounded mx-1">{'{dateCompleted}'}</code>,
+                <code className="text-xs bg-gray-200 p-1 rounded mx-1">{'{qualitativeContent}'}</code>,
+                <code className="text-xs bg-gray-200 p-1 rounded mx-1">{'{quantitativeContent}'}</code>.
+            </p>
+            <Textarea
+                label="Email Body Template"
+                value={config.qualificationEmailTemplate || ""}
+                onChange={e => handleSimpleValueChange('qualificationEmailTemplate', e.target.value)}
+                rows={10}
+                className="font-mono text-sm"
+            />
         </Section>
 
         {/* Discovery Questions */}

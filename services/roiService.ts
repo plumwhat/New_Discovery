@@ -31,8 +31,8 @@ export const performRoiCalculation = (
     
     const { 
       hourlyRateDivisor, 
-      automationTimeSavingPercentage, 
-      automationErrorReductionPercentage 
+      automationTimeSavingPercentage: globalTimeSaving, 
+      automationErrorReductionPercentage: globalErrorReduction 
     } = getRoiCalculationConstants(); // Get constants from config service
 
     const hourlyRate = annualSalary > 0 && hourlyRateDivisor > 0 ? annualSalary / hourlyRateDivisor : 0;
@@ -45,6 +45,11 @@ export const performRoiCalculation = (
 
 
     if (selectedModuleId === 'accountsPayable') {
+        const timeSavingOverride = getInputValue(inputs, 'ap_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'ap_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numInvoicesPerMonth = getInputValue(inputs, 'ap_roi_numInvoicesPerMonth');
         const avgManualProcessingTimePerInvoiceMins = getInputValue(inputs, 'ap_roi_avgManualProcessingTimePerInvoiceMins');
         const currentInvoiceErrorRatePercentage = getInputValue(inputs, 'ap_roi_currentInvoiceErrorRatePercentage') / 100;
@@ -92,44 +97,44 @@ export const performRoiCalculation = (
         const costPerHourOfDowntime = getInputValue(inputs, 'ms_roi_costPerHourOfDowntime');
         const userProductivityLossPercentage = getInputValue(inputs, 'ms_roi_userProductivityLossPercentage') / 100;
         
+        const productivityGainPercentage = getInputValue(inputs, 'ms_roi_productivityGainPercentage') / 100;
+        const downtimeReductionPercentage = getInputValue(inputs, 'ms_roi_downtimeReductionPercentage') / 100;
+        const staffEfficiencyReallocationPercentage = getInputValue(inputs, 'ms_roi_staffEfficiencyReallocationPercentage') / 100;
+
         // 1. User Productivity Gain
-        if (numUsers > 0 && userProductivityLossPercentage > 0 && annualSalary > 0) {
-            // Assuming annualSalary is a blended average user salary if not specific IT staff salary.
-            // If hourlyRate is based on IT staff salary, it might be better to use avg user salary.
-            // For simplicity, using the provided hourlyRate, assuming it's relevant.
-            const annualProductivityLossValue = numUsers * userProductivityLossPercentage * annualSalary; // Total value of lost productivity
-            const productivityGain = annualProductivityLossValue * 0.50; // Assume 50% recovery
+        if (numUsers > 0 && userProductivityLossPercentage > 0 && annualSalary > 0 && productivityGainPercentage > 0) {
+            const annualProductivityLossValue = numUsers * userProductivityLossPercentage * annualSalary;
+            const productivityGain = annualProductivityLossValue * productivityGainPercentage;
             totalAnnualGrossSavings += productivityGain;
             savingsCalculationWorkings.push({
                 category: "User Productivity Gain (Reduced IT Issues)",
-                formula: `(${numUsers} users * ${userProductivityLossPercentage*100}% prod. loss * $${annualSalary.toFixed(0)} avg salary) * 50% recovery`,
+                formula: `(${numUsers} users * ${userProductivityLossPercentage*100}% prod. loss * $${annualSalary.toFixed(0)} avg salary) * ${productivityGainPercentage*100}% recovery`,
                 result: productivityGain,
-                inputsUsed: { numUsers, userProductivityLossPercentage, annualSalary }
+                inputsUsed: { numUsers, userProductivityLossPercentage, annualSalary, productivityGainPercentage }
             });
         }
 
         // 2. Downtime Reduction
-        if (avgDowntimeHoursPerMonth > 0 && costPerHourOfDowntime > 0) {
-            const downtimeReduction = avgDowntimeHoursPerMonth * costPerHourOfDowntime * 0.75 * 12; // Assume 75% reduction
+        if (avgDowntimeHoursPerMonth > 0 && costPerHourOfDowntime > 0 && downtimeReductionPercentage > 0) {
+            const downtimeReduction = avgDowntimeHoursPerMonth * costPerHourOfDowntime * downtimeReductionPercentage * 12;
             totalAnnualGrossSavings += downtimeReduction;
             savingsCalculationWorkings.push({
                 category: "Downtime Cost Reduction",
-                formula: `(${avgDowntimeHoursPerMonth} hrs/mo downtime * $${costPerHourOfDowntime.toFixed(0)}/hr * 75% reduction) * 12 mo`,
+                formula: `(${avgDowntimeHoursPerMonth} hrs/mo downtime * $${costPerHourOfDowntime.toFixed(0)}/hr * ${downtimeReductionPercentage*100}% reduction) * 12 mo`,
                 result: downtimeReduction,
-                inputsUsed: { avgDowntimeHoursPerMonth, costPerHourOfDowntime }
+                inputsUsed: { avgDowntimeHoursPerMonth, costPerHourOfDowntime, downtimeReductionPercentage }
             });
         }
 
         // 3. IT Staff Efficiency / Reallocation
-        if (currentITStaffCount > 0 && hourlyRate > 0) {
-            // Assume managed service allows reallocation of 25% of IT staff time or cost.
-            const staffEfficiencySavings = currentITStaffCount * 0.25 * annualSalary; 
+        if (currentITStaffCount > 0 && hourlyRate > 0 && staffEfficiencyReallocationPercentage > 0) {
+            const staffEfficiencySavings = currentITStaffCount * staffEfficiencyReallocationPercentage * annualSalary; 
             totalAnnualGrossSavings += staffEfficiencySavings;
             savingsCalculationWorkings.push({
                 category: "IT Staff Efficiency/Reallocation",
-                formula: `(${currentITStaffCount} IT FTEs * 25% efficiency gain * $${annualSalary.toFixed(0)} avg salary)`,
+                formula: `(${currentITStaffCount} IT FTEs * ${staffEfficiencyReallocationPercentage*100}% efficiency gain * $${annualSalary.toFixed(0)} avg salary)`,
                 result: staffEfficiencySavings,
-                inputsUsed: { currentITStaffCount, annualSalary }
+                inputsUsed: { currentITStaffCount, annualSalary, staffEfficiencyReallocationPercentage }
             });
         }
 
@@ -137,44 +142,52 @@ export const performRoiCalculation = (
         const estimatedAnnualBreachCost = getInputValue(inputs, 'cs_roi_estimatedAnnualBreachCost');
         const currentAnnualSecuritySpend = getInputValue(inputs, 'cs_roi_currentAnnualSecuritySpend');
         const complianceFineRiskValue = getInputValue(inputs, 'cs_roi_complianceFineRiskValue');
-        // const securityFTEs = getInputValue(inputs, 'cs_roi_securityFTEs'); // For more complex calculations if needed
+        
+        const breachRiskReductionPercentage = getInputValue(inputs, 'cs_roi_breachRiskReductionPercentage') / 100;
+        const toolConsolidationSavingsPercentage = getInputValue(inputs, 'cs_roi_toolConsolidationSavingsPercentage') / 100;
+        const fineRiskReductionPercentage = getInputValue(inputs, 'cs_roi_fineRiskReductionPercentage') / 100;
 
         // 1. Reduced Breach Cost/Likelihood
-        if (estimatedAnnualBreachCost > 0) {
-            const breachCostReduction = estimatedAnnualBreachCost * 0.80; // Assume 80% reduction in likelihood/impact
+        if (estimatedAnnualBreachCost > 0 && breachRiskReductionPercentage > 0) {
+            const breachCostReduction = estimatedAnnualBreachCost * breachRiskReductionPercentage;
             totalAnnualGrossSavings += breachCostReduction;
             savingsCalculationWorkings.push({
                 category: "Reduced Data Breach Cost/Likelihood",
-                formula: `$${estimatedAnnualBreachCost.toFixed(0)} current risk * 80% reduction`,
+                formula: `$${estimatedAnnualBreachCost.toFixed(0)} current risk * ${breachRiskReductionPercentage*100}% reduction`,
                 result: breachCostReduction,
-                inputsUsed: { estimatedAnnualBreachCost }
+                inputsUsed: { estimatedAnnualBreachCost, breachRiskReductionPercentage }
             });
         }
 
         // 2. Security Tool Consolidation / Optimisation
-        if (currentAnnualSecuritySpend > 0) {
-            const toolConsolidationSavings = currentAnnualSecuritySpend * 0.15; // Assume 15% savings from optimized/consolidated tools
+        if (currentAnnualSecuritySpend > 0 && toolConsolidationSavingsPercentage > 0) {
+            const toolConsolidationSavings = currentAnnualSecuritySpend * toolConsolidationSavingsPercentage;
             totalAnnualGrossSavings += toolConsolidationSavings;
             savingsCalculationWorkings.push({
                 category: "Security Tool Consolidation/Optimisation",
-                formula: `$${currentAnnualSecuritySpend.toFixed(0)} current spend * 15% optimisation`,
+                formula: `$${currentAnnualSecuritySpend.toFixed(0)} current spend * ${toolConsolidationSavingsPercentage*100}% optimisation`,
                 result: toolConsolidationSavings,
-                inputsUsed: { currentAnnualSecuritySpend }
+                inputsUsed: { currentAnnualSecuritySpend, toolConsolidationSavingsPercentage }
             });
         }
         
         // 3. Reduced Compliance Fine Risk
-        if (complianceFineRiskValue > 0) {
-            const fineRiskReduction = complianceFineRiskValue * 0.90; // Assume 90% reduction in risk of fines
+        if (complianceFineRiskValue > 0 && fineRiskReductionPercentage > 0) {
+            const fineRiskReduction = complianceFineRiskValue * fineRiskReductionPercentage;
             totalAnnualGrossSavings += fineRiskReduction;
             savingsCalculationWorkings.push({
                 category: "Reduced Compliance Fine Risk",
-                formula: `$${complianceFineRiskValue.toFixed(0)} current risk * 90% reduction`,
+                formula: `$${complianceFineRiskValue.toFixed(0)} current risk * ${fineRiskReductionPercentage*100}% reduction`,
                 result: fineRiskReduction,
-                inputsUsed: { complianceFineRiskValue }
+                inputsUsed: { complianceFineRiskValue, fineRiskReductionPercentage }
             });
         }
     } else if (selectedModuleId === 'orderManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'om_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'om_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numSalesOrdersPerMonth = getInputValue(inputs, 'om_roi_numSalesOrdersPerMonth');
         const avgManualOrderEntryTimeMins = getInputValue(inputs, 'om_roi_avgManualOrderEntryTimeMins');
         const currentOrderErrorRatePercentage = getInputValue(inputs, 'om_roi_currentOrderErrorRatePercentage') / 100;
@@ -205,6 +218,11 @@ export const performRoiCalculation = (
             });
         }
     } else if (selectedModuleId === 'customerInquiryManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'cim_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'cim_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numInquiriesPerMonth = getInputValue(inputs, 'cim_roi_numInquiriesPerMonth');
         const avgHandleTimePerInquiryMins = getInputValue(inputs, 'cim_roi_avgHandleTimePerInquiryMins');
         const repeatInquiryRatePercentage = getInputValue(inputs, 'cim_roi_repeatInquiryRatePercentage') / 100;
@@ -225,10 +243,14 @@ export const performRoiCalculation = (
             savingsCalculationWorkings.push({ category: "Savings (Reduced Repeat Inquiries)", result: annualSavingsFromRepeats, formula: `(${numInquiriesPerMonth} inquiries/mo * ${repeatInquiryRatePercentage*100}% repeat rate * ${automationErrorReductionPercentage*100}% reduction) * $${costToResolveRepeatInquiry}/repeat * 12`, inputsUsed: {numInquiriesPerMonth, repeatInquiryRatePercentage, automationErrorReductionPercentage, costToResolveRepeatInquiry}});
         }
     } else if (selectedModuleId === 'cashApplication') {
+        const timeSavingOverride = getInputValue(inputs, 'ca_roi_overrideTimeSavingPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        
         const numRemittancesPerMonth = getInputValue(inputs, 'ca_roi_numRemittancesPerMonth');
         const avgManualMatchRatePercentage = getInputValue(inputs, 'ca_roi_avgManualMatchRatePercentage') / 100;
         const timePerUnmatchedRemittanceMins = getInputValue(inputs, 'ca_roi_timePerUnmatchedRemittanceMins');
         const annualBankFeesForManualProcessing = getInputValue(inputs, 'ca_roi_annualBankFeesForManualProcessing');
+        const bankFeeReductionPercentage = getInputValue(inputs, 'ca_roi_bankFeeReductionPercentage') / 100;
 
         if (numRemittancesPerMonth > 0 && timePerUnmatchedRemittanceMins > 0 && hourlyRate > 0) {
             const numUnmatchedRemittancesPerMonth = numRemittancesPerMonth * (1 - avgManualMatchRatePercentage);
@@ -237,12 +259,17 @@ export const performRoiCalculation = (
             totalAnnualGrossSavings += annualLaborSavings;
             savingsCalculationWorkings.push({ category: "Labour Savings (Resolving Unmatched Remittances)", result: annualLaborSavings, formula: `(${numRemittancesPerMonth} rem/mo * (1-${avgManualMatchRatePercentage*100}%) * ${timePerUnmatchedRemittanceMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numRemittancesPerMonth, avgManualMatchRatePercentage, timePerUnmatchedRemittanceMins, automationTimeSavingPercentage, hourlyRate}});
         }
-        if (annualBankFeesForManualProcessing > 0) { 
-             const feeSavings = annualBankFeesForManualProcessing * 0.5; 
+        if (annualBankFeesForManualProcessing > 0 && bankFeeReductionPercentage > 0) { 
+             const feeSavings = annualBankFeesForManualProcessing * bankFeeReductionPercentage; 
              totalAnnualGrossSavings += feeSavings;
-             savingsCalculationWorkings.push({ category: "Reduced Bank Fees", result: feeSavings, formula: `$${annualBankFeesForManualProcessing} * 50% (assumed reduction)`, inputsUsed: {annualBankFeesForManualProcessing}});
+             savingsCalculationWorkings.push({ category: "Reduced Bank Fees", result: feeSavings, formula: `$${annualBankFeesForManualProcessing} * ${bankFeeReductionPercentage*100}% reduction`, inputsUsed: {annualBankFeesForManualProcessing, bankFeeReductionPercentage}});
         }
     } else if (selectedModuleId === 'collectionManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'col_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'col_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numOverdueInvoicesManagedMonthly = getInputValue(inputs, 'col_roi_numOverdueInvoicesManagedMonthly');
         const avgCollectorTimePerInvoiceMins = getInputValue(inputs, 'col_roi_avgCollectorTimePerInvoiceMins');
         const badDebtPercentageOfRevenue = getInputValue(inputs, 'col_roi_badDebtPercentageOfRevenue') / 100;
@@ -261,10 +288,14 @@ export const performRoiCalculation = (
             savingsCalculationWorkings.push({ category: "Reduced Bad Debt", result: badDebtReduction, formula: `($${totalAnnualRevenue} revenue * ${badDebtPercentageOfRevenue*100}% bad debt) * ${automationErrorReductionPercentage*100}% reduction`, inputsUsed: {totalAnnualRevenue, badDebtPercentageOfRevenue, automationErrorReductionPercentage}});
         }
     } else if (selectedModuleId === 'creditManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'crm_roi_overrideTimeSavingPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        
         const numCreditAppsPerMonth = getInputValue(inputs, 'crm_roi_numCreditAppsPerMonth');
         const avgTimeToProcessCreditAppManualHrs = getInputValue(inputs, 'crm_roi_avgTimeToProcessCreditAppManualHrs');
         const annualSalesLostDueToSlowCredit = getInputValue(inputs, 'crm_roi_annualSalesLostDueToSlowCredit');
         const costPerManualCreditReview = getInputValue(inputs, 'crm_roi_costPerManualCreditReview');
+        const recoveredSalesPercentage = getInputValue(inputs, 'crm_roi_recoveredSalesPercentage') / 100;
 
         if (numCreditAppsPerMonth > 0 && avgTimeToProcessCreditAppManualHrs > 0 && hourlyRate > 0) {
             const timeSavedPerAppHrs = avgTimeToProcessCreditAppManualHrs * automationTimeSavingPercentage;
@@ -277,12 +308,17 @@ export const performRoiCalculation = (
             totalAnnualGrossSavings += savedReviewCosts;
             savingsCalculationWorkings.push({ category: "Reduced Cost per Credit Review", result: savedReviewCosts, formula: `(${numCreditAppsPerMonth} apps/mo * $${costPerManualCreditReview} * ${automationTimeSavingPercentage*100}% saved) * 12`, inputsUsed: {numCreditAppsPerMonth, costPerManualCreditReview, automationTimeSavingPercentage}});
         }
-        if (annualSalesLostDueToSlowCredit > 0) { 
-            const recoveredSales = annualSalesLostDueToSlowCredit * 0.5; 
+        if (annualSalesLostDueToSlowCredit > 0 && recoveredSalesPercentage > 0) { 
+            const recoveredSales = annualSalesLostDueToSlowCredit * recoveredSalesPercentage; 
             totalAnnualGrossSavings += recoveredSales;
-            savingsCalculationWorkings.push({ category: "Recovered Sales (Faster Credit Decisions)", result: recoveredSales, formula: `$${annualSalesLostDueToSlowCredit} * 50% (assumed recovery)`, inputsUsed: {annualSalesLostDueToSlowCredit}});
+            savingsCalculationWorkings.push({ category: "Recovered Sales (Faster Credit Decisions)", result: recoveredSales, formula: `$${annualSalesLostDueToSlowCredit} * ${recoveredSalesPercentage*100}% recovery`, inputsUsed: {annualSalesLostDueToSlowCredit, recoveredSalesPercentage}});
         }
     } else if (selectedModuleId === 'claimsDeductions') {
+        const timeSavingOverride = getInputValue(inputs, 'cd_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'cd_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+        
         const numClaimsDeductionsMonthly = getInputValue(inputs, 'cd_roi_numClaimsDeductionsMonthly');
         const avgTimePerClaimManualMins = getInputValue(inputs, 'cd_roi_avgTimePerClaimManualMins');
         const percentageInvalidDeductionsUnrecovered = getInputValue(inputs, 'cd_roi_percentageInvalidDeductionsUnrecovered') / 100;
@@ -300,6 +336,11 @@ export const performRoiCalculation = (
              savingsCalculationWorkings.push({ category: "Increased Recovery of Invalid Deductions", result: annualValueRecovered, formula: `(${numClaimsDeductionsMonthly}/mo * $${avgValueInvalidDeduction} * ${percentageInvalidDeductionsUnrecovered*100}% unrecovered * ${automationErrorReductionPercentage*100}% improved recovery) * 12`, inputsUsed: {numClaimsDeductionsMonthly, avgValueInvalidDeduction, percentageInvalidDeductionsUnrecovered, automationErrorReductionPercentage}});
         }
     } else if (selectedModuleId === 'expenseManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'em_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'em_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numExpenseReportsMonthly = getInputValue(inputs, 'em_roi_numExpenseReportsMonthly');
         const avgTimeProcessReportManualMins = getInputValue(inputs, 'em_roi_avgTimeProcessReportManualMins');
         const outOfPolicySpendPercentage = getInputValue(inputs, 'em_roi_outOfPolicySpendPercentage') / 100;
@@ -318,10 +359,16 @@ export const performRoiCalculation = (
             savingsCalculationWorkings.push({ category: "Reduced Out-of-Policy Spend", result: reductionInOutPolicy, formula: `($${totalAnnualTAndESpend} T&E spend * ${outOfPolicySpendPercentage*100}% out-of-policy) * ${automationErrorReductionPercentage*100}% reduction`, inputsUsed: {totalAnnualTAndESpend, outOfPolicySpendPercentage, automationErrorReductionPercentage}});
         }
     } else if (selectedModuleId === 'procurement') {
+        const timeSavingOverride = getInputValue(inputs, 'proc_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'proc_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numPurchaseOrdersMonthly = getInputValue(inputs, 'proc_roi_numPurchaseOrdersMonthly');
         const avgManualPOTimeMins = getInputValue(inputs, 'proc_roi_avgManualPOTimeMins');
         const maverickSpendPercentage = getInputValue(inputs, 'proc_roi_maverickSpendPercentage') / 100;
         const totalAnnualIndirectSpend = getInputValue(inputs, 'proc_roi_totalAnnualIndirectSpend');
+        const maverickSpendPremiumPercentage = getInputValue(inputs, 'proc_roi_maverickSpendPremiumPercentage') / 100;
 
         if (numPurchaseOrdersMonthly > 0 && avgManualPOTimeMins > 0 && hourlyRate > 0) {
             const timeSavedPerPOMins = avgManualPOTimeMins * automationTimeSavingPercentage;
@@ -329,37 +376,45 @@ export const performRoiCalculation = (
             totalAnnualGrossSavings += annualLaborSavings;
             savingsCalculationWorkings.push({ category: "Labour Savings (PO Processing)", result: annualLaborSavings, formula: `(${numPurchaseOrdersMonthly} POs/mo * ${avgManualPOTimeMins} mins * ${automationTimeSavingPercentage*100}% saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numPurchaseOrdersMonthly, avgManualPOTimeMins, automationTimeSavingPercentage, hourlyRate}});
         }
-        if (totalAnnualIndirectSpend > 0 && maverickSpendPercentage > 0) {
+        if (totalAnnualIndirectSpend > 0 && maverickSpendPercentage > 0 && maverickSpendPremiumPercentage > 0) {
             const currentMaverickSpendAmount = totalAnnualIndirectSpend * maverickSpendPercentage;
-            const maverickSpendPremium = 0.10;
-            const savingsFromReducedMaverickSpend = currentMaverickSpendAmount * maverickSpendPremium * automationErrorReductionPercentage; 
+            const savingsFromReducedMaverickSpend = currentMaverickSpendAmount * maverickSpendPremiumPercentage * automationErrorReductionPercentage; 
             totalAnnualGrossSavings += savingsFromReducedMaverickSpend;
-            savingsCalculationWorkings.push({ category: "Savings from Reduced Maverick Spend", result: savingsFromReducedMaverickSpend, formula: `($${totalAnnualIndirectSpend} indirect spend * ${maverickSpendPercentage*100}% maverick) * ${maverickSpendPremium*100}% premium * ${automationErrorReductionPercentage*100}% reduction`, inputsUsed: {totalAnnualIndirectSpend, maverickSpendPercentage, automationErrorReductionPercentage, maverickSpendPremium}});
+            savingsCalculationWorkings.push({ category: "Savings from Reduced Maverick Spend", result: savingsFromReducedMaverickSpend, formula: `($${totalAnnualIndirectSpend} indirect spend * ${maverickSpendPercentage*100}% maverick) * ${maverickSpendPremiumPercentage*100}% premium * ${automationErrorReductionPercentage*100}% reduction`, inputsUsed: {totalAnnualIndirectSpend, maverickSpendPercentage, automationErrorReductionPercentage, maverickSpendPremiumPercentage}});
         }
     } else if (selectedModuleId === 'invoiceDelivery') {
+        const timeSavingOverride = getInputValue(inputs, 'id_roi_overrideTimeSavingPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+
         const numInvoicesSentMonthly = getInputValue(inputs, 'id_roi_numInvoicesSentMonthly');
         const percentagePaperInvoices = getInputValue(inputs, 'id_roi_percentagePaperInvoices') / 100;
         const costPerPaperInvoice = getInputValue(inputs, 'id_roi_costPerPaperInvoice');
         const timeSavedPerInvoiceElectronicMins = getInputValue(inputs, 'id_roi_timeSavedPerInvoiceElectronicMins');
+        const paperToElectronicConversionPercentage = getInputValue(inputs, 'id_roi_paperToElectronicConversionPercentage') / 100;
 
         if (numInvoicesSentMonthly > 0 && percentagePaperInvoices > 0 && costPerPaperInvoice > 0) {
             const numPaperInvoicesMonthly = numInvoicesSentMonthly * percentagePaperInvoices;
-            const paperReductionFactor = 0.9; 
-            const annualPaperCostSavings = numPaperInvoicesMonthly * paperReductionFactor * costPerPaperInvoice * 12;
+            const annualPaperCostSavings = numPaperInvoicesMonthly * paperToElectronicConversionPercentage * costPerPaperInvoice * 12;
             totalAnnualGrossSavings += annualPaperCostSavings;
-            savingsCalculationWorkings.push({ category: "Reduced Paper Invoice Costs", result: annualPaperCostSavings, formula: `(${numInvoicesSentMonthly} invoices/mo * ${percentagePaperInvoices*100}% paper * ${paperReductionFactor*100}% reduction) * $${costPerPaperInvoice}/invoice * 12`, inputsUsed: {numInvoicesSentMonthly, percentagePaperInvoices, costPerPaperInvoice, paperReductionFactor}});
+            savingsCalculationWorkings.push({ category: "Reduced Paper Invoice Costs", result: annualPaperCostSavings, formula: `(${numInvoicesSentMonthly} invoices/mo * ${percentagePaperInvoices*100}% paper * ${paperToElectronicConversionPercentage*100}% reduction) * $${costPerPaperInvoice}/invoice * 12`, inputsUsed: {numInvoicesSentMonthly, percentagePaperInvoices, costPerPaperInvoice, paperToElectronicConversionPercentage}});
         }
         if (numInvoicesSentMonthly > 0 && timeSavedPerInvoiceElectronicMins > 0 && hourlyRate > 0) {
-            const numElectronicTransition = numInvoicesSentMonthly * percentagePaperInvoices * 0.9; 
+            const numElectronicTransition = numInvoicesSentMonthly * percentagePaperInvoices * paperToElectronicConversionPercentage; 
             const annualLaborSavings = (numElectronicTransition * timeSavedPerInvoiceElectronicMins / 60) * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labour Savings (Admin for Electronic Delivery)", result: annualLaborSavings, formula: `(${numInvoicesSentMonthly} inv/mo * ${percentagePaperInvoices*100}% paper * 0.9 electronic conv. * ${timeSavedPerInvoiceElectronicMins} mins saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numInvoicesSentMonthly, percentagePaperInvoices, timeSavedPerInvoiceElectronicMins, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Admin for Electronic Delivery)", result: annualLaborSavings, formula: `(${numInvoicesSentMonthly} inv/mo * ${percentagePaperInvoices*100}% paper * ${paperToElectronicConversionPercentage*100}% electronic conv. * ${timeSavedPerInvoiceElectronicMins} mins saved / 60) * 12 * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numInvoicesSentMonthly, percentagePaperInvoices, paperToElectronicConversionPercentage, timeSavedPerInvoiceElectronicMins, hourlyRate}});
         }
     } else if (selectedModuleId === 'supplierManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'sm_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'sm_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numSuppliersOnboardedAnnually = getInputValue(inputs, 'sm_roi_numSuppliersOnboardedAnnually');
         const avgTimeOnboardSupplierManualHrs = getInputValue(inputs, 'sm_roi_avgTimeOnboardSupplierManualHrs');
         const costOfSupplierDataErrorsAnnual = getInputValue(inputs, 'sm_roi_costOfSupplierDataErrorsAnnual');
         const compliancePenaltyRiskCostAnnual = getInputValue(inputs, 'sm_roi_compliancePenaltyRiskCostAnnual');
+        const complianceRiskReductionPercentage = getInputValue(inputs, 'sm_roi_complianceRiskReductionPercentage') / 100;
 
         if (numSuppliersOnboardedAnnually > 0 && avgTimeOnboardSupplierManualHrs > 0 && hourlyRate > 0) {
             const timeSavedPerSupplierHrs = avgTimeOnboardSupplierManualHrs * automationTimeSavingPercentage;
@@ -372,27 +427,33 @@ export const performRoiCalculation = (
             totalAnnualGrossSavings += errorCostReduction;
             savingsCalculationWorkings.push({ category: "Reduced Costs from Supplier Data Errors", result: errorCostReduction, formula: `$${costOfSupplierDataErrorsAnnual} * ${automationErrorReductionPercentage*100}% reduction`, inputsUsed: {costOfSupplierDataErrorsAnnual, automationErrorReductionPercentage}});
         }
-        if (compliancePenaltyRiskCostAnnual > 0) {
-            const riskCostReduction = compliancePenaltyRiskCostAnnual * 0.5; 
+        if (compliancePenaltyRiskCostAnnual > 0 && complianceRiskReductionPercentage > 0) {
+            const riskCostReduction = compliancePenaltyRiskCostAnnual * complianceRiskReductionPercentage; 
             totalAnnualGrossSavings += riskCostReduction;
-            savingsCalculationWorkings.push({ category: "Reduced Compliance Risk Costs (SM)", result: riskCostReduction, formula: `$${compliancePenaltyRiskCostAnnual} * 50% (assumed reduction)`, inputsUsed: {compliancePenaltyRiskCostAnnual}});
+            savingsCalculationWorkings.push({ category: "Reduced Compliance Risk Costs (SM)", result: riskCostReduction, formula: `$${compliancePenaltyRiskCostAnnual} * ${complianceRiskReductionPercentage*100}% reduction`, inputsUsed: {compliancePenaltyRiskCostAnnual, complianceRiskReductionPercentage}});
         }
     } else if (selectedModuleId === 'documentManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'dm_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'dm_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const numEmployeesUsingSystem = getInputValue(inputs, 'dm_roi_numEmployeesUsingSystem');
         const avgTimeSearchingDocsPerUserHrsWeek = getInputValue(inputs, 'dm_roi_avgTimeSearchingDocsPerUserHrsWeek');
         const annualPhysicalStorageCost = getInputValue(inputs, 'dm_roi_annualPhysicalStorageCost');
         const costOfNonComplianceAnnual = getInputValue(inputs, 'dm_roi_costOfNonComplianceAnnual');
+        const physicalStorageReductionPercentage = getInputValue(inputs, 'dm_roi_physicalStorageReductionPercentage') / 100;
 
         if (numEmployeesUsingSystem > 0 && avgTimeSearchingDocsPerUserHrsWeek > 0 && hourlyRate > 0) {
             const timeSavedPerUserHrsWeek = avgTimeSearchingDocsPerUserHrsWeek * automationTimeSavingPercentage;
             const annualLaborSavings = numEmployeesUsingSystem * timeSavedPerUserHrsWeek * 52 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
-            savingsCalculationWorkings.push({ category: "Labour Savings (Document Search Time)", result: annualLaborSavings, formula: `${numEmployeesUsingSystem} users * ${avgTimeSearchingDocsPerUserHrsWeek} hrs/wk saved searching * ${automationTimeSavingPercentage*100}% * 52 wks * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numEmployeesUsingSystem, avgTimeSearchingDocsPerUserHrsWeek, automationTimeSavingPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Labour Savings (Document Search Time)", result: annualLaborSavings, formula: `${numEmployeesUsingSystem} users * ${avgTimeSearchingDocsPerUserHrsWeek} hrs/wk * ${automationTimeSavingPercentage*100}% saved * 52 wks * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numEmployeesUsingSystem, avgTimeSearchingDocsPerUserHrsWeek, automationTimeSavingPercentage, hourlyRate}});
         }
-        if (annualPhysicalStorageCost > 0) { 
-             const storageCostSavings = annualPhysicalStorageCost * 0.9; 
+        if (annualPhysicalStorageCost > 0 && physicalStorageReductionPercentage > 0) { 
+             const storageCostSavings = annualPhysicalStorageCost * physicalStorageReductionPercentage; 
              totalAnnualGrossSavings += storageCostSavings;
-             savingsCalculationWorkings.push({ category: "Reduced Physical Storage Costs", result: storageCostSavings, formula: `$${annualPhysicalStorageCost} * 90% (assumed reduction)`, inputsUsed: {annualPhysicalStorageCost}});
+             savingsCalculationWorkings.push({ category: "Reduced Physical Storage Costs", result: storageCostSavings, formula: `$${annualPhysicalStorageCost} * ${physicalStorageReductionPercentage*100}% reduction`, inputsUsed: {annualPhysicalStorageCost, physicalStorageReductionPercentage}});
         }
         if (costOfNonComplianceAnnual > 0) {
             const complianceSavings = costOfNonComplianceAnnual * automationErrorReductionPercentage; 
@@ -400,41 +461,51 @@ export const performRoiCalculation = (
             savingsCalculationWorkings.push({ category: "Reduced Non-Compliance Costs (DM)", result: complianceSavings, formula: `$${costOfNonComplianceAnnual} * ${automationErrorReductionPercentage*100}% reduction`, inputsUsed: {costOfNonComplianceAnnual, automationErrorReductionPercentage}});
         }
     } else if (selectedModuleId === 'workflowManagement') {
+        const timeSavingOverride = getInputValue(inputs, 'wm_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'wm_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+        
         const numKeyWorkflowsTargeted = getInputValue(inputs, 'wm_roi_numKeyWorkflowsTargeted');
         const avgInstancesPerWorkflowMonthly = getInputValue(inputs, 'wm_roi_avgInstancesPerWorkflowMonthly');
         const avgManualTimeSavedPerInstanceHrs = getInputValue(inputs, 'wm_roi_avgManualTimeSavedPerInstanceHrs');
         const currentErrorRateInManualWorkflowsPercentage = getInputValue(inputs, 'wm_roi_currentErrorRateInManualWorkflowsPercentage') / 100;
-        const avgTimeToCorrectErrorHrs = getInputValue(defaultRoiInputs, 'def_roi_avgTimeToCorrectErrorHrs') || 1; 
+        const avgTaskDurationForErrorCalcMins = getInputValue(inputs, 'wm_roi_avgTaskDurationForErrorCalcMins');
 
         if (numKeyWorkflowsTargeted > 0 && avgInstancesPerWorkflowMonthly > 0 && avgManualTimeSavedPerInstanceHrs > 0 && hourlyRate > 0) {
             const annualLaborSavings = numKeyWorkflowsTargeted * avgInstancesPerWorkflowMonthly * avgManualTimeSavedPerInstanceHrs * 12 * hourlyRate;
             totalAnnualGrossSavings += annualLaborSavings;
             savingsCalculationWorkings.push({ category: "Labour Savings (Workflow Automation)", result: annualLaborSavings, formula: `${numKeyWorkflowsTargeted} workflows * ${avgInstancesPerWorkflowMonthly} inst/mo * ${avgManualTimeSavedPerInstanceHrs} hrs saved/inst * 12 mo * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numKeyWorkflowsTargeted, avgInstancesPerWorkflowMonthly, avgManualTimeSavedPerInstanceHrs, hourlyRate}});
         }
-        if (numKeyWorkflowsTargeted > 0 && avgInstancesPerWorkflowMonthly > 0 && currentErrorRateInManualWorkflowsPercentage > 0 && avgTimeToCorrectErrorHrs > 0 && hourlyRate > 0) {
+        if (numKeyWorkflowsTargeted > 0 && avgInstancesPerWorkflowMonthly > 0 && currentErrorRateInManualWorkflowsPercentage > 0 && avgTaskDurationForErrorCalcMins > 0 && hourlyRate > 0) {
             const totalInstancesMonthly = numKeyWorkflowsTargeted * avgInstancesPerWorkflowMonthly;
             const errorsMonthly = totalInstancesMonthly * currentErrorRateInManualWorkflowsPercentage;
-            const timeLostToErrorsMonthlyHrs = errorsMonthly * avgTimeToCorrectErrorHrs;
+            const timeLostToErrorsMonthlyHrs = errorsMonthly * (avgTaskDurationForErrorCalcMins / 60);
             const timeSavedFromErrorReductionMonthlyHrs = timeLostToErrorsMonthlyHrs * automationErrorReductionPercentage;
             const annualErrorSavings = timeSavedFromErrorReductionMonthlyHrs * 12 * hourlyRate;
             totalAnnualGrossSavings += annualErrorSavings;
-            savingsCalculationWorkings.push({ category: "Savings (Reduced Workflow Errors & Rework)", result: annualErrorSavings, formula: `(${numKeyWorkflowsTargeted} workflows * ${avgInstancesPerWorkflowMonthly} inst/mo * ${currentErrorRateInManualWorkflowsPercentage*100}% error rate * ${avgTimeToCorrectErrorHrs} hrs/rework * ${automationErrorReductionPercentage*100}% reduction) * 12 mo * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numKeyWorkflowsTargeted, avgInstancesPerWorkflowMonthly, currentErrorRateInManualWorkflowsPercentage, avgTimeToCorrectErrorHrs, automationErrorReductionPercentage, hourlyRate}});
+            savingsCalculationWorkings.push({ category: "Savings (Reduced Workflow Errors & Rework)", result: annualErrorSavings, formula: `(${numKeyWorkflowsTargeted} workflows * ${avgInstancesPerWorkflowMonthly} inst/mo * ${currentErrorRateInManualWorkflowsPercentage*100}% error rate * ${avgTaskDurationForErrorCalcMins / 60} hrs/rework * ${automationErrorReductionPercentage*100}% reduction) * 12 mo * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {numKeyWorkflowsTargeted, avgInstancesPerWorkflowMonthly, currentErrorRateInManualWorkflowsPercentage, avgTaskDurationForErrorCalcMins, automationErrorReductionPercentage, hourlyRate}});
         }
     } else if (selectedModuleId === 'processMapping') {
+        const timeSavingOverride = getInputValue(inputs, 'pm_roi_overrideTimeSavingPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        
         const numKeyProcessesToMap = getInputValue(inputs, 'pm_roi_numKeyProcessesToMap');
         const avgTimeToMapProcessManuallyHrs = getInputValue(inputs, 'pm_roi_avgTimeToMapProcessManuallyHrs');
         const annualCostProcessRelatedInefficiencies = getInputValue(inputs, 'pm_roi_annualCostProcessRelatedInefficiencies');
         const timeReductionForAuditsHrsPerYear = getInputValue(inputs, 'pm_roi_timeReductionForAuditsHrsPerYear');
+        const timeSavedMappingPercentage = getInputValue(inputs, 'pm_roi_timeSavedMappingPercentage') / 100;
+        const inefficiencyReductionPercentage = getInputValue(inputs, 'pm_roi_inefficiencyReductionPercentage') / 100;
 
         if (numKeyProcessesToMap > 0 && avgTimeToMapProcessManuallyHrs > 0 && hourlyRate > 0) {
-            const timeSavedMapping = numKeyProcessesToMap * avgTimeToMapProcessManuallyHrs * 0.50 * hourlyRate;
+            const timeSavedMapping = numKeyProcessesToMap * avgTimeToMapProcessManuallyHrs * timeSavedMappingPercentage * hourlyRate;
             totalAnnualGrossSavings += (timeSavedMapping / solutionLifespanYears); 
-             savingsCalculationWorkings.push({ category: "Efficiency (Process Mapping Time)", result: (timeSavedMapping / solutionLifespanYears), formula: `(${numKeyProcessesToMap} processes * ${avgTimeToMapProcessManuallyHrs} hrs * 50% saved * $${hourlyRate.toFixed(2)}/hr) / ${solutionLifespanYears} yrs`, inputsUsed: {numKeyProcessesToMap, avgTimeToMapProcessManuallyHrs, hourlyRate, solutionLifespanYears}});
+             savingsCalculationWorkings.push({ category: "Efficiency (Process Mapping Time)", result: (timeSavedMapping / solutionLifespanYears), formula: `(${numKeyProcessesToMap} processes * ${avgTimeToMapProcessManuallyHrs} hrs * ${timeSavedMappingPercentage*100}% saved * $${hourlyRate.toFixed(2)}/hr) / ${solutionLifespanYears} yrs`, inputsUsed: {numKeyProcessesToMap, avgTimeToMapProcessManuallyHrs, timeSavedMappingPercentage, hourlyRate, solutionLifespanYears}});
         }
         if (annualCostProcessRelatedInefficiencies > 0) {
-            const inefficiencyReduction = annualCostProcessRelatedInefficiencies * 0.15; 
+            const inefficiencyReduction = annualCostProcessRelatedInefficiencies * inefficiencyReductionPercentage; 
             totalAnnualGrossSavings += inefficiencyReduction;
-            savingsCalculationWorkings.push({ category: "Reduced Process Inefficiency Costs", result: inefficiencyReduction, formula: `$${annualCostProcessRelatedInefficiencies} * 15% (assumed reduction from better maps)`, inputsUsed: {annualCostProcessRelatedInefficiencies}});
+            savingsCalculationWorkings.push({ category: "Reduced Process Inefficiency Costs", result: inefficiencyReduction, formula: `$${annualCostProcessRelatedInefficiencies} * ${inefficiencyReductionPercentage*100}% reduction`, inputsUsed: {annualCostProcessRelatedInefficiencies, inefficiencyReductionPercentage}});
         }
         if (timeReductionForAuditsHrsPerYear > 0 && hourlyRate > 0) {
             const auditTimeSavingsCost = timeReductionForAuditsHrsPerYear * hourlyRate;
@@ -442,10 +513,16 @@ export const performRoiCalculation = (
             savingsCalculationWorkings.push({ category: "Savings (Audit Preparation Time)", result: auditTimeSavingsCost, formula: `${timeReductionForAuditsHrsPerYear} hrs/yr * $${hourlyRate.toFixed(2)}/hr`, inputsUsed: {timeReductionForAuditsHrsPerYear, hourlyRate}});
         }
     } else { // Default/Generic calculation
+        const timeSavingOverride = getInputValue(inputs, 'def_roi_overrideTimeSavingPercentage');
+        const errorReductionOverride = getInputValue(inputs, 'def_roi_overrideErrorReductionPercentage');
+        const automationTimeSavingPercentage = timeSavingOverride > 0 ? timeSavingOverride / 100 : globalTimeSaving;
+        const automationErrorReductionPercentage = errorReductionOverride > 0 ? errorReductionOverride / 100 : globalErrorReduction;
+
         const manualTaskTimeHrsWeekPTE = getInputValue(inputs, 'def_roi_manualTaskTimeHrsWeekPTE');
         const numEmployeesPerformingTask = getInputValue(inputs, 'def_roi_numEmployeesPerformingTask');
         const errorRateManualTaskPercentage = getInputValue(inputs, 'def_roi_errorRateManualTaskPercentage') / 100;
         const avgTimeToCorrectErrorHrs = getInputValue(inputs, 'def_roi_avgTimeToCorrectErrorHrs');
+        const avgTaskDurationForErrorCalcMins = getInputValue(inputs, 'def_roi_avgTaskDurationForErrorCalcMins');
 
         if (manualTaskTimeHrsWeekPTE > 0 && numEmployeesPerformingTask > 0 && hourlyRate > 0) {
             const totalManualHoursPerWeek = manualTaskTimeHrsWeekPTE * numEmployeesPerformingTask;
@@ -459,10 +536,9 @@ export const performRoiCalculation = (
                 inputsUsed: { manualTaskTimeHrsWeekPTE, numEmployeesPerformingTask, hourlyRate, automationTimeSavingPercentage }
             });
         }
-        if (manualTaskTimeHrsWeekPTE > 0 && numEmployeesPerformingTask > 0 && errorRateManualTaskPercentage > 0 && avgTimeToCorrectErrorHrs > 0 && hourlyRate > 0) {
-            const avgTaskDurationForErrorCalc = 0.25; 
+        if (manualTaskTimeHrsWeekPTE > 0 && numEmployeesPerformingTask > 0 && errorRateManualTaskPercentage > 0 && avgTimeToCorrectErrorHrs > 0 && hourlyRate > 0 && avgTaskDurationForErrorCalcMins > 0) {
             const totalWorkHoursPerYear = manualTaskTimeHrsWeekPTE * numEmployeesPerformingTask * 52;
-            const estimatedTasksPerYear = totalWorkHoursPerYear / avgTaskDurationForErrorCalc;
+            const estimatedTasksPerYear = totalWorkHoursPerYear / (avgTaskDurationForErrorCalcMins / 60);
 
             const numErrorsPerYear = estimatedTasksPerYear * errorRateManualTaskPercentage;
             const timeLostToErrorsPerYearHrs = numErrorsPerYear * avgTimeToCorrectErrorHrs;
@@ -474,7 +550,7 @@ export const performRoiCalculation = (
                 category: "Generic Savings (Error Reduction & Rework)",
                 formula: `(Est. Tasks: ${estimatedTasksPerYear.toFixed(0)}/yr * ${errorRateManualTaskPercentage*100}% error rate * ${avgTimeToCorrectErrorHrs} hrs/rework * ${automationErrorReductionPercentage*100}% reduction) * $${hourlyRate.toFixed(2)}/hr`,
                 result: genericErrorReductionSavings,
-                inputsUsed: { manualTaskTimeHrsWeekPTE, numEmployeesPerformingTask, errorRateManualTaskPercentage, avgTimeToCorrectErrorHrs, automationErrorReductionPercentage, hourlyRate, estimatedTasksPerYear }
+                inputsUsed: { manualTaskTimeHrsWeekPTE, numEmployeesPerformingTask, errorRateManualTaskPercentage, avgTimeToCorrectErrorHrs, automationErrorReductionPercentage, hourlyRate, avgTaskDurationForErrorCalcMins, estimatedTasksPerYear }
             });
         }
     }
@@ -487,32 +563,24 @@ export const performRoiCalculation = (
 
     const annualBreakdown: RoiResults['annualBreakdown'] = [];
     let cumulativeNetCashFlow = 0;
-    let paybackPeriodMonths = Infinity;
+
+    let paybackPeriodMonths: number;
+    const netAnnualSavings = totalAnnualGrossSavings - annualSoftwareCost;
+
+    if (upfrontProfServicesCost <= 0 && netAnnualSavings > 0) {
+        paybackPeriodMonths = 0; // Instant payback
+    } else if (netAnnualSavings <= 0) {
+        paybackPeriodMonths = Infinity; // No payback if savings don't cover recurring costs
+    } else {
+        paybackPeriodMonths = (upfrontProfServicesCost / netAnnualSavings) * 12;
+    }
 
     for (let i = 1; i <= solutionLifespanYears; i++) {
         const investmentThisYear = (i === 1) ? upfrontProfServicesCost : 0;
         const netCashFlowYear = totalAnnualGrossSavings - annualSoftwareCost - investmentThisYear;
-        const prevCumulativeNetCashFlow = cumulativeNetCashFlow;
         cumulativeNetCashFlow += netCashFlowYear;
-
-        if (paybackPeriodMonths === Infinity && cumulativeNetCashFlow > 0) {
-            if (prevCumulativeNetCashFlow <= 0) { 
-                paybackPeriodMonths = (i - 1) * 12 + (Math.abs(prevCumulativeNetCashFlow) / (netCashFlowYear / 12));
-            } else {
-                 paybackPeriodMonths = (upfrontProfServicesCost / (totalAnnualGrossSavings - annualSoftwareCost)) * 12;
-                 if (paybackPeriodMonths < 0) paybackPeriodMonths = 0; 
-            }
-        }
         annualBreakdown.push({ year: i, grossSavings: totalAnnualGrossSavings, softwareCost: annualSoftwareCost, investment: investmentThisYear, netCashFlow: netCashFlowYear, cumulativeNetCashFlow });
     }
-    if (paybackPeriodMonths === Infinity && totalNetBenefitOverLifespan <= 0 && totalInvestmentOverLifespan > 0) {
-       // No payback
-    } else if (paybackPeriodMonths === Infinity && totalAnnualGrossSavings > 0 && annualSoftwareCost >= totalAnnualGrossSavings && upfrontProfServicesCost > 0) {
-        // No payback
-    } else if (paybackPeriodMonths === Infinity && totalInvestmentOverLifespan === 0 && totalAnnualGrossSavings > 0){
-        paybackPeriodMonths = 0; 
-    }
-
 
     const results: RoiResults = {
       totalAnnualGrossSavings,

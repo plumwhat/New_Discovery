@@ -1,4 +1,3 @@
-
 import { RoiModuleState } from '../types';
 
 type DemoRoiInputData = Pick<RoiModuleState, 'annualSalary' | 'annualSoftwareCost' | 'upfrontProfServicesCost' | 'solutionLifespanYears' | 'inputs'>;
@@ -17,6 +16,8 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       ap_roi_annualValueMissedEarlyPaymentDiscounts: 10000,
       ap_roi_annualCostPhysicalInvoiceStorage: 2000,
       ap_roi_numFTEs: 5,
+      ap_roi_overrideTimeSavingPercentage: "",
+      ap_roi_overrideErrorReductionPercentage: "",
     },
   },
   orderManagement: {
@@ -30,6 +31,8 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       om_roi_currentOrderErrorRatePercentage: 7,
       om_roi_avgCostToReworkOrderError: 25,
       om_roi_numFTEs: 4,
+      om_roi_overrideTimeSavingPercentage: "",
+      om_roi_overrideErrorReductionPercentage: "",
     },
   },
   managedITSupport: {
@@ -43,6 +46,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       ms_roi_avgDowntimeHoursPerMonth: 10,
       ms_roi_costPerHourOfDowntime: 1000,
       ms_roi_userProductivityLossPercentage: 5,
+      ms_roi_productivityGainPercentage: 50,
+      ms_roi_downtimeReductionPercentage: 75,
+      ms_roi_staffEfficiencyReallocationPercentage: 25,
     },
   },
   cybersecurityServices: {
@@ -56,6 +62,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       cs_roi_currentAnnualSecuritySpend: 50000,
       cs_roi_complianceFineRiskValue: 100000,
       cs_roi_securityFTEs: 2, // Current security FTEs
+      cs_roi_breachRiskReductionPercentage: 80,
+      cs_roi_toolConsolidationSavingsPercentage: 15,
+      cs_roi_fineRiskReductionPercentage: 90,
     },
   },
   // ... other existing demo data ...
@@ -69,6 +78,8 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       cim_roi_avgHandleTimePerInquiryMins: 12,
       cim_roi_repeatInquiryRatePercentage: 15,
       cim_roi_costToResolveRepeatInquiry: 10,
+      cim_roi_overrideTimeSavingPercentage: "",
+      cim_roi_overrideErrorReductionPercentage: "",
     },
   },
   cashApplication: {
@@ -81,6 +92,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       ca_roi_avgManualMatchRatePercentage: 60, 
       ca_roi_timePerUnmatchedRemittanceMins: 15,
       ca_roi_annualBankFeesForManualProcessing: 5000,
+      ca_roi_bankFeeReductionPercentage: 50,
+      ca_roi_overrideTimeSavingPercentage: "",
+      ca_roi_overrideErrorReductionPercentage: "",
     },
   },
   collectionManagement: {
@@ -93,6 +107,8 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       col_roi_avgCollectorTimePerInvoiceMins: 20,
       col_roi_badDebtPercentageOfRevenue: 1.5,
       col_roi_totalAnnualRevenue: 10000000,
+      col_roi_overrideTimeSavingPercentage: "",
+      col_roi_overrideErrorReductionPercentage: "",
     },
   },
   creditManagement: {
@@ -105,6 +121,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       crm_roi_avgTimeToProcessCreditAppManualHrs: 2,
       crm_roi_annualSalesLostDueToSlowCredit: 50000,
       crm_roi_costPerManualCreditReview: 15,
+      crm_roi_recoveredSalesPercentage: 50,
+      crm_roi_overrideTimeSavingPercentage: "",
+      crm_roi_overrideErrorReductionPercentage: "",
     },
   },
   claimsDeductions: {
@@ -117,6 +136,8 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       cd_roi_avgTimePerClaimManualMins: 45,
       cd_roi_percentageInvalidDeductionsUnrecovered: 20,
       cd_roi_avgValueInvalidDeduction: 150,
+      cd_roi_overrideTimeSavingPercentage: "",
+      cd_roi_overrideErrorReductionPercentage: "",
     },
   },
   expenseManagement: {
@@ -129,6 +150,8 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       em_roi_avgTimeProcessReportManualMins: 25,
       em_roi_outOfPolicySpendPercentage: 5,
       em_roi_totalAnnualTAndESpend: 500000,
+      em_roi_overrideTimeSavingPercentage: "",
+      em_roi_overrideErrorReductionPercentage: "",
     },
   },
   procurement: {
@@ -141,6 +164,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       proc_roi_avgManualPOTimeMins: 30,
       proc_roi_maverickSpendPercentage: 10,
       proc_roi_totalAnnualIndirectSpend: 2000000,
+      proc_roi_maverickSpendPremiumPercentage: 10,
+      proc_roi_overrideTimeSavingPercentage: "",
+      proc_roi_overrideErrorReductionPercentage: "",
     },
   },
   invoiceDelivery: {
@@ -153,6 +179,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       id_roi_percentagePaperInvoices: 60,
       id_roi_costPerPaperInvoice: 1.50,
       id_roi_timeSavedPerInvoiceElectronicMins: 3,
+      id_roi_paperToElectronicConversionPercentage: 90,
+      id_roi_overrideTimeSavingPercentage: "",
+      id_roi_overrideErrorReductionPercentage: "",
     },
   },
   supplierManagement: {
@@ -165,6 +194,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       sm_roi_avgTimeOnboardSupplierManualHrs: 5,
       sm_roi_costOfSupplierDataErrorsAnnual: 15000,
       sm_roi_compliancePenaltyRiskCostAnnual: 8000,
+      sm_roi_complianceRiskReductionPercentage: 50,
+      sm_roi_overrideTimeSavingPercentage: "",
+      sm_roi_overrideErrorReductionPercentage: "",
     },
   },
   documentManagement: {
@@ -177,6 +209,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       dm_roi_avgTimeSearchingDocsPerUserHrsWeek: 3,
       dm_roi_annualPhysicalStorageCost: 1000,
       dm_roi_costOfNonComplianceAnnual: 20000,
+      dm_roi_physicalStorageReductionPercentage: 90,
+      dm_roi_overrideTimeSavingPercentage: "",
+      dm_roi_overrideErrorReductionPercentage: "",
     },
   },
   workflowManagement: {
@@ -189,6 +224,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       wm_roi_avgInstancesPerWorkflowMonthly: 100,
       wm_roi_avgManualTimeSavedPerInstanceHrs: 1.5,
       wm_roi_currentErrorRateInManualWorkflowsPercentage: 8,
+      wm_roi_avgTaskDurationForErrorCalcMins: 15,
+      wm_roi_overrideTimeSavingPercentage: "",
+      wm_roi_overrideErrorReductionPercentage: "",
     },
   },
   processMapping: {
@@ -201,6 +239,10 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       pm_roi_avgTimeToMapProcessManuallyHrs: 20,
       pm_roi_annualCostProcessRelatedInefficiencies: 75000,
       pm_roi_timeReductionForAuditsHrsPerYear: 40,
+      pm_roi_timeSavedMappingPercentage: 50,
+      pm_roi_inefficiencyReductionPercentage: 15,
+      pm_roi_overrideTimeSavingPercentage: "",
+      pm_roi_overrideErrorReductionPercentage: "",
     },
   },
   default: {
@@ -213,6 +255,9 @@ export const ROI_DEMO_DATA: Record<string, DemoRoiInputData> = {
       def_roi_numEmployeesPerformingTask: 10,
       def_roi_errorRateManualTaskPercentage: 10,
       def_roi_avgTimeToCorrectErrorHrs: 0.5,
+      def_roi_avgTaskDurationForErrorCalcMins: 15,
+      def_roi_overrideTimeSavingPercentage: "",
+      def_roi_overrideErrorReductionPercentage: "",
     },
   }
 };

@@ -10,6 +10,7 @@ import { ALL_MODULES } from '../constants/moduleConstants';
 import RadioGroup from './common/RadioGroup'; // Changed from Select
 import Button from './common/Button';
 import { evaluateQualificationSection } from '../services/qualificationService';
+import { getQualificationEmailTemplate } from '../services/configService';
 import { EnvelopeIcon } from './common/Icons';
 
 const QualificationSection: React.FC<{
@@ -133,12 +134,11 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
   }, [setAppState, dynamicQualQualQuestions, dynamicQualQuantQuestions]);
 
   const handleEmailSummary = useCallback(() => {
-    const { customerCompany, dateCompleted } = appState;
+    const { customerCompany, dateCompleted, selectedModuleId } = appState;
     const { qualitative, quantitative } = appState.qualification;
 
     const formatSection = (title: string, sectionState: QualificationSectionState, questions: QualificationQuestion[]): string => {
         let questionsContent = "";
-        
         questions.forEach(q => {
             const answerValue = sectionState.answers[q.id];
             if (answerValue !== undefined && answerValue !== "") {
@@ -147,7 +147,7 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
                                    : q.text;
                 const selectedOption = q.options.find(opt => opt.value === answerValue);
                 if (selectedOption) {
-                    const answerLabel = selectedOption.label.replace(/\s\(\d+\)$/, ''); // Remove score part like "(10)"
+                    const answerLabel = selectedOption.label.replace(/\s\(\d+\)$/, '');
                     questionsContent += `Q: ${questionText}\nA: ${answerLabel}\n\n`;
                 }
             }
@@ -156,38 +156,26 @@ const QualificationTab: React.FC<TabProps> = ({ appState, setAppState }) => {
         if (questionsContent) {
             return `${title}\n------------------------------------------\n${questionsContent}`;
         }
-        
         return "";
     };
 
     const subject = `Health Check for ${customerCompany || 'Client'} - ${currentModuleName}`;
 
-    let body = `Health Check Summary for: ${customerCompany || 'Client'}\n`;
-    body += `Module: ${currentModuleName}\n`;
-    body += `Date: ${dateCompleted}\n\n`;
-
     const qualitativeContent = formatSection('Qualitative Assessment', qualitative, dynamicQualQualQuestions);
     const quantitativeContent = formatSection('Quantitative Assessment', quantitative, dynamicQualQuantQuestions);
-    
-    let hasContent = false;
-    if (qualitativeContent) {
-        body += qualitativeContent;
-        hasContent = true;
-    }
-    
-    if (quantitativeContent) {
-        if(qualitativeContent) body += '\n';
-        body += quantitativeContent;
-        hasContent = true;
-    }
-    
-    if(hasContent){
-        body += '------------------------------------------\n';
-    }
-    
-    body += 'Based on your answers we would invite you to complete a Health Check to enable us to better understand your environment.\n';
-    body += 'Link to Health Check: https://forms.office.com/r/gxfsEwtPzn\n\n\n';
 
+    const fullQualitativeSection = qualitativeContent ? `${qualitativeContent}\n` : "";
+    const fullQuantitativeSection = quantitativeContent ? `${quantitativeContent}\n` : "";
+
+    // Get the template and replace placeholders
+    const template = getQualificationEmailTemplate(selectedModuleId || undefined);
+    let body = template
+        .replace('{customerCompany}', customerCompany || 'Client')
+        .replace('{moduleName}', currentModuleName)
+        .replace('{dateCompleted}', dateCompleted)
+        .replace('{qualitativeContent}', fullQualitativeSection)
+        .replace('{quantitativeContent}', fullQuantitativeSection)
+        .replace(/^\s*[\r\n]/gm, ""); // Clean up empty lines from replaced content
 
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;

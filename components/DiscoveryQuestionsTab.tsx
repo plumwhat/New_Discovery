@@ -1,5 +1,6 @@
 
 
+
 import React, { useCallback, useState } from 'react';
 import { DiscoveryQuestion, DiscoveryAnswer, EditableDiscoveryQuestionsTemplates, TabProps, TabId } from '../types';
 import { DISCOVERY_QUESTIONS_TEMPLATES } from '../constants/discoveryConstants';
@@ -7,6 +8,7 @@ import { ALL_MODULES } from '../constants/moduleConstants';
 import Textarea from './common/Textarea';
 import Button from './common/Button';
 import { TrashIcon } from './common/Icons';
+import { generateUUID } from '../utils/textUtils';
 
 interface DiscoverySectionProps {
   title: string;
@@ -127,7 +129,7 @@ const DiscoveryQuestionsTab: React.FC<TabProps> = ({ appState, setAppState }) =>
 
   const handleAddCustomNote = useCallback((moduleId: string, type: 'qualitative' | 'quantitative', noteText: string) => {
     setAppState(prev => {
-      const newNoteId = `custom-note-${crypto.randomUUID()}`;
+      const newNoteId = `custom-note-${generateUUID()}`;
       const newNote: DiscoveryAnswer = {
         questionId: newNoteId,
         questionText: `Custom Note (${type})`, // This is more for internal tracking

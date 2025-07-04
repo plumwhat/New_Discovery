@@ -31,7 +31,7 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates 
       { id: "ms_qual_4", text: "What processes are in place for IT asset management, including hardware and software inventory and lifecycle management?" },
       { id: "ms_qual_5", text: "How are IT system monitoring, patching, and preventative maintenance currently handled?" },
       { id: "ms_qual_6", text: "Are there specific IT skill gaps within your current team or challenges in retaining IT talent?" },
-      { id: "ms_qual_7", text: "What are your organization's key IT strategic goals for the next 12-24 months (e.g., improving user experience, reducing IT costs, enhancing operational stability, supporting business growth)?" },
+      { id: "ms_qual_7", text: "What are your organisation's key IT strategic goals for the next 12-24 months (e.g., improving user experience, reducing IT costs, enhancing operational stability, supporting business growth)?" },
       { id: "ms_qual_8", text: "How does your current IT support structure align with your business continuity and disaster recovery plans?" },
       { id: "ms_qual_9", text: "What level of reporting and visibility do you have into IT support metrics (e.g., ticket volumes, resolution times, user satisfaction, system uptime)?" },
       { id: "ms_qual_10", text: "If you could significantly improve one aspect of your IT support and operations, what would it be?" },
@@ -48,15 +48,15 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates 
   },
   cybersecurityServices: {
     qualitative: [
-      { id: "cs_qual_1", text: "What are your organization's primary cybersecurity concerns (e.g., ransomware, data breaches, phishing, insider threats, denial-of-service)?" },
+      { id: "cs_qual_1", text: "What are your organisation's primary cybersecurity concerns (e.g., ransomware, data breaches, phishing, insider threats, denial-of-service)?" },
       { id: "cs_qual_2", text: "Describe your current security infrastructure and tools (e.g., firewalls, EDR/XDR, SIEM, vulnerability scanners, email security). Are there any known gaps or areas needing an upgrade?" },
       { id: "cs_qual_3", text: "How do you currently manage security monitoring, threat detection, and incident response?" },
       { id: "cs_qual_4", text: "What are your key compliance or regulatory requirements related to data security and privacy (e.g., GDPR, Essential Eight, industry-specific standards)?" },
       { id: "cs_qual_5", text: "How is cybersecurity awareness and training handled for your employees? How effective do you find it?" },
       { id: "cs_qual_6", text: "What processes are in place for vulnerability management and security patching across your IT assets?" },
       { id: "cs_qual_7", text: "Do you conduct regular security assessments, penetration tests, or risk analyses? What were the key findings recently?" },
-      { id: "cs_qual_8", text: "How is access to critical systems and sensitive data controlled and monitored within your organization?" },
-      { id: "cs_qual_9", text: "What is your organization's plan for responding to a significant cybersecurity incident or data breach?" },
+      { id: "cs_qual_8", text: "How is access to critical systems and sensitive data controlled and monitored within your organisation?" },
+      { id: "cs_qual_9", text: "What is your organisation's plan for responding to a significant cybersecurity incident or data breach?" },
       { id: "cs_qual_10", text: "What level of visibility and reporting do you have on your overall security posture and threat landscape?" },
     ],
     quantitative: [
@@ -67,6 +67,90 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates 
       { id: "cs_quant_5", text: "Approximately how many endpoints (desktops, laptops, servers, mobile devices) and critical cloud assets need to be secured?", placeholderHint: "Enter number" },
       { id: "cs_quant_6", text: "What percentage of your IT budget is allocated to cybersecurity?", placeholderHint: "Enter percentage" },
       { id: "cs_quant_7", text: "How many dedicated cybersecurity FTEs do you have, or what portion of IT staff time is allocated to security tasks?", placeholderHint: "Enter number of FTEs or % time" },
+    ]
+  },
+  cloudSolutions: {
+    qualitative: [
+        { id: "cld_qual_1", text: "What are the primary business drivers for your current or future cloud strategy (e.g., cost savings, agility, scalability, disaster recovery, innovation)?" },
+        { id: "cld_qual_2", text: "Describe your current cloud footprint. Which public cloud providers (AWS, Azure, GCP) are you using, and for what types of workloads?" },
+        { id: "cld_qual_3", text: "What are your biggest challenges with your current cloud environment (e.g., managing costs, security and compliance, lack of in-house expertise, performance issues)?" },
+        { id: "cld_qual_4", text: "Do you have a clear cloud migration strategy for your on-premise applications? If so, can you describe it?" },
+        { id: "cld_qual_5", text: "How do you manage cloud governance, including cost management (FinOps), identity and access management (IAM), and resource tagging?" },
+        { id: "cld_qual_6", text: "What are your security concerns related to your public cloud infrastructure and data?" },
+        { id: "cld_qual_7", text: "How are you handling backup, disaster recovery, and business continuity for your cloud-based workloads?" },
+        { id: "cld_qual_8", text: "Are you considering a hybrid or multi-cloud strategy? What are the perceived benefits and challenges?" },
+        { id: "cld_qual_9", text: "How is your development team leveraging cloud services (e.g., containers, serverless, PaaS) to accelerate application delivery?" },
+        { id: "cld_qual_10", text: "What does success look like for your cloud initiatives in the next 12-18 months?" },
+    ],
+    quantitative: [
+        { id: "cld_quant_1", text: "What is your approximate monthly or annual spend on public cloud services?", placeholderHint: "Enter currency amount" },
+        { id: "cld_quant_2", text: "How many on-premise servers or applications are candidates for cloud migration?", placeholderHint: "Enter number" },
+        { id: "cld_quant_3", text: "What is the total volume of data (in TB) stored in or planned for the cloud?", placeholderHint: "Enter TB" },
+        { id: "cld_quant_4", text: "How many FTEs are dedicated to managing your cloud environment?", placeholderHint: "Enter number of FTEs" },
+        { id: "cld_quant_5", text: "Have you experienced unexpected cloud cost overruns? If so, by what approximate percentage?", placeholderHint: "Enter percentage" },
+        { id: "cld_quant_6", text: "What is your target Recovery Time Objective (RTO) and Recovery Point Objective (RPO) for critical applications in the cloud?", placeholderHint: "e.g., RTO: 4 hours, RPO: 1 hour" },
+    ]
+  },
+  networkServices: {
+    qualitative: [
+        { id: "net_qual_1", text: "What are the biggest challenges with your current network performance and reliability (e.g., latency with cloud apps, dropped video calls, office connectivity issues)?" },
+        { id: "net_qual_2", text: "Describe your current Wide Area Network (WAN) architecture. Are you using MPLS, SD-WAN, or standard internet connections?" },
+        { id: "net_qual_3", text: "How do you ensure secure and reliable network access for your remote and hybrid workforce?" },
+        { id: "net_qual_4", text: "How is your network infrastructure currently managed and monitored?", placeholderHint: "e.g., in-house team, third-party provider, basic alerts" },
+        { id: "net_qual_5", text: "What are your key security concerns related to your network (e.g., unauthorised access, malware propagation, DDoS attacks)?" },
+        { id: "net_qual_6", text: "As you adopt more cloud services, how is your network evolving to provide direct and efficient access to them?" },
+        { id: "net_qual_7", text: "Are you considering any network upgrades or new technologies (like SASE - Secure Access Service Edge) to address your challenges?" },
+        { id: "net_qual_8", text: "How difficult is it to deploy new sites or change network configurations with your current setup?" },
+        { id: "net_qual_9", text: "What level of visibility and analytics do you have into your network traffic and performance?" },
+        { id: "net_qual_10", text: "If you could change one thing about your network to better support the business, what would it be?" },
+    ],
+    quantitative: [
+        { id: "net_quant_1", text: "How many office locations or sites are connected by your network?", placeholderHint: "Enter number" },
+        { id: "net_quant_2", text: "What is your current annual spend on network connectivity (e.g., MPLS, internet circuits)?", placeholderHint: "Enter currency amount" },
+        { id: "net_quant_3", text: "How many network-related outages or significant performance degradation events have you had in the last 6 months?", placeholderHint: "Enter number" },
+        { id: "net_quant_4", text: "What is the total bandwidth available at your primary and branch locations?", placeholderHint: "e.g., HQ: 1Gbps, Branch: 100Mbps" },
+        { id: "net_quant_5", text: "How many FTEs or what percentage of team time is spent on managing and troubleshooting the network?", placeholderHint: "Enter FTEs or percentage" },
+    ]
+  },
+  modernWorkplaceITS: {
+    qualitative: [
+        { id: "mw_qual_1", text: "What are your primary goals for your modern workplace strategy (e.g., enhancing collaboration, improving employee experience, increasing productivity, enabling hybrid work)?" },
+        { id: "mw_qual_2", text: "Which collaboration platforms are central to your organisation (e.g., Microsoft 365/Teams, Google Workspace, Slack)?" },
+        { id: "mw_qual_3", text: "What are the biggest challenges your employees face with your current collaboration and communication tools?" },
+        { id: "mw_qual_4", text: "How do you manage and secure employee endpoints (desktops, laptops, mobile devices)?" },
+        { id: "mw_qual_5", text: "How are you leveraging your investment in platforms like Microsoft 365? Are there underutilised features (e.g., Power Platform, advanced security)?" },
+        { id: "mw_qual_6", text: "What is your strategy for employee onboarding and offboarding from an IT perspective?" },
+        { id: "mw_qual_7", text: "How do you manage user identities and ensure secure access to applications and data from any device, anywhere?" },
+        { id: "mw_qual_8", text: "Are you looking to automate any routine business tasks or processes using tools within your collaboration suite (e.g., Power Automate)?" },
+        { id: "mw_qual_9", text: "How do you ensure data governance and prevent data leakage within your collaboration platforms?" },
+        { id: "mw_qual_10", text: "What does an ideal 'day in the life' look like for an employee in your organisation from a technology perspective?" },
+    ],
+    quantitative: [
+        { id: "mw_quant_1", text: "How many employees are licensed for your primary collaboration suite (e.g., Microsoft 365 E3/E5)?", placeholderHint: "Enter number" },
+        { id: "mw_quant_2", text: "What is your user adoption rate for key tools like Microsoft Teams or SharePoint Online?", placeholderHint: "Enter percentage" },
+        { id: "mw_quant_3", text: "How many endpoints (desktops, laptops, mobiles) are managed by your IT team?", placeholderHint: "Enter number" },
+        { id: "mw_quant_4", text: "What is the average time it takes to provision a new employee with all necessary IT access and hardware?", placeholderHint: "Enter time (e.g., hours or days)" },
+        { id: "mw_quant_5", text: "How many different applications does a typical employee need to use daily to perform their job?", placeholderHint: "Enter number" },
+    ]
+  },
+  itConsulting: {
+    qualitative: [
+        { id: "itc_qual_1", text: "What are the most significant strategic challenges or opportunities your business is facing where technology could play a key role?" },
+        { id: "itc_qual_2", text: "Do you have a documented IT strategy and technology roadmap for the next 3-5 years? How confident are you in it?" },
+        { id: "itc_qual_3", text: "What are the biggest gaps between your current IT capabilities and what the business needs to achieve its goals?" },
+        { id: "itc_qual_4", text: "Are there any major technology decisions or projects on the horizon (e.g., ERP replacement, major cloud migration, business acquisition) where you need expert guidance?" },
+        { id: "itc_qual_5", text: "How do you currently approach IT governance, risk management, and compliance? What are the challenges?" },
+        { id: "itc_qual_6", text: "How do you evaluate and select new technologies or vendors?" },
+        { id: "itc_qual_7", text: "Does your IT team have the internal capacity and expertise to lead large-scale, complex technology projects?" },
+        { id: "itc_qual_8", text: "How do you measure the return on investment (ROI) and business value of your IT initiatives?" },
+        { id: "itc_qual_9", text: "What is the current relationship between IT and other business departments? Is IT seen as a strategic partner or a cost centre?" },
+        { id: "itc_qual_10", text: "If you had an independent team of technology experts, what is the first major problem you would ask them to help you solve?" },
+    ],
+    quantitative: [
+        { id: "itc_quant_1", text: "What is your total annual IT budget (both operational and capital)?", placeholderHint: "Enter currency amount" },
+        { id: "itc_quant_2", text: "What percentage of your IT budget is spent on 'keeping the lights on' versus innovation and new projects?", placeholderHint: "Enter percentage" },
+        { id: "itc_quant_3", text: "How many major IT projects have been delayed or failed to deliver their intended value in the past 2 years?", placeholderHint: "Enter number" },
+        { id: "itc_quant_4", text: "What is the estimated value of the business initiative that is being blocked or slowed by technology challenges?", placeholderHint: "Enter currency amount" },
     ]
   },
   orderManagement: {
@@ -121,7 +205,7 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates 
       { id: "ca_qual_4", text: "How are partial payments, short payments, or payments without clear remittance details handled?" },
       { id: "ca_qual_5", text: "What is the process for identifying and resolving unapplied cash?" },
       { id: "ca_qual_6", text: "How much manual effort is involved in data entry, matching, and exception handling in cash application?" },
-      { id: "ca_qual_7", text: "What systems or tools are currently used for cash application (e.g., ERP module, lockbox services, spreadsheets)?" },
+      { id: "ca_qual_7", text: "What systems or tools are currently used for cash application (e.g., lockbox services, spreadsheets)?" },
       { id: "ca_qual_8", text: "How does the efficiency of your cash application process impact your Days Sales Outstanding (DSO)?" },
       { id: "ca_qual_9", text: "What level of visibility does your AR team have into incoming payments and application status?" },
       { id: "ca_qual_10", text: "Are there specific types of customers or payment methods that cause more difficulties in cash application?" }
@@ -212,7 +296,7 @@ export const DISCOVERY_QUESTIONS_TEMPLATES: EditableDiscoveryQuestionsTemplates 
       { id: "em_qual_7", text: "What level of visibility does finance have into employee spend and T&E budget adherence?" },
       { id: "em_qual_8", text: "How long does it typically take for an employee to be reimbursed after submitting an expense report?" },
       { id: "em_qual_9", text: "What systems or tools are currently used for expense management?" },
-      { id: "em_qual_10", text: "What are the goals for improving your expense management process?" }
+      { id: "em_qual_10", text: "What are your goals for improving your expense management process?" }
     ],
     quantitative: [
       { id: "em_quant_1", text: "How many expense reports are processed per month?", placeholderHint: "Enter number" },

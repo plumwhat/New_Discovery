@@ -25,7 +25,8 @@ import {
 } from '../constants/roiConstants';
 import { 
   QUALIFICATION_QUESTIONS_BY_MODULE as DEFAULT_QUALIFICATION_QUESTIONS_BY_MODULE,
-  DEFAULT_QUALIFICATION_THRESHOLDS
+  DEFAULT_QUALIFICATION_THRESHOLDS,
+  QUALIFICATION_EMAIL_TEMPLATES_BY_MODULE,
 } from '../constants/qualificationConstants';
 import { DISCOVERY_QUESTIONS_TEMPLATES as DEFAULT_DISCOVERY_QUESTIONS_TEMPLATES } from '../constants/discoveryConstants';
 import { PAIN_POINT_HIERARCHY as DEFAULT_PAIN_POINT_HIERARCHY, REVERSE_WATERFALL_CHEAT_SHEETS as DEFAULT_REVERSE_WATERFALL_CHEAT_SHEETS } from '../constants/painPointConstants';
@@ -142,6 +143,22 @@ export const getQualificationQuestionsByModule = (): AllModuleQualificationQuest
 export const getQualificationThresholds = (): { qualified: number; clarification: number } => {
   const adminConfig = loadAdminConfig();
   return adminConfig?.qualificationThresholds || DEFAULT_QUALIFICATION_THRESHOLDS;
+};
+
+export const getQualificationEmailTemplate = (moduleId?: string): string => {
+  const adminConfig = loadAdminConfig();
+  // Admin custom template has highest priority. This is useful for temporary global overrides.
+  // The user can clear this in the admin panel to revert to module-specific templates.
+  if (adminConfig?.qualificationEmailTemplate) {
+    return adminConfig.qualificationEmailTemplate;
+  }
+  
+  if (moduleId && QUALIFICATION_EMAIL_TEMPLATES_BY_MODULE[moduleId]) {
+    return QUALIFICATION_EMAIL_TEMPLATES_BY_MODULE[moduleId];
+  }
+  
+  // For any module not explicitly listed, use the default template which omits the link.
+  return QUALIFICATION_EMAIL_TEMPLATES_BY_MODULE.default;
 };
 
 export const getDiscoveryQuestionsTemplates = (): EditableDiscoveryQuestionsTemplates => {

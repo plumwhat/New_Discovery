@@ -152,7 +152,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
               type={input.type}
               value={currentModuleRoiData.inputs[input.id] || ""}
               onChange={e => handleInputChange(input.id, e.target.value)}
-              placeholder={`Enter ${input.label.toLowerCase()}`}
+              placeholder={input.placeholder || `Enter ${input.label.toLowerCase()}`}
               unit={input.unit}
               isCurrency={input.isCurrency}
             />
@@ -170,10 +170,7 @@ const RoiCalculatorTab: React.FC<TabProps> = ({ appState, setAppState }) => {
 
     const paybackDisplay = getPaybackPeriodDisplay(
         results.paybackPeriodMonths,
-        results.solutionLifespanYears,
-        results.totalNetBenefitOverLifespan,
-        results.totalInvestmentOverLifespan,
-        results.totalAnnualGrossSavings
+        results.solutionLifespanYears
     );
 
     return (

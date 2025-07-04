@@ -14,7 +14,7 @@ import {
     ArrowDownTrayIcon
 } from './common/Icons';
 import { generateSolutionDocumentContent, triggerDownload } from '../services/exportService';
-import { ModuleInfographic } from './common/ModuleInfographic';
+import { generateUUID } from '../utils/textUtils';
 
 
 const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
@@ -73,7 +73,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
       }));
     } else { 
       const newBlock: RequirementBlock = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         requirement: currentRequirement,
         solution: currentSolution,
       };
@@ -122,7 +122,7 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
     if (blockToDuplicate) {
       const newBlock: RequirementBlock = {
         ...blockToDuplicate,
-        id: crypto.randomUUID(),
+        id: generateUUID(),
       };
       const originalIndex = requirementBlocks.findIndex(block => block.id === blockId);
       const newBlocks = [...requirementBlocks];
@@ -345,7 +345,6 @@ const SolutionBuilderTab: React.FC<TabProps> = ({ appState, setAppState }) => {
              <p className="mt-4 text-sm text-gray-600"><i>Quantitative ROI analysis for the <strong>{coreModuleNameStr}</strong> module can be performed in the 'ROI Calculator' tab to complement this solution outline.</i></p>
           )}
 
-          {selectedCoreModuleId && <ModuleInfographic moduleId={selectedCoreModuleId} />} 
         </div>
       </section>
     );

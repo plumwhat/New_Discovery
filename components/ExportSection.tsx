@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { ExportFormat } from '../types';
 import RadioGroup from './common/RadioGroup';
@@ -79,7 +78,7 @@ const ExportSection: React.FC<ExportSectionProps> = ({
               iconPosition="left"
               className="w-full sm:w-auto flex-grow sm:flex-grow-0"
             >
-              Reset All App Data {/* Changed button text */}
+              Reset All Application Data
             </Button>
           </div>
         </div>

@@ -1,104 +1,91 @@
 import { EngagementStepType } from '../types';
 
 export const ENGAGEMENT_OBJECTIVES: Record<EngagementStepType, string[]> = {
-  [EngagementStepType.INITIAL_ENGAGEMENT]: [
-    "Qualify Lead (BANT)",
-    "Understand High-Level Pain Points",
-    "Establish Initial Contact & Rapport",
-    "Schedule First Customer Meeting",
+  [EngagementStepType.PLAN_AND_PREPARE]: [
+    "Develop Account Hypothesis & Initial POV",
+    "Identify Key Stakeholders, Influencers & Detractors",
+    "Define Initial Value Proposition",
+    "Establish Multi-Threaded Outreach Strategy",
   ],
-  [EngagementStepType.HEALTH_CHECK]: [
-    "Assess Current Process State",
-    "Benchmark Against Industry Standards",
-    "Identify Quick Wins & Obvious Gaps",
-    "Gather Data for Business Case",
+  [EngagementStepType.OPEN_AND_CONNECT]: [
+    "Establish Credibility & Build Rapport",
+    "Secure Initial Discovery Meeting with a Champion",
+    "Understand Customer's Initial Perspective & Stated Needs",
+    "Validate Key Stakeholder Roles & Influence",
   ],
-  [EngagementStepType.CUSTOMER_MEETING]: [
-    "Confirm Understanding of Challenges",
-    "Introduce High-Level Value Proposition",
-    "Build Relationships with Key Stakeholders",
-    "Define & Agree on Next Steps",
+  [EngagementStepType.DISCOVER_AND_DIAGNOSE]: [
+    "Uncover Underlying Business Pains & Critical Needs",
+    "Quantify Financial & Operational Impact of Pains",
+    "Understand Decision-Making Process, Criteria & Timeline",
+    "Identify Political Landscape & Cultivate Coaches",
   ],
-  [EngagementStepType.QUALIFICATION]: [
-    "Validate Budget & Financial Viability",
-    "Identify & Confirm Decision-Makers (Authority)",
-    "Deepen Understanding of Need & Urgency",
-    "Establish Agreed-Upon Timeline",
-    "Assess Technical Fit & Environment",
+  [EngagementStepType.CRAFT_AND_VALIDATE_SOLUTION]: [
+    "Co-create a 'To-Be' Vision with the Customer",
+    "Map Solution Capabilities to Diagnosed Needs",
+    "Gain Preliminary Buy-in from Key Stakeholders",
+    "Document Technical, Business & Success Requirements",
   ],
-  [EngagementStepType.DISCOVERY_MEETING]: [
-    "Deep-Dive into Specific Processes",
-    "Map Pain Points to Solution Capabilities",
-    "Identify Key Metrics for Success (KPIs)",
-    "Uncover Political Landscape & Influencers",
+  [EngagementStepType.PROPOSE_AND_PROVE_VALUE]: [
+    "Deliver a Tailored, Value-Based Demonstration",
+    "Present a Compelling Business Case & ROI Analysis",
+    "Proactively Address all Stakeholder Objections",
+    "Submit Formal Proposal Document",
   ],
-  [EngagementStepType.PROCESS_MAPS]: [
-    "Visualize Current State 'As-Is' Process",
-    "Design & Agree on Future State 'To-Be' Process",
-    "Gain Consensus on Process Changes",
-    "Document Scope for Implementation",
+  [EngagementStepType.GAIN_COMMITMENT_AND_CLOSE]: [
+    "Finalize Technical, Commercial & Legal Terms",
+    "Secure Verbal and Written Commitment from Power Sponsor",
+    "Navigate Procurement & Legal Review Processes",
+    "Gain Final Signature on Agreement",
   ],
-  [EngagementStepType.DEMONSTRATION]: [
-    "Showcase Solution for Specific Pain Points",
-    "Prove Technical Viability & 'Art of the Possible'",
-    "Create a 'Wow' Moment for Users & Stakeholders",
-    "Address Technical & Functional Questions",
-  ],
-  [EngagementStepType.ROI_SOLUTION_PRESENTATION]: [
-    "Present Final Business Case & ROI Analysis",
-    "Align Solution with Executive-Level Goals",
-    "Secure Final Approval & Commitment",
-    "Outline Implementation Plan & Next Steps",
+  [EngagementStepType.IMPLEMENT_AND_EXPAND]: [
+    "Ensure a Smooth Handover to Implementation/CSM Team",
+    "Track and Confirm Initial Value Realization (First 90 Days)",
+    "Establish Cadence for Strategic Business Reviews (QBRs)",
+    "Identify & Qualify Upsell/Cross-sell Opportunities",
   ],
 };
 
 export const ENGAGEMENT_SALES_ACTIONS: Record<EngagementStepType, string[]> = {
-  [EngagementStepType.INITIAL_ENGAGEMENT]: [
-    "Research prospect on LinkedIn/Company Website",
-    "Prepare initial outreach email/call script",
-    "Send introductory email with value proposition",
-    "Make initial qualifying call to champion",
+  [EngagementStepType.PLAN_AND_PREPARE]: [
+    "Conduct research on company (10-K, news), industry, and stakeholders",
+    "Build an Account & Opportunity Map in CRM",
+    "Prepare initial outreach email & call templates",
+    "Define key discovery questions using the 'Pain Points' tab",
   ],
-  [EngagementStepType.HEALTH_CHECK]: [
-    "Send pre-call questionnaire to gather data",
-    "Analyze customer's existing process documentation",
-    "Prepare agenda for health check call",
-    "Conduct benchmark analysis against industry data",
+  [EngagementStepType.OPEN_AND_CONNECT]: [
+    "Execute multi-channel outreach (email, phone, LinkedIn)",
+    "Leverage mutual connections for warm introductions",
+    "Log all activities meticulously in CRM",
+    "Send a post-meeting summary email with agreed next steps",
   ],
-  [EngagementStepType.CUSTOMER_MEETING]: [
-    "Prepare meeting agenda and presentation deck",
-    "Confirm meeting attendees and roles",
-    "Document meeting minutes and action items",
-    "Send follow-up email summarizing discussion & next steps",
+  [EngagementStepType.DISCOVER_AND_DIAGNOSE]: [
+    "Conduct structured discovery meetings with multiple stakeholders",
+    "Use the 'Discovery Questions' tab to guide conversations",
+    "Quantify pains using the 'ROI Calculator' tab with customer data",
+    "Build and maintain a 'Political Map' of the opportunity",
   ],
-  [EngagementStepType.QUALIFICATION]: [
-    "Identify and engage with the economic buyer",
-    "Discuss budget allocation and approval process",
-    "Confirm project timeline with project sponsor",
-    "Assess technical infrastructure for solution fit with IT",
+  [EngagementStepType.CRAFT_AND_VALIDATE_SOLUTION]: [
+    "Use the 'Solution Builder' tab to outline the proposal",
+    "Conduct workshops with customer SMEs to refine the solution scope",
+    "Present preliminary solution design to champion for feedback",
+    "Develop a mutual action plan (MAP) with the customer",
   ],
-  [EngagementStepType.DISCOVERY_MEETING]: [
-    "Prepare detailed, role-based discovery questions",
-    "Schedule session with process owners/SMEs",
-    "Document current state process flow ('As-Is')",
-    "Identify and quantify key pain points and metrics",
+  [EngagementStepType.PROPOSE_AND_PROVE_VALUE]: [
+    "Configure and rehearse a tailored solution demonstration",
+    "Finalize ROI analysis and executive presentation deck",
+    "Schedule and conduct value presentation with all decision-makers",
+    "Deliver formal proposal document to the champion",
   ],
-  [EngagementStepType.PROCESS_MAPS]: [
-    "Create 'As-Is' process map based on discovery notes",
-    "Lead workshop to validate 'As-Is' map with stakeholders",
-    "Collaborate on designing the 'To-Be' process",
-    "Get stakeholder sign-off on future state map",
+  [EngagementStepType.GAIN_COMMITMENT_AND_CLOSE]: [
+    "Lead negotiations on pricing and terms with the economic buyer",
+    "Provide security/compliance documentation to procurement",
+    "Facilitate calls between customer's legal team and ours",
+    "Prepare contract for electronic signature and delivery",
   ],
-  [EngagementStepType.DEMONSTRATION]: [
-    "Prepare tailored demo script focusing on key pains",
-    "Configure demo environment with customer-specific data",
-    "Conduct internal pre-demo dry run",
-    "Follow up with demo recording and Q&A summary",
-  ],
-  [EngagementStepType.ROI_SOLUTION_PRESENTATION]: [
-    "Finalize ROI calculations and business case document",
-    "Prepare executive-level presentation deck",
-    "Schedule presentation with all decision-makers",
-    "Deliver formal proposal and outline procurement steps",
+  [EngagementStepType.IMPLEMENT_AND_EXPAND]: [
+    "Schedule and lead internal sales-to-delivery handover meeting",
+    "Schedule and co-lead customer project kickoff meeting",
+    "Set up the first Quarterly Business Review (QBR) in the calendar",
+    "Update CRM to 'Closed-Won' and monitor account for new opportunities",
   ],
 };

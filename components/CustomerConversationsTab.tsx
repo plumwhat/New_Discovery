@@ -1,14 +1,15 @@
 
-
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { TabProps, ConversationStepId, ConversationExchange, ServiceType, CustomerConversationState, TabId, Module, ExportFormat, ScriptItemType, ScriptItem, ConversationSectionConfig } from '../types'; // Renamed AutomationType to ServiceType
-import { FINANCE_MODULES, BUSINESS_MODULES, ALL_MODULES, ITS_MODULES } from '../constants/moduleConstants'; // Added ITS_MODULES
+import { TabProps, ConversationStepId, ConversationExchange, ServiceType, CustomerConversationState, TabId, Module, ExportFormat, ScriptItemType, ScriptItem, ConversationSectionConfig } from '../types';
+import { FINANCE_MODULES, BUSINESS_MODULES, ALL_MODULES, ITS_MODULES } from '../constants/moduleConstants';
 import Button from './common/Button';
 import Textarea from './common/Textarea';
 import Input from './common/Input';
 import RadioGroup from './common/RadioGroup';
-import { ChevronRightIcon, ChevronLeftIcon, CheckCircleIcon, XCircleIcon, ArrowDownTrayIcon, PlusCircleIcon, MinusCircleIcon, ChatBubbleLeftIcon, ArrowUpIcon, EyeIcon } from './common/Icons';
+import { ChevronRightIcon, ChevronLeftIcon, CheckCircleIcon, XCircleIcon, ArrowDownTrayIcon, ChatBubbleLeftIcon, EyeIcon } from './common/Icons';
 import { triggerDownload, generateCustomerConversationExportContent } from '../services/exportService';
+import { generateUUID } from '../utils/textUtils';
+import { getResellerCompanyName } from '../services/configService';
 
 
 const SCRIPT_SECTIONS_CONFIG: ConversationSectionConfig[] = [
@@ -88,27 +89,19 @@ const SCRIPT_SECTIONS_CONFIG: ConversationSectionConfig[] = [
 
 
 const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState }) => {
-  const { customerConversations, customerCompany, dateCompleted } = appState;
+  const { customerConversations, customerCompany, dateCompleted, customerName } = appState;
   const { activeSectionId, completedSectionIds, exchangeAnswers, moduleExchangeAnswers, currentServiceFocus, explorationInput, followUpDetails, generalNotes, exchanges } = customerConversations; 
   const tabIdValue = TabId.CUSTOMER_CONVERSATIONS;
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
 
-  const [expandedNoteAreas, setExpandedNoteAreas] = useState<Record<string, boolean>>({});
   const [showSummary, setShowSummary] = useState<boolean>(false);
-
-  const handleToggleNoteArea = (itemId: string) => {
-    setExpandedNoteAreas(prev => ({ ...prev, [itemId]: !prev[itemId] }));
-  };
 
   const handleAnswerChange = useCallback((itemId: string, value: string) => {
     setAppState(prev => ({
       ...prev,
       customerConversations: {
         ...prev.customerConversations,
-        exchangeAnswers: {
-          ...prev.customerConversations.exchangeAnswers,
-          [itemId]: value,
-        }
+        exchangeAnswers: { ...prev.customerConversations.exchangeAnswers, [itemId]: value }
       }
     }));
   }, [setAppState]);
@@ -120,10 +113,7 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
         ...prev.customerConversations,
         moduleExchangeAnswers: {
           ...prev.customerConversations.moduleExchangeAnswers,
-          [groupId]: {
-            ...(prev.customerConversations.moduleExchangeAnswers[groupId] || {}),
-            [moduleId]: value,
-          }
+          [groupId]: { ...(prev.customerConversations.moduleExchangeAnswers[groupId] || {}), [moduleId]: value }
         }
       }
     }));
@@ -132,406 +122,248 @@ const CustomerConversationsTab: React.FC<TabProps> = ({ appState, setAppState })
   const handleDirectStateChange = useCallback((property: keyof CustomerConversationState['followUpDetails'] | 'explorationInput' | 'generalNotes', value: any) => {
       setAppState(prev => {
         const newState = { ...prev.customerConversations };
-        if (property === 'interestConfirmed') {
-          newState.followUpDetails.interestConfirmed = value; 
-        } else if (['contactName', 'contactEmail', 'meetingDate', 'meetingTime', 'notes', 'specialistNeeded'].includes(property)) {
+        if (['contactName', 'contactEmail', 'meetingDate', 'meetingTime', 'notes'].includes(property)) {
           (newState.followUpDetails as any)[property] = value;
         } else if (property === 'explorationInput') {
           newState.explorationInput = value as string;
         } else if (property === 'generalNotes') {
           newState.generalNotes = value as string;
+        } else if (property === 'interestConfirmed' || property === 'specialistNeeded') {
+          (newState.followUpDetails as any)[property] = value;
         }
         return { ...prev, customerConversations: newState };
       });
   }, [setAppState]);
 
-
   const handleContinue = useCallback(() => {
     const currentSectionConfig = SCRIPT_SECTIONS_CONFIG.find(s => s.id === activeSectionId);
     if (!currentSectionConfig) return;
 
-    let updatedStateFromPostLogic: Partial<Pick<CustomerConversationState, 'currentServiceFocus' | 'followUpDetails' | 'explorationInput'>> = {}; 
+    let updatedStateFromPostLogic: Partial<Pick<CustomerConversationState, 'currentServiceFocus' | 'followUpDetails' | 'explorationInput'>> = {};
     if (currentSectionConfig.postLogic) {
-      updatedStateFromPostLogic = currentSectionConfig.postLogic(appState.customerConversations, exchangeAnswers);
+      // Create a temporary state for postLogic to work on, including any pending direct changes
+      const tempStateForLogic = { ...customerConversations };
+      if (updatedStateFromPostLogic.explorationInput) tempStateForLogic.explorationInput = updatedStateFromPostLogic.explorationInput;
+      //... apply other pending changes if any
+
+      updatedStateFromPostLogic = currentSectionConfig.postLogic(tempStateForLogic, exchangeAnswers);
     }
     
     const newExchanges: ConversationExchange[] = [];
     currentSectionConfig.scriptItems.forEach(item => {
       if (item.type === 'script') {
-        newExchanges.push({
-          id: crypto.randomUUID(), sectionId: activeSectionId, scriptItemId: item.id,
-          type: 'script_presented', promptText: item.text
-        });
+        newExchanges.push({ id: generateUUID(), sectionId: activeSectionId, scriptItemId: item.id, type: 'script_presented', promptText: item.text });
       } else if (item.type === 'question_textarea' && exchangeAnswers[item.id]) {
-        newExchanges.push({
-          id: crypto.randomUUID(), sectionId: activeSectionId, scriptItemId: item.id,
-          type: 'question_answered', promptText: item.text, answerText: exchangeAnswers[item.id]
-        });
+        newExchanges.push({ id: generateUUID(), sectionId: activeSectionId, scriptItemId: item.id, type: 'question_answered', promptText: item.text, answerText: exchangeAnswers[item.id] });
       } else if (item.type === 'input_prompt' && item.targetStateProperty) {
          const value = item.targetStateProperty === 'explorationInput' ? explorationInput : followUpDetails[item.targetStateProperty as keyof typeof followUpDetails];
-         if (value !== undefined && value !== null && value !== '') {
-            newExchanges.push({
-              id: crypto.randomUUID(), sectionId: activeSectionId, scriptItemId: item.id,
-              type: 'question_answered', promptText: item.text, answerText: String(value)
-            });
-         }
+         if (value) newExchanges.push({ id: generateUUID(), sectionId: activeSectionId, scriptItemId: item.id, type: 'question_answered', promptText: item.text, answerText: String(value) });
       } else if (item.type === 'interest_buttons' && followUpDetails.interestConfirmed !== null) {
-          newExchanges.push({
-            id: crypto.randomUUID(), sectionId: activeSectionId, scriptItemId: item.id,
-            type: 'question_answered', promptText: item.text, answerText: String(followUpDetails.interestConfirmed)
-          });
-      } else if (item.type === 'radio_group' && item.targetStateProperty && followUpDetails[item.targetStateProperty as keyof typeof followUpDetails] !== null) {
-          newExchanges.push({
-            id: crypto.randomUUID(), sectionId: activeSectionId, scriptItemId: item.id,
-            type: 'question_answered', promptText: item.text, answerText: String(followUpDetails[item.targetStateProperty as keyof typeof followUpDetails])
-          });
+          newExchanges.push({ id: generateUUID(), sectionId: activeSectionId, scriptItemId: item.id, type: 'question_answered', promptText: item.text, answerText: followUpDetails.interestConfirmed ? 'Interest Confirmed' : 'Interest Declined' });
       } else if (item.type === 'module_question_group' && moduleExchangeAnswers[item.id]) {
           Object.entries(moduleExchangeAnswers[item.id]).forEach(([moduleId, answer]) => {
-            if (answer) {
-              const module = ALL_MODULES.find(m => m.id === moduleId);
-              newExchanges.push({
-                id: crypto.randomUUID(), sectionId: activeSectionId, scriptItemId: item.id,
-                type: 'module_question_answered', moduleKey: moduleId, 
-                promptText: `Regarding ${module?.name || 'Unknown Module'}: ${item.text}`, 
-                answerText: answer
-              });
-            }
+              if (answer) newExchanges.push({ id: generateUUID(), sectionId: activeSectionId, scriptItemId: item.id, type: 'module_question_answered', moduleKey: moduleId, answerText: answer });
           });
       } else if (item.type === 'final_notes' && generalNotes) {
-         newExchanges.push({
-            id: crypto.randomUUID(), sectionId: activeSectionId, scriptItemId: item.id,
-            type: 'note_taken', promptText: item.text, answerText: generalNotes
-          });
+          newExchanges.push({ id: generateUUID(), sectionId: activeSectionId, scriptItemId: item.id, type: 'note_taken', promptText: item.text, answerText: generalNotes });
       }
     });
-    if (updatedStateFromPostLogic.currentServiceFocus !== undefined && updatedStateFromPostLogic.currentServiceFocus !== currentServiceFocus) { 
-        newExchanges.push({
-            id: crypto.randomUUID(), sectionId: activeSectionId, type: 'focus_determined', answerText: updatedStateFromPostLogic.currentServiceFocus || "Not Determined" 
-        });
+
+    setAppState(prev => {
+        const nextSectionId = currentSectionConfig.nextSectionId;
+        const nextSectionConfig = nextSectionId ? SCRIPT_SECTIONS_CONFIG.find(s => s.id === nextSectionId) : null;
+        let preLogicUpdates: Partial<CustomerConversationState> = {};
+        if (nextSectionConfig?.preLogic) {
+          preLogicUpdates = nextSectionConfig.preLogic({ ...prev.customerConversations, ...updatedStateFromPostLogic });
+        }
+        
+        if (!nextSectionId) setShowSummary(true);
+
+        return {
+            ...prev,
+            customerConversations: {
+                ...prev.customerConversations,
+                ...updatedStateFromPostLogic,
+                ...preLogicUpdates,
+                exchanges: [...prev.customerConversations.exchanges, ...newExchanges],
+                completedSectionIds: [...prev.customerConversations.completedSectionIds, activeSectionId],
+                activeSectionId: nextSectionId || activeSectionId,
+                exchangeAnswers: {},
+            }
+        };
+    });
+  }, [activeSectionId, setAppState, exchangeAnswers, customerConversations, explorationInput, followUpDetails, moduleExchangeAnswers, generalNotes]);
+
+  const handleBack = useCallback(() => {
+    setShowSummary(false);
+    const currentSectionIndex = SCRIPT_SECTIONS_CONFIG.findIndex(s => s.id === activeSectionId);
+    if (currentSectionIndex > 0) {
+      setAppState(prev => ({
+        ...prev,
+        customerConversations: {
+          ...prev.customerConversations,
+          activeSectionId: SCRIPT_SECTIONS_CONFIG[currentSectionIndex - 1].id,
+          completedSectionIds: prev.customerConversations.completedSectionIds.filter(id => id !== SCRIPT_SECTIONS_CONFIG[currentSectionIndex - 1].id)
+        }
+      }));
     }
+  }, [activeSectionId, setAppState]);
 
-
-    setAppState(prev => ({
-      ...prev,
-      customerConversations: {
-        ...prev.customerConversations,
-        ...updatedStateFromPostLogic,
-        completedSectionIds: [...new Set([...prev.customerConversations.completedSectionIds, activeSectionId])],
-        activeSectionId: currentSectionConfig.nextSectionId || activeSectionId,
-        exchanges: [...prev.customerConversations.exchanges, ...newExchanges],
-      }
-    }));
-
-    if (currentSectionConfig.nextSectionId) {
-      setTimeout(() => { 
-        const nextSectionElement = document.getElementById(`section-${currentSectionConfig.nextSectionId}`);
-        nextSectionElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
-
-  }, [activeSectionId, appState.customerConversations, exchangeAnswers, moduleExchangeAnswers, explorationInput, followUpDetails, generalNotes, setAppState, currentServiceFocus]); 
-
-  const handleExportConversation = () => {
-    const filename = `CustomerConversation_${customerCompany.replace(/\s/g, '_') || 'Export'}_${dateCompleted}.html`;
+  const handleExport = useCallback(() => {
     const content = generateCustomerConversationExportContent(customerConversations, customerCompany, dateCompleted, ExportFormat.HTML);
+    const filename = `ConversationLog_${customerCompany || 'Client'}_${dateCompleted}.html`;
     triggerDownload(content, filename, 'html');
-  };
+  }, [customerConversations, customerCompany, dateCompleted]);
 
-  const handleInterestConfirmation = (isInterested: boolean) => {
-    handleDirectStateChange('interestConfirmed', isInterested);
-  };
+  const modulesForFocus = useMemo(() => {
+    if (currentServiceFocus === ServiceType.FINANCE) return FINANCE_MODULES;
+    if (currentServiceFocus === ServiceType.BUSINESS) return BUSINESS_MODULES;
+    if (currentServiceFocus === ServiceType.ITS) return ITS_MODULES;
+    return [];
+  }, [currentServiceFocus]);
 
-  const renderScriptItem = (item: ScriptItem, sectionId: ConversationStepId) => {
-    const focusText = currentServiceFocus || "relevant services"; 
-    const itemText = item.text.replace(/\[SERVICE_FOCUS_TEXT\]/g, focusText); 
+  const renderModuleQuestionGroup = (item: ScriptItem) => {
+    if (item.moduleServiceFocus !== currentServiceFocus) return null;
+    return (
+      <div key={item.id} className="p-3 bg-gray-100 rounded-md space-y-3">
+        <h4 className="font-semibold text-gray-700">{item.text}</h4>
+        {modulesForFocus.length > 0 ? (
+          modulesForFocus.map(module => (
+            <Textarea
+              key={module.id}
+              id={`${item.id}-${module.id}`}
+              label={`Challenges related to ${module.name}:`}
+              value={moduleExchangeAnswers[item.id]?.[module.id] || ''}
+              onChange={(e) => handleModuleAnswerChange(item.id, module.id, e.target.value)}
+              placeholder="Note down specific customer comments or pain points..."
+            />
+          ))
+        ) : (
+          <p className="text-sm text-gray-500">No specific modules for this focus area. Use the general challenges box below.</p>
+        )}
+      </div>
+    );
+  };
+  
+  const onInterestChange = useCallback((isInterested: boolean) => {
+      handleDirectStateChange('interestConfirmed', isInterested);
+  }, [handleDirectStateChange]);
+
+  const renderScriptItem = (item: ScriptItem) => {
+    const textWithPlaceholders = item.text
+      .replace(/\[Customer Name\]/g, customerName || 'there')
+      .replace(/\[Your Name\]/g, 'I')
+      .replace(/\[Your Company\]/g, getResellerCompanyName() || 'our company')
+      .replace(/\[SERVICE_FOCUS_TEXT\]/g, currentServiceFocus || 'the identified area');
 
     switch (item.type) {
       case 'script':
-        return <p key={item.id} className="text-md italic text-gray-700 my-3 p-3 bg-[#E6F4F1] border-l-4 border-[#01916D] rounded">{itemText}</p>; 
-      case 'input_prompt':
-        const value = item.targetStateProperty === 'explorationInput' 
-          ? explorationInput 
-          : item.targetStateProperty && followUpDetails.hasOwnProperty(item.targetStateProperty)
-          ? followUpDetails[item.targetStateProperty as keyof typeof followUpDetails] || ''
-          : '';
-        return (
-          <div key={item.id} className="my-3">
-            <Input
-              label={itemText}
-              id={`${sectionId}-${item.id}`}
-              value={String(value)}
-              onChange={(e) => item.targetStateProperty && handleDirectStateChange(item.targetStateProperty as any, e.target.value)}
-              placeholder={item.placeholder}
-              className="bg-white"
-            />
-          </div>
-        );
+        return <p key={item.id} className="p-3 bg-blue-50 text-blue-800 rounded-md">{textWithPlaceholders}</p>;
       case 'question_textarea':
-        return (
-          <div key={item.id} className="my-4 p-3 border border-gray-200 rounded-md bg-white shadow-sm">
-            <p className="text-md font-medium text-gray-800 mb-2">{itemText}</p>
-            <Button
-              onClick={() => handleToggleNoteArea(item.id)}
-              variant="secondary"
-              size="sm"
-              icon={expandedNoteAreas[item.id] ? <MinusCircleIcon /> : <ChatBubbleLeftIcon />}
-              iconPosition="left"
-              className="mb-2"
-            >
-              {expandedNoteAreas[item.id] ? 'Hide Notes' : 'Add/Edit Notes'}
-            </Button>
-            {expandedNoteAreas[item.id] && (
-              <Textarea
-                id={`${sectionId}-${item.id}-ans`}
-                value={exchangeAnswers[item.id] || ''}
-                onChange={(e) => handleAnswerChange(item.id, e.target.value)}
-                placeholder={item.placeholder || "Record customer's response here..."}
-                rows={3}
-                className="bg-yellow-50 focus:bg-white"
-                aria-label={`Response to: ${itemText}`}
-              />
-            )}
-          </div>
-        );
+        return <Textarea key={item.id} id={item.id} label={textWithPlaceholders} value={exchangeAnswers[item.id] || ''} onChange={(e) => handleAnswerChange(item.id, e.target.value)} placeholder={item.placeholder} />;
+      case 'input_prompt':
+        return <Input key={item.id} id={item.id} label={textWithPlaceholders} value={(item.targetStateProperty === 'explorationInput' ? explorationInput : followUpDetails[item.targetStateProperty as keyof typeof followUpDetails]) as string || ''} onChange={(e) => handleDirectStateChange(item.targetStateProperty!, e.target.value)} placeholder={item.placeholder} />;
       case 'module_question_group':
-        if (item.moduleServiceFocus && item.moduleServiceFocus !== currentServiceFocus) return null;  
-        let modulesToDisplay: Module[] = [];
-        if (currentServiceFocus === ServiceType.FINANCE) modulesToDisplay = FINANCE_MODULES;
-        else if (currentServiceFocus === ServiceType.BUSINESS) modulesToDisplay = BUSINESS_MODULES;
-        else if (currentServiceFocus === ServiceType.ITS) modulesToDisplay = ITS_MODULES; 
-
+        return renderModuleQuestionGroup(item);
+      case 'interest_buttons':
         return (
-          <div key={item.id} className="my-4 p-3 border border-indigo-200 rounded-md bg-indigo-50 shadow-sm">
-            <h4 className="text-md font-semibold text-indigo-700 mb-2">{itemText.replace(/\[SERVICE_FOCUS_TEXT\]/g, focusText)}</h4>
-            {modulesToDisplay.length > 0 ? modulesToDisplay.slice(0, 3).map(module => ( 
-              <div key={module.id} className="my-3 p-2 border-t border-indigo-100">
-                <p className="text-sm font-medium text-gray-800 mb-1">Regarding {module.name}: What are their current processes and any related challenges in this area?</p>
-                <Button
-                    onClick={() => handleToggleNoteArea(`${item.id}-${module.id}`)}
-                    variant="secondary"
-                    size="sm"
-                    icon={expandedNoteAreas[`${item.id}-${module.id}`] ? <MinusCircleIcon /> : <ChatBubbleLeftIcon />}
-                    className="!py-1 !px-2 mb-1 text-xs"
-                >
-                    {expandedNoteAreas[`${item.id}-${module.id}`] ? 'Hide' : 'Notes'} for {module.name}
-                </Button>
-                {expandedNoteAreas[`${item.id}-${module.id}`] && (
-                    <Textarea
-                        id={`${sectionId}-${item.id}-${module.id}-ans`}
-                        value={moduleExchangeAnswers[item.id]?.[module.id] || ''}
-                        onChange={(e) => handleModuleAnswerChange(item.id, module.id, e.target.value)}
-                        placeholder={`Notes for ${module.name}...`}
-                        rows={2}
-                        className="bg-yellow-50 focus:bg-white text-sm"
-                        aria-label={`Response for ${module.name}`}
-                    />
-                )}
-              </div>
-            )) : <p className="text-sm text-gray-500">No specific modules pre-selected for {focusText}. Use general challenges area.</p>}
+          <div key={item.id} className="p-3 bg-gray-100 rounded-md">
+            <p className="text-gray-700 font-medium mb-2">{textWithPlaceholders}</p>
+            <div className="flex gap-4">
+              <Button onClick={() => onInterestChange(true)} variant={followUpDetails.interestConfirmed === true ? "success" : "secondary"} icon={<CheckCircleIcon />}>Confirm Interest</Button>
+              <Button onClick={() => onInterestChange(false)} variant={followUpDetails.interestConfirmed === false ? "danger" : "secondary"} icon={<XCircleIcon />}>Decline Interest</Button>
+            </div>
           </div>
         );
-        case 'interest_buttons':
-            return (
-                <div key={item.id} className="my-4 p-3 border border-gray-200 rounded-md bg-white shadow-sm">
-                    <p className="text-md font-medium text-gray-800 mb-3">{itemText}</p>
-                    <div className="flex space-x-3">
-                        <Button
-                            onClick={() => handleInterestConfirmation(true)}
-                            variant={followUpDetails.interestConfirmed === true ? "success" : "secondary"}
-                            className={`flex-1 ${followUpDetails.interestConfirmed === true ? 'ring-2 ring-green-500 ring-offset-1' : ''}`}
-                            icon={<CheckCircleIcon />}
-                        >
-                            Yes, Positive Interest
-                        </Button>
-                        <Button
-                            onClick={() => handleInterestConfirmation(false)}
-                            variant={followUpDetails.interestConfirmed === false ? "danger" : "secondary"}
-                            className={`flex-1 ${followUpDetails.interestConfirmed === false ? 'ring-2 ring-red-500 ring-offset-1' : ''}`}
-                            icon={<XCircleIcon />}
-                        >
-                            No, Not Interested / Neutral
-                        </Button>
-                    </div>
-                </div>
-            );
-       case 'final_notes':
-        return (
-            <div key={item.id} className="my-4 p-3 border border-gray-200 rounded-md bg-yellow-50 shadow-sm">
-                 <Textarea
-                    label={itemText}
-                    id={`${sectionId}-${item.id}-ans`}
-                    value={generalNotes}
-                    onChange={(e) => handleDirectStateChange('generalNotes', e.target.value)}
-                    placeholder={item.placeholder || "Summarise key takeaways, next actions, sentiment..."}
-                    rows={4}
-                    className="bg-white focus:bg-yellow-50"
-                    aria-label={itemText}
-                />
-            </div>
-        );
+      case 'final_notes':
+         return <Textarea key={item.id} id={item.id} label={textWithPlaceholders} value={generalNotes} onChange={(e) => handleDirectStateChange('generalNotes', e.target.value)} placeholder={item.placeholder} rows={5} />;
       default:
         return null;
     }
   };
-  
-  const renderConversationSummary = () => {
-    if (!showSummary) return null;
+
+  const currentSectionConfig = SCRIPT_SECTIONS_CONFIG.find(s => s.id === activeSectionId);
+  const currentSectionIndex = SCRIPT_SECTIONS_CONFIG.findIndex(s => s.id === activeSectionId);
+
+  const renderContent = () => {
+    if (showSummary) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-800">Conversation Summary</h3>
+          <p>The guided conversation has concluded. Review the generated log and export it for your records or to share with colleagues.</p>
+          <div className="p-4 border rounded-md bg-gray-50 max-h-96 overflow-y-auto">
+            {exchanges.map(ex => (
+              <div key={ex.id} className="py-2 border-b last:border-b-0">
+                <p className="text-xs font-bold text-gray-500">{ex.sectionId}</p>
+                <p className="font-semibold text-gray-700">{ex.promptText || ALL_MODULES.find(m => m.id === ex.moduleKey)?.name || 'Note'}</p>
+                <p className="text-gray-600 pl-4">{ex.answerText}</p>
+              </div>
+            ))}
+          </div>
+          <Button onClick={handleExport} icon={<ArrowDownTrayIcon />}>Export Full Log (HTML)</Button>
+        </div>
+      );
+    }
+
+    if (!currentSectionConfig) return <p>Conversation ended or invalid state.</p>;
 
     return (
-        <div className="mt-8 p-4 border-2 border-dashed border-[#80C7B8] rounded-lg bg-[#E6F4F1] shadow-inner"> 
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-[#017a59]">Conversation Summary</h3> 
-                <Button onClick={() => setShowSummary(false)} variant="secondary" size="sm">Close Summary</Button>
-            </div>
-
-            <div className="space-y-3 text-sm">
-                <p><strong>Customer Company:</strong> {customerCompany || "N/A"}</p>
-                <p><strong>Service Focus Determined:</strong> {currentServiceFocus || "Not yet determined"}</p> 
-                {currentServiceFocus && <p><strong>Keywords for Focus:</strong> {explorationInput || "N/A"}</p>}
-                
-                <hr className="my-3" />
-
-                {SCRIPT_SECTIONS_CONFIG.map(section => {
-                    const sectionCompleted = completedSectionIds.includes(section.id) || section.id === activeSectionId;
-                    if (!sectionCompleted) return null;
-
-                    const sectionAnswers: JSX.Element[] = [];
-                    section.scriptItems.forEach(item => {
-                        let answer: string | boolean | null | undefined = undefined;
-                        let questionText = item.text.replace(/\[SERVICE_FOCUS_TEXT\]/g, currentServiceFocus || "relevant services"); 
-
-                        if (item.type === 'question_textarea' && exchangeAnswers[item.id]) {
-                            answer = exchangeAnswers[item.id];
-                        } else if (item.type === 'input_prompt' && item.targetStateProperty) {
-                            answer = item.targetStateProperty === 'explorationInput' ? explorationInput : followUpDetails[item.targetStateProperty as keyof typeof followUpDetails];
-                        } else if (item.type === 'interest_buttons') {
-                            answer = followUpDetails.interestConfirmed;
-                            questionText = item.text; 
-                        } else if (item.type === 'module_question_group' && moduleExchangeAnswers[item.id]) {
-                            const moduleDetails = Object.entries(moduleExchangeAnswers[item.id]).map(([modId, ans]) => {
-                                const module = ALL_MODULES.find(m => m.id === modId);
-                                return ans ? <li key={modId} className="ml-4">{module?.name || modId}: {ans}</li> : null;
-                            }).filter(Boolean);
-                            if (moduleDetails.length > 0) {
-                                sectionAnswers.push(
-                                    <div key={`${item.id}-module`} className="mt-1">
-                                        <p><strong>{questionText}:</strong></p>
-                                        <ul className="list-disc pl-5">{moduleDetails}</ul>
-                                    </div>
-                                );
-                            }
-                            return; 
-                        } else if (item.type === 'final_notes' && generalNotes) {
-                            answer = generalNotes;
-                        }
-                        
-                        if (answer !== undefined && answer !== null && answer !== '') {
-                            sectionAnswers.push(
-                                <p key={item.id}><strong>{questionText}:</strong> {typeof answer === 'boolean' ? (answer ? 'Yes' : 'No') : String(answer)}</p>
-                            );
-                        }
-                    });
-
-                    if (sectionAnswers.length > 0) {
-                        return (
-                            <div key={section.id} className="mb-2">
-                                <h4 className="font-semibold text-[#017a59]">{section.title}</h4> 
-                                {sectionAnswers}
-                            </div>
-                        );
-                    }
-                    return null;
-                })}
-                
-                <hr className="my-3" />
-                <h4 className="font-semibold text-[#017a59]">Follow-Up Details:</h4> 
-                <p><strong>Interest Confirmed for Specialist:</strong> {followUpDetails.interestConfirmed === null ? 'N/A' : (followUpDetails.interestConfirmed ? 'Yes' : 'No')}</p>
-                {followUpDetails.interestConfirmed && <p><strong>Specialist Needed For:</strong> {followUpDetails.specialistNeeded || currentServiceFocus || 'N/A'}</p>}
-                <p><strong>Contact Name:</strong> {followUpDetails.contactName || 'N/A'}</p>
-                <p><strong>Contact Email:</strong> {followUpDetails.contactEmail || 'N/A'}</p>
-                <p><strong>Meeting Date:</strong> {followUpDetails.meetingDate || 'N/A'}</p>
-                <p><strong>Meeting Time:</strong> {followUpDetails.meetingTime || 'N/A'}</p>
-                <p><strong>Follow-Up Notes:</strong> {followUpDetails.notes || 'N/A'}</p>
-                
-                <hr className="my-3" />
-                <p><strong>General Conversation Notes:</strong> {generalNotes || 'N/A'}</p>
-            </div>
+      <div className="space-y-6">
+        <h3 className="text-xl font-semibold text-gray-800">{currentSectionConfig.title}</h3>
+        <div className="space-y-4">
+          {currentSectionConfig.scriptItems.map(item => renderScriptItem(item))}
         </div>
+      </div>
     );
   };
-
-
+  
   return (
-    <section 
-      className="p-4 md:p-6 bg-white shadow rounded-lg"
-      role="region"
-      aria-labelledby={`${tabIdValue}-heading`}
-    >
-      <div className="flex flex-wrap justify-between items-center mb-6 border-b pb-4">
-        <h2 id={`${tabIdValue}-heading`} className="text-xl font-semibold text-gray-800">Customer Conversation Guide</h2>
-        <Button 
-            onClick={handleExportConversation} 
-            variant="secondary" 
-            size="sm"
-            icon={<ArrowDownTrayIcon />} 
-            iconPosition="left"
-        >
-            Export Conversation (HTML)
-        </Button>
+    <section id={`${tabIdValue}-section`} aria-labelledby={`${tabIdValue}-heading`} className="p-6 bg-white shadow rounded-lg">
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <h2 id={`${tabIdValue}-heading`} className="text-2xl font-semibold text-gray-800 flex items-center">
+          <ChatBubbleLeftIcon className="w-8 h-8 mr-2 text-[#01916D]" />
+          Customer Conversation Guide
+        </h2>
+        {exchanges.length > 0 && (
+          <Button onClick={handleExport} variant="secondary" size="sm" icon={<ArrowDownTrayIcon />}>Export Log</Button>
+        )}
       </div>
-      
-      <div ref={sectionsContainerRef} className="space-y-6 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-        {SCRIPT_SECTIONS_CONFIG.map((sectionConfig) => {
-          const isVisible = sectionConfig.id === activeSectionId || completedSectionIds.includes(sectionConfig.id);
-          if (!isVisible) return null;
 
-          const isActive = sectionConfig.id === activeSectionId;
-          
-          return (
-            <div
-              key={sectionConfig.id}
-              id={`section-${sectionConfig.id}`}
-              className={`mb-8 p-4 border rounded-lg transition-all duration-300 ${isActive ? 'border-[#01916D] shadow-lg bg-[#E6F4F1]' : 'border-gray-300 bg-gray-50'}`} 
-              aria-live={isActive ? "polite" : "off"}
-              aria-labelledby={`section-title-${sectionConfig.id}`}
+      <div className="flex gap-8">
+        <nav className="w-1/4 space-y-1">
+          {SCRIPT_SECTIONS_CONFIG.map(section => (
+            <button key={section.id}
+              className={`w-full text-left p-2 rounded-md text-sm font-medium flex items-center ${
+                activeSectionId === section.id ? 'bg-[#E6F4F1] text-[#01916D]' : 
+                completedSectionIds.includes(section.id) ? 'text-gray-400 hover:bg-gray-100' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              disabled={!completedSectionIds.includes(section.id) && activeSectionId !== section.id}
             >
-              <h3 id={`section-title-${sectionConfig.id}`} className={`text-lg font-semibold mb-4 ${isActive ? 'text-[#017a59]' : 'text-gray-700'}`}> 
-                {sectionConfig.title} {isActive && <span className="text-sm font-normal text-[#01916D]">(Current Step)</span>} 
-              </h3>
-              
-              {sectionConfig.scriptItems.map(item => renderScriptItem(item, sectionConfig.id))}
-
-              {isActive && sectionConfig.nextSectionId && (
-                <Button onClick={handleContinue} icon={<ChevronRightIcon />} iconPosition="right" variant="primary" className="mt-4">
-                  Continue to {SCRIPT_SECTIONS_CONFIG.find(s => s.id === sectionConfig.nextSectionId)?.title.substring(3) || "Next Step"}
-                </Button>
+              {completedSectionIds.includes(section.id) && activeSectionId !== section.id ? (
+                <CheckCircleIcon className="w-5 h-5 mr-2 text-green-500" />
+              ) : (
+                <div className={`w-5 h-5 mr-2 flex items-center justify-center`}>
+                    <div className={`w-2 h-2 rounded-full ${activeSectionId === section.id ? 'bg-[#01916D]' : 'bg-gray-400'}`}></div>
+                </div>
               )}
-              {isActive && !sectionConfig.nextSectionId && ( 
-                  <div className="mt-6 pt-4 border-t border-gray-200 space-x-3">
-                     <Button 
-                        onClick={() => setShowSummary(true)} 
-                        variant="primary" 
-                        icon={<EyeIcon />}
-                        disabled={showSummary}
-                    >
-                        View Conversation Summary
-                    </Button>
-                  </div>
-              )}
-            </div>
-          );
-        })}
-        {renderConversationSummary()}
+              {section.title}
+            </button>
+          ))}
+        </nav>
+        <div className="w-3/4 p-4 border rounded-lg bg-gray-50">
+            {renderContent()}
+        </div>
       </div>
-      <div className="mt-6 pt-4 border-t border-gray-200">
-          <Button 
-            onClick={() => sectionsContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-            variant="ghost"
-            icon={<ArrowUpIcon />}
-            iconPosition="left"
-          >
-            Scroll to Top
+
+      <div className="mt-8 pt-6 border-t flex justify-between items-center">
+        <Button onClick={handleBack} disabled={currentSectionIndex === 0} icon={<ChevronLeftIcon />}>
+          Back
+        </Button>
+        {!showSummary && (
+          <Button onClick={handleContinue} disabled={!currentSectionConfig.nextSectionId && activeSectionId === SCRIPT_SECTIONS_CONFIG[SCRIPT_SECTIONS_CONFIG.length-1].id} icon={<ChevronRightIcon />} iconPosition="right">
+            {currentSectionConfig.nextSectionId ? 'Continue' : 'Finish Conversation'}
           </Button>
+        )}
       </div>
     </section>
   );

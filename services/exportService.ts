@@ -1,6 +1,6 @@
 
 
-import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat, RequirementBlock, TabMetadata, PainPointLevel1Pain, EditableReverseWaterfallCheatSheets, QualificationQuestion, EditableDiscoveryQuestionsTemplates, EditableModuleSolutionContentMap, DiscoveryQuestion, ConversationExchange, ConversationStepId, ServiceType, CustomerConversationState, PainPointMode, QualificationQuestionOption, ModuleQualificationQuestions, EngagementWorkflowStep, EngagementWorkflowState } from '../types'; // Renamed AutomationType to ServiceType
+import { AppState, Role, TabId, ScorecardAnswer, QualificationStatus, DiscoveryAnswer, RoiResults, Module, ExportFormat, RequirementBlock, TabMetadata, PainPointLevel1Pain, EditableReverseWaterfallCheatSheets, QualificationQuestion, EditableDiscoveryQuestionsTemplates, EditableModuleSolutionContentMap, DiscoveryQuestion, ConversationExchange, ConversationStepId, ServiceType, CustomerConversationState, PainPointMode, QualificationQuestionOption, ModuleQualificationQuestions, EngagementWorkflowStep, EngagementWorkflowState, EngagementAction } from '../types'; // Renamed AutomationType to ServiceType
 import { SCORECARD_QUESTIONS } from '../constants/scorecardConstants';
 import { QUALIFICATION_QUESTIONS_BY_MODULE, DEFAULT_QUALIFICATION_THRESHOLDS } from '../constants/qualificationConstants';
 import { DISCOVERY_QUESTIONS_TEMPLATES } from '../constants/discoveryConstants';
@@ -10,7 +10,6 @@ import { MODULE_SPECIFIC_SOLUTION_CONTENT } from '../constants/solutionContentCo
 import { RESELLER_COMPANY_NAME } from '../constants/appConfigConstants';
 import { PAIN_POINT_HIERARCHY, REVERSE_WATERFALL_CHEAT_SHEETS, initialPainPointsState } from '../constants/painPointConstants';
 import { initialCustomerConversationState } from '../constants/initialStateConstants';
-import { MODULE_INFOGRAPHICS_HTML } from '../constants/infographicConstants';
 import { ROI_INPUT_TEMPLATES } from '../constants/roiConstants';
 import { formatCurrency, getPaybackPeriodDisplay } from '../utils/formattingUtils'; 
 import { escapeHtml, nl2br, stripHtml } from '../utils/textUtils'; 
@@ -348,7 +347,7 @@ export const generateSolutionDocumentContent = (
 
     if (format === ExportFormat.HTML) {
         content += `<html><head><title>Solution Proposal for ${escapeHtml(coreModuleName)}</title>${htmlStyles}</head><body><div class="container">\n`;
-        content += formatSectionTitleHtml(`Solution Proposal for ${coreModuleName}`, 1, true);
+        content += formatSectionTitleHtml(`Solution Proposal for ${escapeHtml(coreModuleName)}`, 1, true);
         content += `<div class="field"><span class="field-label">Prepared for:</span> <span class="field-value">${escapeHtml(customerCompany || "Valued Client")}</span></div>`;
         content += `<div class="field"><span class="field-label">Date:</span> <span class="field-value">${escapeHtml(dateCompleted)}</span></div>`;
         content += `<div class="field"><span class="field-label">Prepared by:</span> <span class="field-value">${escapeHtml(RESELLER_COMPANY_NAME)}</span></div>\n`;
@@ -362,15 +361,6 @@ export const generateSolutionDocumentContent = (
 
         content += formatSectionTitleHtml("Overview of the Proposed Solution", 2);
         content += `<div class="prose solution-overview-details">${solutionOverviewTextContent}</div>`; 
-
-        if (selectedCoreModuleId && MODULE_INFOGRAPHICS_HTML[selectedCoreModuleId]) {
-            content += `<div class="infographic-section-export">`;
-            content += formatSectionTitleHtml(`Module Insights: ${coreModuleName}`, 3);
-            let infographicHtml = MODULE_INFOGRAPHICS_HTML[selectedCoreModuleId];
-            infographicHtml = infographicHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "<!-- Chart scripts removed for embedded view. View original HTML for interactive charts. -->");
-            content += infographicHtml;
-            content += `</div>`;
-        }
 
         content += formatSectionTitleHtml("Detailed Customer Solution & Requirements", 2);
         content += `<h3>Core Module: ${escapeHtml(coreModuleName)}</h3>`;
@@ -410,10 +400,6 @@ export const generateSolutionDocumentContent = (
 
         content += formatSectionTitleTextMd("Overview of the Proposed Solution", 2, ExportFormat.MD);
         content += stripHtml(solutionOverviewTextContent) + "\n\n";
-        if (selectedCoreModuleId && MODULE_INFOGRAPHICS_HTML[selectedCoreModuleId]) {
-            content += `(Note: A visual infographic for ${coreModuleName} is available in the HTML export or within the application.)\n\n`;
-        }
-
 
         content += formatSectionTitleTextMd("Detailed Customer Solution & Requirements", 2, ExportFormat.MD);
         content += `**Core Module:** ${coreModuleName}\n`;
@@ -476,10 +462,10 @@ const formatEngagementWorkflow = (steps: EngagementWorkflowStep[], isHtml: boole
         steps.forEach(step => {
             content += `<li style="margin-bottom: 1em;"><strong>${escapeHtml(step.stepType)}</strong> (Status: ${escapeHtml(step.status)})`;
             if (step.objectives && step.objectives.length > 0) {
-                content += `<div class="note" style="margin-left: 15px;"><strong>Objectives:</strong><ul>${step.objectives.map(o => `<li>${escapeHtml(o)}</li>`).join('')}</ul></div>`;
+                content += `<div class="note" style="margin-left: 15px;"><strong>Objectives:</strong><ul>${step.objectives.map(o => `<li>${o.completed ? '✅ ' : '🔲 '}${escapeHtml(o.text)}</li>`).join('')}</ul></div>`;
             }
             if (step.salesActions && step.salesActions.length > 0) {
-                content += `<div class="note" style="color: #005A9C; margin-left: 15px;"><strong>Sales Actions:</strong><ul>${step.salesActions.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul></div>`;
+                content += `<div class="note" style="color: #005A9C; margin-left: 15px;"><strong>Sales Actions:</strong><ul>${step.salesActions.map(a => `<li>${a.completed ? '✅ ' : '🔲 '}${escapeHtml(a.text)}</li>`).join('')}</ul></div>`;
             }
             content += `</li>`;
         });
@@ -489,10 +475,10 @@ const formatEngagementWorkflow = (steps: EngagementWorkflowStep[], isHtml: boole
         steps.forEach((step, index) => {
             content += `${index + 1}. **${step.stepType}** (Status: ${step.status})\n`;
             if (step.objectives && step.objectives.length > 0) {
-                content += `   - **Objectives:**\n${step.objectives.map(o => `     - ${o}`).join('\n')}\n`;
+                content += `   - **Objectives:**\n${step.objectives.map(o => `     - [${o.completed ? 'x' : ' '}] ${o.text}`).join('\n')}\n`;
             }
             if (step.salesActions && step.salesActions.length > 0) {
-                content += `   - **Sales Actions:**\n${step.salesActions.map(a => `     - ${a}`).join('\n')}\n`;
+                content += `   - **Sales Actions:**\n${step.salesActions.map(a => `     - [${a.completed ? 'x' : ' '}] ${a.text}`).join('\n')}\n`;
             }
         });
     }
@@ -513,13 +499,13 @@ export const generateEngagementWorkflowHtml = (workflow: EngagementWorkflowState
 
             if (step.objectives && step.objectives.length > 0) {
                 content += '<h4>Objectives:</h4><ul>';
-                step.objectives.forEach(o => { content += `<li>${escapeHtml(o)}</li>`; });
+                step.objectives.forEach(o => { content += `<li>${o.completed ? '✅ ' : '🔲 '}${escapeHtml(o.text)}</li>`; });
                 content += '</ul>';
             }
 
             if (step.salesActions && step.salesActions.length > 0) {
                 content += '<h4>Sales Actions:</h4><ul>';
-                step.salesActions.forEach(a => { content += `<li>${escapeHtml(a)}</li>`; });
+                step.salesActions.forEach(a => { content += `<li>${a.completed ? '✅ ' : '🔲 '}${escapeHtml(a.text)}</li>`; });
                 content += '</ul>';
             }
              if (step.objectives.length === 0 && step.salesActions.length === 0) {

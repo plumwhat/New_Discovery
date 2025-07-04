@@ -52,3 +52,16 @@ export const stripHtml = (html: string): string => {
     text = text.replace(/\n\s*\n/g, '\n\n'); // Reduce multiple newlines to two
     return text.trim();
 };
+
+/**
+ * Generates a standard RFC4122 version 4 compliant UUID.
+ * This is a cross-browser compatible way to generate unique identifiers.
+ * @returns A new UUID string.
+ */
+export const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
