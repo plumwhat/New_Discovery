@@ -39,7 +39,7 @@ export const QUALIFICATION_EMAIL_TEMPLATES_BY_MODULE: Record<string, string> = {
   creditManagement: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/xGuZnxpDrS`,
   collectionManagement: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/tJqqBJsbd5`,
   claimsDeductions: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/bU6VndfDt6`,
-  accountsPayable: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/gxfsRwtPzn450`,
+  accountsPayable: `${BASE_EMAIL_TEMPLATE_BODY_WITH_LINK} https://forms.office.com/r/gxfsEwtPzn450`,
 };
 
 const DEFAULT_QUALIFICATION_QUESTIONS: ModuleQualificationQuestions = {
